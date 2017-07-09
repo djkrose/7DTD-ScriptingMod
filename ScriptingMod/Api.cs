@@ -1,12 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace ScriptingMod
 {
     public class Api : ModApiAbstract
     {
+        internal static string SaveGameFolder = GamePrefs.GetString(EnumGamePrefs.SaveGameFolder);
+        internal static string ScriptingModFolder = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Api)).Location);
+        internal static string CommandsFolder = Path.Combine(ScriptingModFolder, "");
+        //internal static string CommandsPath = Path.Combine(SaveGameFolder, "Commands");
+
         public Api()
         {
             Log.Debug("Api constructor called.");
