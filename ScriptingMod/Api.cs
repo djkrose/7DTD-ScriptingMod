@@ -11,8 +11,7 @@ namespace ScriptingMod
     {
         internal static string SaveGameFolder = GamePrefs.GetString(EnumGamePrefs.SaveGameFolder);
         internal static string ScriptingModFolder = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Api)).Location);
-        internal static string CommandsFolder = Path.Combine(ScriptingModFolder, "");
-        //internal static string CommandsPath = Path.Combine(SaveGameFolder, "Commands");
+        internal static string CommandsFolder = Path.Combine(ScriptingModFolder, "Commands");
 
         public Api()
         {

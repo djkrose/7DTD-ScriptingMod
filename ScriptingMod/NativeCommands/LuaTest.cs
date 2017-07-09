@@ -17,7 +17,6 @@ namespace ScriptingMod.NativeCommands
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
-            Log.Debug("Current directory: " + Directory.GetCurrentDirectory());
             LuaEngine.Current.ExecuteFile(@"luatest.lua");
         }
     }
