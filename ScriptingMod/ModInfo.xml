@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+  <ModInfo>
+    <Name value="Scripting Mod"/>
+    <Description value="Scripting Mod for 7DTD Dedicated Server"/>
+    <Author value="djkrose"/>
+    <Version value="0.1"/>
+    <Website value=""/>
+  </ModInfo>
+</xml>
