@@ -8,34 +8,28 @@ using NLua.Exceptions;
 
 namespace ScriptingMod
 {
-    internal class LuaEngine
+    internal class LuaEngine : ScriptEngine
     {
-        private static LuaEngine luaEngine;
-        public static LuaEngine Current => luaEngine ?? (luaEngine = new LuaEngine());
+        private static LuaEngine _current;
+        public static LuaEngine Current => _current ?? (_current = new LuaEngine());
 
-        private Lua engine;
+        private readonly Lua _lua;
+
+        public override ScriptTypeEnum ScriptType => ScriptTypeEnum.LUA;
 
         private LuaEngine()
         {
-            engine = new Lua();
-            engine.LoadCLRPackage();
-            engine["print"] = new Action<object[]>(Print);
+            _lua = new Lua();
+            _lua.LoadCLRPackage();
+            _lua["print"] = new Action<object[]>(Print);
         }
 
-        private void Print(params object[] values)
-        {
-            if (values == null || values.Length == 0)
-                return;
-            string output = values.Select(v => v.ToString()).Aggregate((s, s1) => s + s1);
-            Log.Out(output);
-        }
-
-        public void Execute(string script)
+        public override void ExecuteInline(string script)
         {
             try
             {
                 Log.Debug("Starting inline LUA script ...");
-                engine.DoString(script);
+                _lua.DoString(script);
                 Log.Debug("Inline LUA script ended.");
             }
             catch (LuaScriptException ex)
@@ -50,13 +44,13 @@ namespace ScriptingMod
             }
         }
 
-        public void ExecuteFile(string fileName)
+        public override void ExecuteFile(string fileName)
         {
             try
             {
                 Log.Debug($"Starting LUA script {fileName} ...");
                 // TODO: Let this also work when file has UTF-8 bom
-                engine.DoFile(Path.Combine(Api.CommandsFolder, fileName));
+                _lua.DoFile(Path.Combine(Api.CommandsFolder, fileName));
                 Log.Debug($"LUA script {fileName} ended.");
             }
             catch (LuaScriptException ex)
@@ -69,6 +63,20 @@ namespace ScriptingMod
                 Log.Exception(ex);
                 Log.Error($"LUA script {fileName} failed.");
             }
+        }
+
+        public override void SetValue(string name, object value)
+        {
+            _lua[name] = value;
+        }
+
+
+        private void Print(params object[] values)
+        {
+            if (values == null || values.Length == 0)
+                return;
+            string output = values.Select(v => v.ToString()).Aggregate((s, s1) => s + s1);
+            Log.Out(output);
         }
     }
 }

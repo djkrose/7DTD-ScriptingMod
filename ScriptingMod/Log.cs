@@ -12,13 +12,14 @@ namespace ScriptingMod
     internal class Log : global::Log
     {
         private const bool DEBUG = true;
-        private const string PREFIX = "[DEBUG] ";
+        private const string PREFIX = "[SCRIPTING MOD] ";
+        private const string DEBUG_PREFIX = "[DEBUG] ";
 
         public static void Debug(string _format, params object[] _values)
         {
             if (DEBUG)
             {
-                global::Log.Out(PREFIX + _format, _values);
+                global::Log.Out(PREFIX + DEBUG_PREFIX + _format, _values);
             }
         }
 
@@ -26,7 +27,7 @@ namespace ScriptingMod
         {
             if (DEBUG)
             {
-                global::Log.Out(PREFIX + _s);
+                global::Log.Out(PREFIX + DEBUG_PREFIX + _s);
             }
         }
 
@@ -34,42 +35,42 @@ namespace ScriptingMod
 
         public new static void Out(string _format, params object[] _values)
         {
-            global::Log.Out(_format, _values);
+            global::Log.Out(PREFIX + _format, _values);
         }
 
         public new static void Out(string _s)
         {
-            global::Log.Out(_s);
+            global::Log.Out(PREFIX + _s);
         }
 
         public new static void Warning(string _format, params object[] _values)
         {
-            global::Log.Warning(_format, _values);
+            global::Log.Warning(PREFIX + _format, _values);
         }
 
         public new static void Warning(string _s)
         {
-            global::Log.Warning(_s);
+            global::Log.Warning(PREFIX + _s);
         }
 
         public new static void Error(string _format, params object[] _values)
         {
-            global::Log.Error(_format, _values);
+            global::Log.Error(PREFIX + _format, _values);
         }
 
         public new static void Error(string _s)
         {
-            global::Log.Error(_s);
+            global::Log.Error(PREFIX + _s);
         }
 
         public new static void Error(string _s, UnityEngine.Object _context)
         {
-            global::Log.Error(_s, _context);
+            global::Log.Error(PREFIX + _s, _context);
         }
 
         public new static void Exception(Exception _e)
         {
-            global::Log.Exception(_e);
+            global::Log.Error(PREFIX + _e);
         }
 
         #endregion

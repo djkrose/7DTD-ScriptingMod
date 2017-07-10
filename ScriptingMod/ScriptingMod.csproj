@@ -60,11 +60,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
+    <Compile Include="NativeCommands\ScriptCommand.cs" />
     <Compile Include="NativeCommands\LuaTest.cs" />
     <Compile Include="NativeCommands\Version.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="LuaEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScriptEngine.cs" />
     <Compile Include="StateManager.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -77,11 +79,17 @@
     <Content Include="Commands\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Commands\luaerror.lua">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="ILMerge.props" />
     <None Include="ILMerge.Task.targets">
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Extensions\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
