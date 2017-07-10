@@ -8,7 +8,7 @@ namespace ScriptingMod.NativeCommands
     /// <summary>
     /// Class used for all script commands; every command file gets one object
     /// </summary>
-    public class ScriptCommand : ConsoleCmdAbstract
+    public class DynamicCommand : ConsoleCmdAbstract
     {
         private readonly string[] _commands;
         private readonly Action<List<string>, CommandSenderInfo> _action;
@@ -18,9 +18,9 @@ namespace ScriptingMod.NativeCommands
 
         /// <summary>
         /// Prevent the server from creating a static command from this class.
-        /// Will output: WRN Command class ScriptCommand does not contain a parameterless constructor, skipping
+        /// Will output: WRN Command class DynamicCommand does not contain a parameterless constructor, skipping
         /// </summary>
-        private ScriptCommand()
+        private DynamicCommand()
         {
             // never called
         }
@@ -33,7 +33,7 @@ namespace ScriptingMod.NativeCommands
         /// <param name="description"></param>
         /// <param name="help"></param>
         /// <param name="defaultPermissionLevel"></param>
-        public ScriptCommand(string[] commands, Action<List<string>, CommandSenderInfo> action, string description, string help = null, int defaultPermissionLevel = 0)
+        public DynamicCommand(string[] commands, Action<List<string>, CommandSenderInfo> action, string description, string help = null, int defaultPermissionLevel = 0)
         {
             _commands = commands;
             _action = action;

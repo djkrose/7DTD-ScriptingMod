@@ -4,36 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using ScriptingMod.NativeCommands;
-using Logx = global::Log;
+using ScriptingMod.ScriptEngines;
 
-namespace ScriptingMod
+namespace ScriptingMod.Managers
 {
-    internal class StateManager
+    internal static class CommandManager
     {
-        public static void Awake()
-        {
-            try
-            {
-                LoadDynamicCommands();
-            }
-            catch (Exception e)
-            {
-                Log.Error("Error in StateManager.Awake: " + e);
-            }
-        }
-
-        public static void Shutdown()
-        {
-            try
-            {
-                // TODO
-            }
-            catch (Exception e)
-            {
-                Log.Error("Error in StateManager.Shutdown: " + e);
-            }
-        }
-
         public static void LoadDynamicCommands()
         {
             Log.Out("Registering script commands ...");
@@ -52,15 +28,15 @@ namespace ScriptingMod
                 var defaultPermissionLevel = 0;
 
                 var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-                var action = new Action<List<string>, CommandSenderInfo>(delegate(List<string> paramsList, CommandSenderInfo senderInfo)
+                var action = new Action<List<string>, CommandSenderInfo>(delegate (List<string> paramsList, CommandSenderInfo senderInfo)
                 {
                     scriptEngine.SetValue("params", paramsList.ToArray());
                     scriptEngine.SetValue("senderInfo", senderInfo);
                     scriptEngine.ExecuteFile(filePath);
                 });
 
-                var scriptCommand = new ScriptCommand(commands, action, description, help, defaultPermissionLevel);
-                
+                var scriptCommand = new DynamicCommand(commands, action, description, help, defaultPermissionLevel);
+
                 Log.Out($"Registered command(s) \"{string.Join(" ", commands)}\" with script \"{fileName}\".");
 
                 // TODO: Register scriptCommand using nasty reflection hacks in 7DTD server
@@ -88,5 +64,6 @@ namespace ScriptingMod
             Uri folderUri = new Uri(folder);
             return Uri.UnescapeDataString(folderUri.MakeRelativeUri(pathUri).ToString().Replace('/', Path.DirectorySeparatorChar));
         }
+
     }
 }

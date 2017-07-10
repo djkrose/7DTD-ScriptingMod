@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using NLua;
 using NLua.Exceptions;
 
-namespace ScriptingMod
+namespace ScriptingMod.ScriptEngines
 {
     internal class LuaEngine : ScriptEngine
     {

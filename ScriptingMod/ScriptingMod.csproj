@@ -60,14 +60,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
-    <Compile Include="NativeCommands\ScriptCommand.cs" />
+    <Compile Include="Managers\CommandManager.cs" />
+    <Compile Include="NativeCommands\DynamicCommand.cs" />
     <Compile Include="NativeCommands\LuaTest.cs" />
     <Compile Include="NativeCommands\Version.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="LuaEngine.cs" />
+    <Compile Include="ScriptEngines\LuaEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ScriptEngine.cs" />
-    <Compile Include="StateManager.cs" />
+    <Compile Include="ScriptEngines\ScriptEngine.cs" />
+    <Compile Include="Managers\StateManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ILMergeOrder.txt" />

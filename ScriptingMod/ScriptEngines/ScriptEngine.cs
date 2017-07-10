@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ScriptingMod
+namespace ScriptingMod.ScriptEngines
 {
     internal enum ScriptTypeEnum { LUA, JS }
 
