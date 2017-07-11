@@ -15,7 +15,7 @@ namespace ScriptingMod.Managers
             }
             catch (Exception e)
             {
-                Log.Error("Error in StateManager.Awake: " + e);
+                Log.Exception(e);
             }
         }
 
@@ -23,11 +23,11 @@ namespace ScriptingMod.Managers
         {
             try
             {
-                // TODO
+                // Nothing to do yet
             }
             catch (Exception e)
             {
-                Log.Error("Error in StateManager.Shutdown: " + e);
+                Log.Exception(e);
             }
         }
 

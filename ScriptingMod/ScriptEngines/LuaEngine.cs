@@ -48,8 +48,9 @@ namespace ScriptingMod.ScriptEngines
             try
             {
                 Log.Debug($"Starting LUA script {fileName} ...");
-                // TODO: Let this also work when file has UTF-8 bom
-                _lua.DoFile(filePath);
+                // We are not using _lua.DoFile(..) because it does not support UTF-8 w/ BOM encoding
+                string script = File.ReadAllText(filePath);
+                _lua.DoString(script);
                 Log.Debug($"LUA script {fileName} ended.");
             }
             catch (LuaScriptException ex)
