@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -113,6 +114,7 @@ namespace ScriptingMod.Managers
 
                 Log.Debug($"Loading script \"{fileName}\" ...");
 
+                // TODO: Load stuff from script metadata
                 var commands = new string[] { Path.GetFileNameWithoutExtension(filePath) };
                 var description = $"Description for command {commands[0]}.";
                 var help = $"This executes the script {fileName} using djkrose's Scripting Mod.";
@@ -161,8 +163,34 @@ namespace ScriptingMod.Managers
                 AddSortedCommandObjectPair(commandObjectPair);
             }
 
-            _commandObjects.Add(commandObject);
+            AddCommandObjectSorted(commandObject);
         }
+
+        private CommandObjectComparer _commandObjectComparer = new CommandObjectComparer();
+
+        private class CommandObjectComparer : IComparer<IConsoleCommand>
+        {
+            [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
+            public int Compare(IConsoleCommand o1, IConsoleCommand o2)
+            {
+                return string.Compare(o1.GetCommands()[0], o2.GetCommands()[0], StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        /// <summary>
+        /// Inserts a new CommandObject in the list at the position sorted by the first command name.
+        /// See: https://stackoverflow.com/a/12172412/785111
+        /// </summary>
+        /// <param name="item"></param>
+        private void AddCommandObjectSorted(IConsoleCommand item)
+        {
+            var index = _commandObjects.BinarySearch(item, _commandObjectComparer);
+            if (index < 0) index = ~index;
+            _commandObjects.Insert(index, item);
+            Log.Debug($"Inserted new command object at index {index} of {_commandObjects.Count}.");
+        }
+
+        private CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
 
         private class CommandObjectPairComparer : IComparer
         {
@@ -176,14 +204,15 @@ namespace ScriptingMod.Managers
 
         /// <summary>
         /// Inserts a new CommandObjectPair object in the list at the position sorted by the command name
+        /// See: https://stackoverflow.com/a/12172412/785111
         /// </summary>
         /// <param name="item">An object of struct type SdtdConsole.OL</param>
         private void AddSortedCommandObjectPair(object item)
         {
-            var index = Array.BinarySearch(_commandObjectPairs.Cast<object>().ToArray(), item, new CommandObjectPairComparer());
+            var index = Array.BinarySearch(_commandObjectPairs.Cast<object>().ToArray(), item, _commandObjectPairComparer);
             if (index < 0) index = ~index;
             _commandObjectPairs.Insert(index, item);
-            Log.Debug("Inserted new object at index " + index + " of " + _commandObjectPairs.Count);
+            Log.Debug($"Inserted new command object pair at index {index} of {_commandObjectPairs.Count}.");
         }
 
         public void SaveChanges()
@@ -191,6 +220,8 @@ namespace ScriptingMod.Managers
             // Update SdtdConsole.ET to be a readonly copy of SdtdConsole.WT
             Log.Debug("Updating readonly copy of command list ...");
             _commandObjectsReadOnlyField.SetValue(SdtdConsole.Instance, new ReadOnlyCollection<IConsoleCommand>(_commandObjects));
+
+            Log.Dump(_commandObjectPairs);
 
             Log.Debug("Saving changes to commands and permissions to disk ...");
             GameManager.Instance.adminTools.Save();

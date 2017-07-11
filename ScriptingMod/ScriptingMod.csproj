@@ -90,6 +90,12 @@
     <None Include="Build.targets">
       <SubType>Designer</SubType>
     </None>
+    <Content Include="Commands\zzz.lua">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Commands\aaa.lua">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="ILMerge.props" />
     <None Include="ILMerge.targets">
       <SubType>Designer</SubType>
