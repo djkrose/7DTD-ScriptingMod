@@ -81,19 +81,19 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Commands\*.*">
+    <None Include="Build.targets">
+      <SubType>Designer</SubType>
+    </None>
+    <Content Include="Commands\aaa.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Commands\luaerror.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="Build.targets">
-      <SubType>Designer</SubType>
-    </None>
-    <Content Include="Commands\zzz.lua">
+    <Content Include="Commands\luatest.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Commands\aaa.lua">
+    <Content Include="Commands\zzz.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="ILMerge.props" />
