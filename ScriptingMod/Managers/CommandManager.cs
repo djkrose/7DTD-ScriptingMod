@@ -187,7 +187,7 @@ namespace ScriptingMod.Managers
             var index = _commandObjects.BinarySearch(item, _commandObjectComparer);
             if (index < 0) index = ~index;
             _commandObjects.Insert(index, item);
-            Log.Debug($"Inserted new command object at index {index} of {_commandObjects.Count}.");
+            Log.Debug($"Inserted new command object at index {index} of {_commandObjects.Count-1}.");
         }
 
         private CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
@@ -212,7 +212,7 @@ namespace ScriptingMod.Managers
             var index = Array.BinarySearch(_commandObjectPairs.Cast<object>().ToArray(), item, _commandObjectPairComparer);
             if (index < 0) index = ~index;
             _commandObjectPairs.Insert(index, item);
-            Log.Debug($"Inserted new command object pair at index {index} of {_commandObjectPairs.Count}.");
+            Log.Debug($"Inserted new command object pair at index {index} of {_commandObjectPairs.Count-1}.");
         }
 
         public void SaveChanges()
