@@ -129,7 +129,15 @@ namespace ScriptingMod.Managers
                 });
 
                 var commandObject = new DynamicCommand(commands, action, description, help, defaultPermissionLevel);
-                AddCommand(commandObject);
+                try
+                {
+                    AddCommand(commandObject);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning($"Could not register command script \"{fileName}\": {ex.Message}");
+                    continue;
+                }
 
                 Log.Out($"Registered command(s) \"{commands.Join(" ")}\" with script \"{fileName}\".");
             }

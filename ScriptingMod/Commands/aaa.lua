@@ -1,2 +1,1 @@
-print("Hello World! I am a LUA script!")
-And this is an error!
+print("Hello from aaa.lua!")
