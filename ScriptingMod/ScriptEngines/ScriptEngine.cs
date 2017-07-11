@@ -14,7 +14,7 @@ namespace ScriptingMod.ScriptEngines
             switch (scriptType)
             {
                 case ScriptTypeEnum.LUA:
-                    return LuaEngine.Current;
+                    return LuaEngine.Instance;
                 default:
                     throw new NotImplementedException();
             }
@@ -25,7 +25,7 @@ namespace ScriptingMod.ScriptEngines
             switch (fileExtension.ToLowerInvariant())
             {
                 case ".lua":
-                    return LuaEngine.Current;
+                    return LuaEngine.Instance;
                 default:
                     throw new NotImplementedException();
             }

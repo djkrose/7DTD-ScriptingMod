@@ -11,27 +11,37 @@ namespace ScriptingMod
     /// </summary>
     internal class Log : global::Log
     {
-        private const bool DEBUG = true;
         private const string PREFIX = "[SCRIPTING MOD] ";
         private const string DEBUG_PREFIX = "[DEBUG] ";
 
+//#if DEBUG
+//        public const bool DEBUG = true;
+//#else
+//        public const bool DEBUG = false;
+//#endif
+
+        public static void Dump(object obj)
+        {
+#if DEBUG
+            Log.Debug(ObjectDumper.Dump(obj));
+#endif
+        }
+
         public static void Debug(string _format, params object[] _values)
         {
-            if (DEBUG)
-            {
-                global::Log.Out(PREFIX + DEBUG_PREFIX + _format, _values);
-            }
+#if DEBUG
+            global::Log.Out(PREFIX + DEBUG_PREFIX + _format, _values);
+#endif
         }
 
         public static void Debug(string _s)
         {
-            if (DEBUG)
-            {
-                global::Log.Out(PREFIX + DEBUG_PREFIX + _s);
-            }
+#if DEBUG
+            global::Log.Out(PREFIX + DEBUG_PREFIX + _s);
+#endif
         }
 
-        #region Original methods for completeness and possible future modification
+#region Original methods for completeness and possible future modification
 
         public new static void Out(string _format, params object[] _values)
         {
@@ -73,6 +83,6 @@ namespace ScriptingMod
             global::Log.Error(PREFIX + _e);
         }
 
-        #endregion
+#endregion
     }
 }

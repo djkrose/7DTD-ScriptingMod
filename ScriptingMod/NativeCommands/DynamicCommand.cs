@@ -10,11 +10,11 @@ namespace ScriptingMod.NativeCommands
     /// </summary>
     public class DynamicCommand : ConsoleCmdAbstract
     {
-        private readonly string[] _commands;
-        private readonly Action<List<string>, CommandSenderInfo> _action;
-        private readonly string _description;
-        private readonly string _help;
-        private readonly int _defaultPermissionLevel;
+        private string[] _commands;
+        private Action<List<string>, CommandSenderInfo> _action;
+        private string _description;
+        private string _help;
+        private int _defaultPermissionLevel;
 
         /// <summary>
         /// Prevent the server from creating a static command from this class.

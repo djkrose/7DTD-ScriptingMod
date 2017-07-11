@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ScriptingMod.NativeCommands;
-using ScriptingMod.ScriptEngines;
 
 namespace ScriptingMod.Managers
 {
@@ -13,7 +11,7 @@ namespace ScriptingMod.Managers
         {
             try
             {
-                LoadDynamicCommands();
+                CommandManager.Instance.LoadDynamicCommands();
             }
             catch (Exception e)
             {

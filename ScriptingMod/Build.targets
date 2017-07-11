@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <!-- ILMerge integration -->
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props'))" />
+    <Error Condition="!Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets'))" />
+  </Target>
+  <Import Project="ILMerge.targets" Condition="Exists('ILMerge.targets')" />
+
+  <!-- Create Mono CLR symbol files (.mdb) -->
+  <Target Name="GenerateMonoSymbols">
+    <PropertyGroup>
+      <MonoMdbGenerator>$(SolutionDir)packages\Mono.pdb2mdb.0.1.0.20130128\tools\pdb2mdb.exe</MonoMdbGenerator>
+    </PropertyGroup>
+    <Message Text="$(ProjectName) -&gt; $(TargetPath).mdb" Importance="High" />
+    <Exec Command="$(MonoMdbGenerator) $(TargetPath)" WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" />
+  </Target>
+
+  <!-- Copy all mod files into 7DTD Mods folder -->
+  <Target Name="InstallMod">
+    <PropertyGroup>
+      <ModsDirectory>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\Mods\</ModsDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <AllModFiles Include="$(OutputPath)**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(AllModFiles)" DestinationFolder="$(ModsDirectory)$(ProjectName)\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Chain all previously defined targets after build -->
+  <Target Name="AfterBuild">
+    <CallTarget Targets="GenerateMonoSymbols" Condition=" Exists('$(OutputPath)\$(AssemblyName).pdb') " />
+    <CallTarget Targets="InstallMod" Condition="Exists('$(ModsDirectory).')"/>
+  </Target>
+
+</Project>

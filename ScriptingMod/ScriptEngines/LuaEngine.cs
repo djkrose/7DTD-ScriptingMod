@@ -8,10 +8,10 @@ namespace ScriptingMod.ScriptEngines
 {
     internal class LuaEngine : ScriptEngine
     {
-        private static LuaEngine _current;
-        public static LuaEngine Current => _current ?? (_current = new LuaEngine());
+        private static LuaEngine _instance;
+        public static LuaEngine Instance => _instance ?? (_instance = new LuaEngine());
 
-        private readonly Lua _lua;
+        private Lua _lua;
 
         public override ScriptTypeEnum ScriptType => ScriptTypeEnum.LUA;
 
@@ -42,13 +42,14 @@ namespace ScriptingMod.ScriptEngines
             }
         }
 
-        public override void ExecuteFile(string fileName)
+        public override void ExecuteFile(string filePath)
         {
+            var fileName = FileHelper.GetRelativePath(filePath, Api.CommandsFolder);
             try
             {
                 Log.Debug($"Starting LUA script {fileName} ...");
                 // TODO: Let this also work when file has UTF-8 bom
-                _lua.DoFile(Path.Combine(Api.CommandsFolder, fileName));
+                _lua.DoFile(filePath);
                 Log.Debug($"LUA script {fileName} ended.");
             }
             catch (LuaScriptException ex)

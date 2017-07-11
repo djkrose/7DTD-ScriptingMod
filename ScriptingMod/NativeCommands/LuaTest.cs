@@ -18,7 +18,7 @@ namespace ScriptingMod.NativeCommands
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
-            LuaEngine.Current.ExecuteFile(@"luatest.lua");
+            LuaEngine.Instance.ExecuteFile(@"luatest.lua");
         }
     }
 }
