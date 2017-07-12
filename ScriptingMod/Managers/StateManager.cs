@@ -11,7 +11,7 @@ namespace ScriptingMod.Managers
         {
             try
             {
-                CommandManager.LoadDynamicCommands();
+                ScriptManager.LoadCommands();
             }
             catch (Exception e)
             {

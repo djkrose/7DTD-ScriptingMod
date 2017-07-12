@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NLua;
@@ -12,8 +13,7 @@ namespace ScriptingMod.ScriptEngines
         public static LuaEngine Instance => _instance ?? (_instance = new LuaEngine());
 
         private Lua _lua;
-
-        public override ScriptTypeEnum ScriptType => ScriptTypeEnum.LUA;
+        protected override string CommentPrefix => "--";
 
         private LuaEngine()
         {
@@ -70,6 +70,7 @@ namespace ScriptingMod.ScriptEngines
             _lua[name] = value;
         }
 
+        #region Methods exposed in LUA
 
         private void Print(params object[] values)
         {
@@ -78,5 +79,7 @@ namespace ScriptingMod.ScriptEngines
             string output = values.Select(v => v.ToString()).Aggregate((s, s1) => s + s1);
             Log.Out(output);
         }
+
+        #endregion
     }
 }

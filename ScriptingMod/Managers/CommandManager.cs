@@ -3,12 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using ScriptingMod.NativeCommands;
-using ScriptingMod.ScriptEngines;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Managers
@@ -67,49 +65,6 @@ namespace ScriptingMod.Managers
             Log.Debug("Established references to 7DTD's \"private parts\" through reflection.");
         }
 
-        public static void LoadDynamicCommands()
-        {
-            var scripts = Directory.GetFiles(Api.CommandsFolder, "*.*", SearchOption.AllDirectories)
-                .Where(s => s.EndsWith(".lua", StringComparison.OrdinalIgnoreCase) ||
-                            s.EndsWith(".js", StringComparison.OrdinalIgnoreCase));
-
-            foreach (string script in scripts)
-            {
-                var filePath = script; // Needed prior C# 5.0 as closure
-                var fileName = FileHelper.GetRelativePath(filePath, Api.CommandsFolder);
-
-                Log.Debug($"Loading script \"{fileName}\" ...");
-
-                // TODO: Load stuff from script metadata
-                var commands = new string[] { Path.GetFileNameWithoutExtension(filePath) };
-                var description = $"Description for command {commands[0]}.";
-                var help = $"This executes the script {fileName} using djkrose's Scripting Mod.";
-                var defaultPermissionLevel = 0;
-
-                var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-                var action = new Action<List<string>, CommandSenderInfo>(delegate (List<string> paramsList, CommandSenderInfo senderInfo)
-                {
-                    scriptEngine.SetValue("params", paramsList.ToArray());
-                    scriptEngine.SetValue("senderInfo", senderInfo);
-                    scriptEngine.ExecuteFile(filePath);
-                });
-
-                var commandObject = new DynamicCommand(commands, action, description, help, defaultPermissionLevel);
-                try
-                {
-                    AddCommand(commandObject);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning($"Could not register command script \"{fileName}\": {ex.Message}");
-                    continue;
-                }
-
-                Log.Out($"Registered command(s) \"{commands.Join(" ")}\" with script \"{fileName}\".");
-            }
-
-            Log.Out("All script commands added.");
-        }
 
         /// <summary>
         /// Registers the given command object with it's command names into the Console.
@@ -120,10 +75,16 @@ namespace ScriptingMod.Managers
         /// <param name="commandObject"></param>
         public static void AddCommand(DynamicCommand commandObject)
         {
+            if (commandObject == null)
+                throw new ArgumentNullException(nameof(commandObject));
+
             var commands = commandObject.GetCommands();
 
+            if (commands == null || commands.Length == 0 || commands.All(string.IsNullOrEmpty))
+                throw new ArgumentException("No command name(s) defined.");
+
             if (_commandObjects.Contains(commandObject))
-                throw new ArgumentException($"The object for command(s) \"{commands.Join(" ")}\" is already registered and cannot be registered twice.");
+                throw new ArgumentException($"The command object \"{commands.Join(" ")}\" already exists and cannot be registered twice.");
 
             foreach (string command in commands)
             {
@@ -131,7 +92,7 @@ namespace ScriptingMod.Managers
                     continue;
 
                 if (CommandExists(command))
-                    throw new ArgumentException($"The command \"{command}\" is already registered elsewhere and cannot be registered twice.");
+                    throw new ArgumentException($"The command \"{command}\" already exists and cannot be registered twice.");
 
                 object commandObjectPair = _commandObjectPairConstructor.Invoke(new object[] {command, commandObject});
                 AddSortedCommandObjectPair(commandObjectPair);
