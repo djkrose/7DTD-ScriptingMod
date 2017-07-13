@@ -9,6 +9,51 @@ namespace ScriptingMod.Extensions
     {
 
         /// <summary>
+        /// Tries to convert the string to int; returns null on parse error.
+        /// Usage: int foo = text.ToInt() ?? 42;
+        /// </summary>
+        public static int? ToInt(this string value)
+        {
+            return int.TryParse(value, out int i) ? (int?) i : null;
+        }
+
+        /// <summary>
+        /// Tries to convert the string to long; returns null on parse error.
+        /// Usage: long foo = text.ToLong() ?? 42;
+        /// </summary>
+        public static long? ToLong(this string value)
+        {
+            return long.TryParse(value, out long i) ? (long?)i : null;
+        }
+
+        /// <summary>
+        /// Tries to convert the string to float; returns null on parse error.
+        /// Usage: float foo = text.ToFloat() ?? 42f;
+        /// </summary>
+        public static float? ToFloat(this string value)
+        {
+            return float.TryParse(value, out float i) ? (float?)i : null;
+        }
+
+        /// <summary>
+        /// Tries to convert the string to double; returns null on parse error.
+        /// Usage: double foo = text.ToDouble() ?? 42d;
+        /// </summary>
+        public static double? ToDouble(this string value)
+        {
+            return double.TryParse(value, out double i) ? (double?)i : null;
+        }
+
+        /// <summary>
+        /// Tries to convert the string to decimal; returns null on parse error.
+        /// Usage: decimal foo = text.ToDecimal() ?? 42m;
+        /// </summary>
+        public static decimal? ToDecimal(this string value)
+        {
+            return decimal.TryParse(value, out decimal i) ? (decimal?)i : null;
+        }
+
+        /// <summary>
         /// Removes the indentation of the first non-empty line from all the lines,
         /// effectively keeping relative indentation but removing common indentation.
         /// Also empty lines at start and end are removed.

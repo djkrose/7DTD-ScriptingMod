@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NLua;
-using NLua.Exceptions;
 using ObjectDumper;
 
 namespace ScriptingMod.ScriptEngines
@@ -24,47 +23,18 @@ namespace ScriptingMod.ScriptEngines
             _lua["dump"] = new Action<object, int>(Dump);
         }
 
-        public override void ExecuteInline(string script)
-        {
-            try
-            {
-                Log.Debug("Starting inline Lua script ...");
-                _lua.DoString(script);
-                Log.Debug("Inline Lua script ended.");
-            }
-            catch (LuaScriptException ex)
-            {
-                Log.Exception(ex);
-                Log.Error("Inline Lua script failed.");
-            }
-            catch (Exception ex)
-            {
-                Log.Exception(ex);
-                Log.Error("Inline Lua script failed.");
-            }
-        }
-
         public override void ExecuteFile(string filePath)
         {
             var fileName = FileHelper.GetRelativePath(filePath, Api.CommandsFolder);
-            try
-            {
-                Log.Debug($"Starting Lua script {fileName} ...");
-                // We are not using _lua.DoFile(..) because it does not support UTF-8 w/ BOM encoding
-                string script = File.ReadAllText(filePath);
-                _lua.DoString(script);
-                Log.Debug($"Lua script {fileName} ended.");
-            }
-            catch (LuaScriptException ex)
-            {
-                Log.Exception(ex);
-                Log.Error($"Lua script {fileName} failed.");
-            }
-            catch (Exception ex)
-            {
-                Log.Exception(ex);
-                Log.Error($"Lua script {fileName} failed.");
-            }
+
+            Log.Debug($"Starting Lua script {fileName} ...");
+
+            // We are not using _lua.DoFile(..) because it does not support UTF-8 w/ BOM encoding
+            // TODO: Fix UTF-8 for require()'d files too, e.g. by adjusting all scripts on start
+            string script = File.ReadAllText(filePath);
+            _lua.DoString(script);
+
+            Log.Debug($"Lua script {fileName} ended.");
         }
 
         public override void SetValue(string name, object value)
@@ -80,11 +50,23 @@ namespace ScriptingMod.ScriptEngines
                 return;
             string output = values.Select(v => v.ToString()).Aggregate((s, s1) => s + s1);
             SdtdConsole.Instance.Output(output);
+            Log.Debug(output);
         }
 
         private void Dump(object obj, int depth = 4)
         {
-            Print(obj.DumpToString("object", new DumpOptions() { MaxDepth = depth }));
+            var output = obj.DumpToString("object", new DumpOptions() {MaxDepth = depth});
+            var truncated = output.Substring(0, 1024);
+
+            if (output.Length > truncated.Length)
+            {
+                SdtdConsole.Instance.Output(truncated + " [...]\r\n[output truncated; full output in log file]");
+                Log.Debug(output);
+            }
+            else
+            {
+                SdtdConsole.Instance.Output(output);
+            }
         }
 
         #endregion

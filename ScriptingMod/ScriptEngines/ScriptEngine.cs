@@ -74,8 +74,6 @@ namespace ScriptingMod.ScriptEngines
             }
         }
 
-        public abstract void ExecuteInline(string script);
-
         public abstract void ExecuteFile(string filePath);
 
         public abstract void SetValue(string name, object value);

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -45,16 +43,8 @@ namespace ScriptingMod.Managers
 
         private static DynamicCommand CreateCommandObject(string filePath)
         {
+            var fileName     = FileHelper.GetRelativePath(filePath, Api.CommandsFolder);
             var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-
-            Dictionary<string, string> metadata = scriptEngine.LoadMetadata(filePath);
-
-            var commands = metadata.GetValue("commands", "").Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
-            var description = metadata.GetValue("description", "");
-            var help = metadata.GetValue("help", null);
-            int defaultPermissionLevel;
-            if (!int.TryParse(metadata.GetValue("defaultPermission"), out defaultPermissionLevel))
-                defaultPermissionLevel = 0;
 
             var action = new Action<List<string>, CommandSenderInfo>(delegate (List<string> paramsList, CommandSenderInfo senderInfo)
             {
@@ -62,12 +52,27 @@ namespace ScriptingMod.Managers
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath));
 
                 scriptEngine.SetValue("params", paramsList.ToArray());
-                scriptEngine.ExecuteFile(filePath);
+
+                try
+                {
+                    scriptEngine.ExecuteFile(filePath);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Script {fileName} failed: " + ex.Message);
+                    SdtdConsole.Instance.Output($"Script {fileName} failed: " + ex.Message);
+                }
 
                 Directory.SetCurrentDirectory(oldDirectory);
             });
 
-            return new DynamicCommand(commands, action, description, help, defaultPermissionLevel);
+            var metadata         = scriptEngine.LoadMetadata(filePath);
+            var commands         = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var description      = metadata.GetValue("description", "");
+            var help             = metadata.GetValue("help", null);
+            int defaultPermision = metadata.GetValue("defaultPermission").ToInt() ?? 0;
+
+            return new DynamicCommand(commands, action, description, help, defaultPermision);
 
         }
 
