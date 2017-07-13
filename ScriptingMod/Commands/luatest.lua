@@ -38,7 +38,5 @@ else
 end
 
 print("Version: " .. _VERSION)
-
-dump(params)
-dump(senderInfo)
-dump(GameData)
+print("Connection: " .. senderInfo.NetworkConnection.UT)
+dump(senderInfo.NetworkConnection, 1)

@@ -136,12 +136,14 @@ namespace ObjectDumper
             if (indentationLevel / 2 > options.MaxDepth - 1)
                 return;
 
+            var nonPublic = options.NonPublic ? BindingFlags.NonPublic : BindingFlags.Default;
+
             PropertyInfo[] properties =
-                (from property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                (from property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public | nonPublic)
                  where property.GetIndexParameters().Length == 0
                        && property.CanRead
                  select property).ToArray();
-            IEnumerable<FieldInfo> fields = options.NoFields ? Enumerable.Empty<FieldInfo>() : type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            IEnumerable<FieldInfo> fields = options.NoFields ? Enumerable.Empty<FieldInfo>() : type.GetFields(BindingFlags.Instance | BindingFlags.Public | nonPublic);
 
             if (!properties.Any() && !fields.Any())
                 return;
