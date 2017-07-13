@@ -14,6 +14,8 @@ namespace ObjectDumper
     /// </summary>
     public static class Dumper
     {
+        private const int INDENTATION_SPACE = 2;
+
         /// <summary>
         /// Dumps the specified value to the <see cref="TextWriter"/> using the
         /// specified <paramref name="name"/>.
@@ -52,7 +54,8 @@ namespace ObjectDumper
 
         private static void InternalDump(int indentationLevel, string name, object value, TextWriter writer, ObjectIDGenerator idGenerator,bool recursiveDump, DumpOptions options)
         {
-            var indentation = new string(' ', indentationLevel * 3);
+            var indentation = new string(' ', indentationLevel * INDENTATION_SPACE);
+            var indentation2 = new string(' ', (indentationLevel + 1) * INDENTATION_SPACE);
 
             if (value == null)
             {
@@ -143,7 +146,7 @@ namespace ObjectDumper
             writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}{{", indentation));
             if (properties.Any())
             {
-                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}   properties {{", indentation));
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}properties {{", indentation2));
                 foreach (PropertyInfo pi in properties)
                 {
                     try
@@ -164,11 +167,11 @@ namespace ObjectDumper
                         InternalDump(indentationLevel + 2, pi.Name, ex, writer, idGenerator, false, options);
                     }
                 }
-                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}   }}", indentation));
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}}}", indentation2));
             }
             if (fields.Any())
             {
-                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}   fields {{", indentation));
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}fields {{", indentation2));
                 foreach (FieldInfo field in fields)
                 {
                     try
@@ -181,7 +184,7 @@ namespace ObjectDumper
                         InternalDump(indentationLevel + 2, field.Name, ex, writer, idGenerator, false, options);
                     }
                 }
-                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}   }}", indentation));
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}}}", indentation2));
             }
             writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0}}}", indentation));
         }
