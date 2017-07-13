@@ -23,12 +23,8 @@
 --
 -- Global functions:
 --   print(text)                       Prints the text to console and log file
---   dump(object[, maxDepth])          Dumps the whole object in readable form into the log file.
+--   dump(variable[, maxDepth])        Dumps .Net objects in readable form into the log file.
 --                                     maxDepth = How deep the structure is traversed; default: 4
-
-
-package.path = "../Helpers/?.lua;" .. package.path
-local inspect = require('inspect')
 
 if params.Length == 2 then
     print("Hello " .. params[0] .. " " .. params[1] .. ", nice to meet you! I am a Lua script.")
@@ -37,3 +33,9 @@ else
 end
 
 print("Version: " .. _VERSION)
+
+
+-- This Lua module allows dumping Lua objects to the console, similar to dump() for .Net objects
+-- Usage: inspect(variable)
+package.path = "../Helpers/?.lua;" .. package.path
+local inspect = require('inspect')

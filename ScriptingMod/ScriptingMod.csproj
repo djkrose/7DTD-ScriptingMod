@@ -80,7 +80,6 @@
     <Compile Include="NativeCommands\LuaTest.cs" />
     <Compile Include="NativeCommands\Version.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="ReflectionHelper.cs" />
     <Compile Include="ScriptEngines\JsEngine.cs" />
     <Compile Include="ScriptEngines\LuaEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -43,8 +43,6 @@ namespace ScriptingMod
 #endif
         }
 
-#region Original methods for completeness and possible future modification
-
         public new static void Out(string _format, params object[] _values)
         {
             global::Log.Out(PREFIX + _format, _values);
@@ -85,6 +83,5 @@ namespace ScriptingMod
             global::Log.Error(PREFIX + _e);
         }
 
-#endregion
     }
 }
