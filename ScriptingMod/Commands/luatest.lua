@@ -24,8 +24,8 @@
 --
 -- Global functions:
 --   print(text)                       Prints the text to console and log file
---   dump(object)                      Dumps the whole object in readable form into the log file
-
+--   dump(object[, maxDepth])          Dumps the whole object in readable form into the log file.
+--                                     maxDepth = How deep the structure is traversed; default: 4
 
 
 package.path = "../Helpers/?.lua;" .. package.path

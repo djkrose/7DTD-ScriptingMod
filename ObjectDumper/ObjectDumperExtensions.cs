@@ -31,14 +31,26 @@ namespace ObjectDumper
         /// <exception cref="ArgumentNullException">
         /// <para><paramref name="name"/> is <c>null</c> or empty.</para>
         /// </exception>
-        public static T Dump<T>(this T value, string name)
+        public static T Dump<T>(this T value, string name = null)
         {
-            if (StringEx.IsNullOrWhiteSpace(name))
-                throw new ArgumentNullException("name");
+            return Dump(value, name, DumpOptions.Default);
+        }
 
+        public static T Dump<T>(this T value, int maxDepth)
+        {
+            return Dump(value, null, new DumpOptions() {MaxDepth = maxDepth});
+        }
+
+        public static T Dump<T>(this T value, string name, int maxDepth)
+        {
+            return Dump(value, name, new DumpOptions() {MaxDepth = maxDepth});
+        }
+
+        public static T Dump<T>(this T value, string name, DumpOptions options)
+        {
             using (var writer = new DebugWriter())
             {
-                return Dump(value, name, writer);
+                return Dump(value, name, writer, options);
             }
         }
 
@@ -151,8 +163,6 @@ namespace ObjectDumper
 
         public static T Dump<T>(this T value, string name, TextWriter writer, DumpOptions options)
         {
-            if (StringEx.IsNullOrWhiteSpace(name))
-                throw new ArgumentNullException("name");
             if (writer == null)
                 throw new ArgumentNullException("writer");
             if (options == null)
@@ -183,9 +193,19 @@ namespace ObjectDumper
         /// <exception cref="ArgumentNullException">
         /// <para><paramref name="name"/> is <c>null</c> or empty.</para>
         /// </exception>
-        public static string DumpToString<T>(this T value, string name)
+        public static string DumpToString<T>(this T value, string name = null)
         {
             return DumpToString(value, name, DumpOptions.Default);
+        }
+
+        public static string DumpToString<T>(this T value, int maxDepth)
+        {
+            return DumpToString(value, null, new DumpOptions() { MaxDepth = maxDepth });
+        }
+
+        public static string DumpToString<T>(this T value, string name, int maxDepth)
+        {
+            return DumpToString(value, name, new DumpOptions() { MaxDepth = maxDepth });
         }
 
         public static string DumpToString<T>(this T value, string name, DumpOptions options)

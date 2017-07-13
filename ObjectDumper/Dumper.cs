@@ -41,8 +41,8 @@ namespace ObjectDumper
 
         public static void Dump(object value, string name, TextWriter writer, DumpOptions options)
         {
-            if (StringEx.IsNullOrWhiteSpace(name))
-                throw new ArgumentNullException("name");
+            if (name == null)
+                name = "var";
             if (writer == null)
                 throw new ArgumentNullException("writer");
             if (options == null)
@@ -52,7 +52,7 @@ namespace ObjectDumper
             InternalDump(0, name, value, writer, idGenerator, true, options);
         }
 
-        private static void InternalDump(int indentationLevel, string name, object value, TextWriter writer, ObjectIDGenerator idGenerator,bool recursiveDump, DumpOptions options)
+        private static void InternalDump(int indentationLevel, string name, object value, TextWriter writer, ObjectIDGenerator idGenerator, bool recursiveDump, DumpOptions options)
         {
             var indentation = new string(' ', indentationLevel * INDENTATION_SPACE);
             var indentation2 = new string(' ', (indentationLevel + 1) * INDENTATION_SPACE);
@@ -131,6 +131,9 @@ namespace ObjectDumper
                 return;
 
             if (!recursiveDump)
+                return;
+
+            if (indentationLevel / 2 > options.MaxDepth - 1)
                 return;
 
             PropertyInfo[] properties =

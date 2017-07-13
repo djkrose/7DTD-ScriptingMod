@@ -17,13 +17,16 @@ namespace UnitTests
         [Test()]
         public void DumpToStringTest()
         {
-            Console.WriteLine(this.DumpToString("this"));
+            Console.WriteLine(this.DumpToString());
 
-            Console.WriteLine(DateTime.Now.DumpToString("Now"));
+            Console.WriteLine(DateTime.Now.DumpToString("DateTime.Now"));
 
             Console.WriteLine(CultureInfo.CurrentCulture.DumpToString("CurrentCulture"));
 
-            Console.WriteLine(ScriptEngine.GetInstance(ScriptTypeEnum.LUA).DumpToString("LuaEngine"));
+            Console.WriteLine(CultureInfo.CurrentCulture.DumpToString("CurrentCulture", 1));
+
+            Console.WriteLine(ScriptEngine.GetInstance(ScriptTypeEnum.LUA).DumpToString("LuaEngine", 2));
+
         }
     }
 }

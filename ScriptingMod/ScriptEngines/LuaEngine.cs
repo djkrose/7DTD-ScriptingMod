@@ -84,7 +84,7 @@ namespace ScriptingMod.ScriptEngines
 
         private void Dump(object obj, int depth = 4)
         {
-            Print(obj.DumpToString("object"));
+            Print(obj.DumpToString("object", new DumpOptions() { MaxDepth = depth }));
         }
 
         #endregion
