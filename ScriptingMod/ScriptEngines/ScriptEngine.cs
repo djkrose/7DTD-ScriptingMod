@@ -108,8 +108,6 @@ namespace ScriptingMod.ScriptEngines
                 match = match.NextMatch();
             }
 
-            Log.Dump(metadata);
-
             return metadata;
         }
     }

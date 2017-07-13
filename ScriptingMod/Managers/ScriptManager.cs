@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -56,9 +58,25 @@ namespace ScriptingMod.Managers
 
             var action = new Action<List<string>, CommandSenderInfo>(delegate (List<string> paramsList, CommandSenderInfo senderInfo)
             {
+                var oldDirectory = Directory.GetCurrentDirectory();
+                Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath));
                 scriptEngine.SetValue("params", paramsList.ToArray());
                 scriptEngine.SetValue("senderInfo", senderInfo);
+
+                try
+                {
+                    Log.Dump(paramsList.ToArray());
+                    Log.Dump(senderInfo);
+                    Log.Dump(scriptEngine);
+
+                }
+                catch (Exception ex)
+                {
+                    Log.Exception(ex);
+                }
+
                 scriptEngine.ExecuteFile(filePath);
+                Directory.SetCurrentDirectory(oldDirectory);
             });
 
             return new DynamicCommand(commands, action, description, help, defaultPermissionLevel);

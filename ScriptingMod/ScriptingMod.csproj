@@ -47,8 +47,12 @@
     <Reference Include="NLua, Version=1.3.2.0, Culture=neutral, PublicKeyToken=8df2ab518030ea95, processorArchitecture=MSIL">
       <HintPath>..\packages\NLua_Safe.1.3.2.1\lib\net35\NLua.dll</HintPath>
     </Reference>
+    <Reference Include="ObjectDumper, Version=1.0.0.12, Culture=neutral, PublicKeyToken=9e2fabf3af85dba9, processorArchitecture=MSIL">
+      <HintPath>..\packages\ObjectDumper.1.0.0.12\lib\net35-Client\ObjectDumper.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
@@ -70,7 +74,6 @@
     <Compile Include="NativeCommands\LuaTest.cs" />
     <Compile Include="NativeCommands\Version.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="ObjectDumper.cs" />
     <Compile Include="ReflectionHelper.cs" />
     <Compile Include="ScriptEngines\JsEngine.cs" />
     <Compile Include="ScriptEngines\LuaEngine.cs" />
@@ -88,19 +91,13 @@
     <None Include="Build.targets">
       <SubType>Designer</SubType>
     </None>
-    <Content Include="Commands\aaa.lua">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Commands\luaerror.lua">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Commands\zzz.lua">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Commands\utf8bom.lua">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="Commands\luatest.lua">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Helpers\DataDumper.lua">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Helpers\inspect.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="ILMerge.props" />

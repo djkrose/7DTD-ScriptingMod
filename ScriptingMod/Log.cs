@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Diagnostics;
+using ObjectDumper;
 
 namespace ScriptingMod
 {
@@ -23,7 +25,7 @@ namespace ScriptingMod
         public static void Dump(object obj)
         {
 #if DEBUG
-            Log.Debug(ObjectDumper.Dump(obj));
+            Log.Debug(obj.DumpToString("object"));
 #endif
         }
 
