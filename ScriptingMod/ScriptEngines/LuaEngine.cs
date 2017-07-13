@@ -79,7 +79,7 @@ namespace ScriptingMod.ScriptEngines
             if (values == null || values.Length == 0)
                 return;
             string output = values.Select(v => v.ToString()).Aggregate((s, s1) => s + s1);
-            Log.Out(output);
+            SdtdConsole.Instance.Output(output);
         }
 
         private void Dump(object obj, int depth = 4)

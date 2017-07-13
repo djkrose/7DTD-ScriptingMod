@@ -13,54 +13,66 @@ namespace ScriptingMod.Managers
 {
     public static class CommandManager
     {
-        private static FieldInfo _commandObjectsField;                // List<IConsoleCommand> SdtdConsole.WT
-        private static FieldInfo _commandObjectPairsField;            // List<SdtdConsole.OL> SdtdConsole.PT
-        private static FieldInfo _commandObjectsReadOnlyField;        // ReadOnlyCollection<IConsoleCommand> SdtdConsole.ET
-        private static FieldInfo _commandObjectPair_CommandField;     // string SdtdConsole.OL.JT
-        private static ConstructorInfo _commandObjectPairConstructor; // SdtdConsole.OL(string _param1, IConsoleCommand _param2)
+        private static FieldInfo _commandObjectsField;                // List<IConsoleCommand> SdtdConsole.SR
+        private static FieldInfo _commandObjectPairsField;            // List<SdtdConsole.XO> SdtdConsole.DR
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private static Type      _commandObjectPairType;              // private struct XO (last in source)
+        private static FieldInfo _commandObjectsReadOnlyField;        // ReadOnlyCollection<IConsoleCommand> SdtdConsole.HR
+        private static FieldInfo _commandObjectPair_CommandField;     // string SdtdConsole.XO.JR
+        private static ConstructorInfo _commandObjectPairConstructor; // SdtdConsole.XO(string _param1, IConsoleCommand _param2)
 
         /// <summary>
         /// List of command objects.
-        /// Reference to: List&lt;IConsoleCommand&gt; SdtdConsole.WT
         /// </summary>
         private static List<IConsoleCommand> _commandObjects => (List<IConsoleCommand>)_commandObjectsField.GetValue(SdtdConsole.Instance)
-            ?? throw new NullReferenceException("Received null value through reflection from SdtdConsole.WT");
+            ?? throw new NullReferenceException("Received null value through reflection from _commandObjects.");
 
         /// <summary>
         /// List of pairs of (command name, command object), one for each command name.
-        /// Reference to: List&lt;SdtdConsole.OL&gt; SdtdConsole.PT
         /// Must use type-unspecific IList here instead of List&lt;something&gt;
         /// </summary>
         private static IList _commandObjectPairs => (IList)_commandObjectPairsField.GetValue(SdtdConsole.Instance)
-            ?? throw new NullReferenceException("Received null value through reflection from SdtdConsole.PT");
+            ?? throw new NullReferenceException("Received null value through reflection for _commandObjectPairs.");
 
         static CommandManager()
         {
-            _commandObjectsField = typeof(SdtdConsole)
-                .GetField("WT", BindingFlags.NonPublic | BindingFlags.Instance);
+            // Hard-coded reflection names are only valid for Alpha 16 b135!!!
+            try
+            {
+                _commandObjectsField = typeof(SdtdConsole)
+                    .GetField("SR", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            _commandObjectPairsField = typeof(SdtdConsole)
-                .GetField("PT", BindingFlags.NonPublic | BindingFlags.Instance);
+                _commandObjectPairsField = typeof(SdtdConsole)
+                    .GetField("DR", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            _commandObjectsReadOnlyField = typeof(SdtdConsole)
-                .GetField("ET", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (_commandObjectsReadOnlyField == null)
-                throw new TargetException("Could not find field through reflection: ReadOnlyCollection<IConsoleCommand> SdtdConsole.ET");
+                _commandObjectsReadOnlyField = typeof(SdtdConsole)
+                    .GetField("HR", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (_commandObjectsReadOnlyField == null)
+                    throw new TargetException(
+                        "Could not find field through reflection: _commandObjectsReadOnlyField");
 
-            var commandObjectPairType = typeof(SdtdConsole)
-                .GetNestedType("OL", BindingFlags.NonPublic);
-            if (commandObjectPairType == null)
-                throw new TargetException("Could not find type through reflection: struct SdtdConsole.OL");
+                _commandObjectPairType = typeof(SdtdConsole)
+                    .GetNestedType("XO", BindingFlags.NonPublic);
+                // ReSharper disable once JoinNullCheckWithUsage
+                if (_commandObjectPairType == null)
+                    throw new TargetException("Could not find type through reflection: commandObjectPairType");
 
-            _commandObjectPairConstructor = commandObjectPairType.GetConstructor(
-                BindingFlags.Public | BindingFlags.Instance, null,
-                new[] { typeof(string), typeof(IConsoleCommand) }, null);
-            if (_commandObjectPairConstructor == null)
-                throw new TargetException("Could not find constructor through reflection: struct SdtdConsole.OL(string _param1, IConsoleCommand _param2)");
+                _commandObjectPairConstructor = _commandObjectPairType.GetConstructor(
+                    BindingFlags.Public | BindingFlags.Instance, null,
+                    new[] {typeof(string), typeof(IConsoleCommand)}, null);
+                if (_commandObjectPairConstructor == null)
+                    throw new TargetException(
+                        "Could not find constructor through reflection: _commandObjectPairConstructor");
 
-            _commandObjectPair_CommandField = commandObjectPairType.GetField("JT");
-            if (_commandObjectPair_CommandField == null)
-                throw new TargetException("Could not find field through reflection: string SdtdConsole.OL.JT");
+                _commandObjectPair_CommandField = _commandObjectPairType.GetField("JR");
+                if (_commandObjectPair_CommandField == null)
+                    throw new TargetException("Could not find field through reflection: commandObjectPairType");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error while establishing references to 7DTD's \"private parts\". Your game version might not be compatible with this Scripting Mod version." + Environment.NewLine + ex);
+                throw;
+            }
 
             Log.Debug("Established references to 7DTD's \"private parts\" through reflection.");
         }
