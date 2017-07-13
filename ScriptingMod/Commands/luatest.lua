@@ -1,7 +1,7 @@
 ﻿-- This script gets automatically registered in 7DTD as a new command. The tags (@) in the first
--- comment block define the command name and aliases, description, help text, etc. The metadata must
--- use single-line comment (--) and must appear before the first Lua statement at the beginning.
--- The tags @commands and @description are mandatory, all others are optional.
+-- comment block define the command name and aliases, description, help text, etc. The metadata
+-- must use single-line comment (--) and must appear before the first Lua statement at the
+-- beginning. The tags @commands and @description are mandatory, all others are optional.
 -- 
 -- @commands           luatest lua
 -- @defaultPermission  0
@@ -16,10 +16,17 @@
 --                     2. Test the Lua scripting functionality with parameter handling.
 
 
--- Help text has ended here, because the comment block is interrupted by a newline without comment.
+-- Help text has ended here because the comment block is interrupted by a newline without comment.
 -- 
--- Available global variables:
---   params[]
+-- Global variables:
+--   params       string[]             Array of parameters to the command, e.g params[0], params[1]
+--   senderInfo   CommandSenderInfo    Object with data about the remote client and network
+--
+-- Global functions:
+--   print(text)                       Prints the text to console and log file
+--   dump(object)                      Dumps the whole object in readable form into the log file
+
+
 
 package.path = "../Helpers/?.lua;" .. package.path
 local inspect = require('inspect')
@@ -32,6 +39,6 @@ end
 
 print("Version: " .. _VERSION)
 
-
 dump(params)
 dump(senderInfo)
+dump(GameData)

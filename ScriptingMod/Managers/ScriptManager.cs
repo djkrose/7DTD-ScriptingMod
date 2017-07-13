@@ -68,14 +68,13 @@ namespace ScriptingMod.Managers
                     Log.Dump(paramsList.ToArray());
                     Log.Dump(senderInfo);
                     Log.Dump(scriptEngine);
-
                 }
                 catch (Exception ex)
                 {
                     Log.Exception(ex);
                 }
 
-                scriptEngine.ExecuteFile(filePath);
+                //scriptEngine.ExecuteFile(filePath);
                 Directory.SetCurrentDirectory(oldDirectory);
             });
 
