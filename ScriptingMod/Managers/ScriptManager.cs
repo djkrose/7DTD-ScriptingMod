@@ -60,21 +60,11 @@ namespace ScriptingMod.Managers
             {
                 var oldDirectory = Directory.GetCurrentDirectory();
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath));
+
                 scriptEngine.SetValue("params", paramsList.ToArray());
                 scriptEngine.SetValue("senderInfo", senderInfo);
+                scriptEngine.ExecuteFile(filePath);
 
-                try
-                {
-                    Log.Dump(paramsList.ToArray());
-                    Log.Dump(senderInfo);
-                    Log.Dump(scriptEngine);
-                }
-                catch (Exception ex)
-                {
-                    Log.Exception(ex);
-                }
-
-                //scriptEngine.ExecuteFile(filePath);
                 Directory.SetCurrentDirectory(oldDirectory);
             });
 
