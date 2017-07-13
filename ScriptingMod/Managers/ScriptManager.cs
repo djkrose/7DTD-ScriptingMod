@@ -62,7 +62,6 @@ namespace ScriptingMod.Managers
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath));
 
                 scriptEngine.SetValue("params", paramsList.ToArray());
-                scriptEngine.SetValue("senderInfo", senderInfo);
                 scriptEngine.ExecuteFile(filePath);
 
                 Directory.SetCurrentDirectory(oldDirectory);

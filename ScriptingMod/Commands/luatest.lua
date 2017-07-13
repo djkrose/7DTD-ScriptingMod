@@ -20,7 +20,6 @@
 -- 
 -- Global variables:
 --   params       string[]             Array of parameters to the command, e.g params[0], params[1]
---   senderInfo   CommandSenderInfo    Object with data about the remote client and network
 --
 -- Global functions:
 --   print(text)                       Prints the text to console and log file
@@ -38,5 +37,3 @@ else
 end
 
 print("Version: " .. _VERSION)
-print("Connection: " .. senderInfo.NetworkConnection.UT)
-dump(senderInfo.NetworkConnection, 1)
