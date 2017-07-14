@@ -34,8 +34,19 @@ end
 
 print("Version: " .. _VERSION)
 
-
 -- This Lua module allows dumping Lua objects to the console, similar to dump() for .Net objects
 -- Usage: inspect(variable)
 package.path = "../Helpers/?.lua;" .. package.path
 local inspect = require('inspect')
+local someNumbers = {1, 3, 7, 11}
+print(inspect(someNumbers))
+
+-- You can import all standard .Net namespaces and use all public objects!
+-- Let's use the .Net class System.IO.File to read this script file...
+-- import("System.IO.File")
+-- local content = File.ReadAllText("luatest.lua")
+-- print("==== Here comes the content of luatest.lua ====")
+-- print(content)
+
+import("GameManager")
+dump(GameManager)

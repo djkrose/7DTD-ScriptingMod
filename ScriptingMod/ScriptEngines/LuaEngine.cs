@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NLua;
+using NLua.Exceptions;
 using ObjectDumper;
 
 namespace ScriptingMod.ScriptEngines
@@ -21,6 +22,7 @@ namespace ScriptingMod.ScriptEngines
             _lua.LoadCLRPackage();
             _lua["print"] = new Action<object[]>(Print);
             _lua["dump"] = new Action<object, int>(Dump);
+            //_lua["GameManager"] = new
         }
 
         public override void ExecuteFile(string filePath)
@@ -32,9 +34,36 @@ namespace ScriptingMod.ScriptEngines
             // We are not using _lua.DoFile(..) because it does not support UTF-8 w/ BOM encoding
             // TODO: Fix UTF-8 for require()'d files too, e.g. by adjusting all scripts on start
             string script = File.ReadAllText(filePath);
-            _lua.DoString(script);
 
-            Log.Debug($"Lua script {fileName} ended.");
+            try
+            {
+                _lua.DoString(script);
+                Log.Debug($"Lua script {fileName} ended.");
+            }
+            catch (LuaScriptException ex)
+            {
+                // LuaScriptException.ToString() does not - against convention - print stack trace or inner exceptions
+
+                // Create short message for console
+                var shortMessage = (ex.Source ?? "") + ex.Message;
+                Exception curr = ex;
+                while (curr.InnerException != null)
+                {
+                    curr = curr.InnerException;
+                    shortMessage += " ---> " + curr.GetType().FullName + ": " + curr.Message;
+                }
+                if (ex.InnerException != null)
+                    shortMessage += " [details in server log]";
+                SdtdConsole.Instance.Output($"Lua script {fileName} failed: " + shortMessage);
+
+                // Create long message with stack trace for log file
+                var fullMessage = ex.GetType().FullName + ": " + (ex.Source ?? "") + ex.Message;
+                if (ex.InnerException != null)
+                    fullMessage += " ---> " + ex.InnerException + Environment.NewLine + "   --- End of inner exception stack trace ---";
+                if (ex.StackTrace != null)
+                    fullMessage += Environment.NewLine + ex.StackTrace;
+                Log.Error($"Lua script {fileName} failed: " + fullMessage);
+            }
         }
 
         public override void SetValue(string name, object value)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using NLua.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.NativeCommands;
 using ScriptingMod.ScriptEngines;
@@ -57,10 +58,11 @@ namespace ScriptingMod.Managers
                 {
                     scriptEngine.ExecuteFile(filePath);
                 }
+                // LuaScriptException is already handled in LuaEngine
                 catch (Exception ex)
                 {
-                    Log.Error($"Script {fileName} failed: " + ex.Message);
-                    SdtdConsole.Instance.Output($"Script {fileName} failed: " + ex.Message);
+                    SdtdConsole.Instance.Output($"Script {fileName} failed: " + ex.GetType().FullName + ": " + ex.Message + " [details in server log]");
+                    Log.Error($"Script {fileName} failed: " + ex);
                 }
 
                 Directory.SetCurrentDirectory(oldDirectory);
