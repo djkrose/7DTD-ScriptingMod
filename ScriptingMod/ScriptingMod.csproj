@@ -77,7 +77,7 @@
     <Compile Include="Managers\CommandManager.cs" />
     <Compile Include="Managers\ScriptManager.cs" />
     <Compile Include="NativeCommands\DynamicCommand.cs" />
-    <Compile Include="NativeCommands\LuaTest.cs" />
+    <Compile Include="NativeCommands\LuaReset.cs" />
     <Compile Include="NativeCommands\Version.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="ScriptEngines\JsEngine.cs" />

@@ -18,11 +18,16 @@ namespace ScriptingMod.ScriptEngines
 
         private LuaEngine()
         {
+            InitLua();
+        }
+
+        private void InitLua()
+        {
             _lua = new Lua();
             _lua.LoadCLRPackage();
             _lua["print"] = new Action<object[]>(Print);
             _lua["dump"] = new Action<object, int>(Dump);
-            //_lua["GameManager"] = new
+            //_lua["GameManager"] = GameManager.Instance;
         }
 
         public override void ExecuteFile(string filePath)
@@ -63,12 +68,21 @@ namespace ScriptingMod.ScriptEngines
                 if (ex.StackTrace != null)
                     fullMessage += Environment.NewLine + ex.StackTrace;
                 Log.Error($"Lua script {fileName} failed: " + fullMessage);
+
+                // Dump only for me
+                Log.Dump(ex);
             }
         }
 
         public override void SetValue(string name, object value)
         {
             _lua[name] = value;
+        }
+
+        public void Reset()
+        {
+            _lua?.Dispose();
+            InitLua();
         }
 
         #region Methods exposed in Lua
