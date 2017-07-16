@@ -29,7 +29,7 @@ namespace ScriptingMod.NativeCommands
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
-            SdtdConsole.Instance.Output("djkrose's Scripting Mod - v0.2"); // TODO: make dynamic
+            SdtdConsole.Instance.Output("djkrose's Scripting Mod - v0.2"); // TODO [P3]: make dynamic
         }
     }
 }
