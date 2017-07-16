@@ -13,13 +13,13 @@ namespace ScriptingMod.Managers
 {
     public static class CommandManager
     {
-        private static FieldInfo _commandObjectsField;                // List<IConsoleCommand> SdtdConsole.SR
-        private static FieldInfo _commandObjectPairsField;            // List<SdtdConsole.XO> SdtdConsole.DR
+        private static FieldInfo _commandObjectsField;                // List<IConsoleCommand> SdtdConsole.TD
+        private static FieldInfo _commandObjectPairsField;            // List<SdtdConsole.YU> SdtdConsole.OD
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private static Type      _commandObjectPairType;              // private struct XO (last in source)
-        private static FieldInfo _commandObjectsReadOnlyField;        // ReadOnlyCollection<IConsoleCommand> SdtdConsole.HR
-        private static FieldInfo _commandObjectPair_CommandField;     // string SdtdConsole.XO.JR
-        private static ConstructorInfo _commandObjectPairConstructor; // SdtdConsole.XO(string _param1, IConsoleCommand _param2)
+        private static Type      _commandObjectPairType;              // private struct YU (last in source)
+        private static FieldInfo _commandObjectsReadOnlyField;        // ReadOnlyCollection<IConsoleCommand> SdtdConsole.ZD
+        private static FieldInfo _commandObjectPair_CommandField;     // string SdtdConsole.YU.LD
+        private static ConstructorInfo _commandObjectPairConstructor; // SdtdConsole.YU(string _param1, IConsoleCommand _param2)
 
         /// <summary>
         /// List of command objects.
@@ -40,19 +40,19 @@ namespace ScriptingMod.Managers
             try
             {
                 _commandObjectsField = typeof(SdtdConsole)
-                    .GetField("SR", BindingFlags.NonPublic | BindingFlags.Instance);
+                    .GetField("TD", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 _commandObjectPairsField = typeof(SdtdConsole)
-                    .GetField("DR", BindingFlags.NonPublic | BindingFlags.Instance);
+                    .GetField("OD", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 _commandObjectsReadOnlyField = typeof(SdtdConsole)
-                    .GetField("HR", BindingFlags.NonPublic | BindingFlags.Instance);
+                    .GetField("ZD", BindingFlags.NonPublic | BindingFlags.Instance);
                 if (_commandObjectsReadOnlyField == null)
                     throw new TargetException(
                         "Could not find field through reflection: _commandObjectsReadOnlyField");
 
                 _commandObjectPairType = typeof(SdtdConsole)
-                    .GetNestedType("XO", BindingFlags.NonPublic);
+                    .GetNestedType("YU", BindingFlags.NonPublic);
                 // ReSharper disable once JoinNullCheckWithUsage
                 if (_commandObjectPairType == null)
                     throw new TargetException("Could not find type through reflection: commandObjectPairType");
@@ -64,7 +64,7 @@ namespace ScriptingMod.Managers
                     throw new TargetException(
                         "Could not find constructor through reflection: _commandObjectPairConstructor");
 
-                _commandObjectPair_CommandField = _commandObjectPairType.GetField("JR");
+                _commandObjectPair_CommandField = _commandObjectPairType.GetField("LD");
                 if (_commandObjectPair_CommandField == null)
                     throw new TargetException("Could not find field through reflection: commandObjectPairType");
             }
