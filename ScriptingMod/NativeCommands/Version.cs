@@ -11,7 +11,7 @@ namespace ScriptingMod.NativeCommands
 
         public override string[] GetCommands()
         {
-            return new string[] {"sm-version"};
+            return new string[] {"lua-version", "js-version"};
         }
 
         public override string GetDescription()
@@ -23,12 +23,13 @@ namespace ScriptingMod.NativeCommands
         {
             return "Tests if djkrose's Scripting Mod is correctly installed and prints out version information.\n" +
                    "Usage:\n" +
-                   $"   sm-version";
+                   $"   lua-version\r\n" +
+                   $"   js-version\r\n";
         }
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
-            SdtdConsole.Instance.Output("djkrose's Scripting Mod - v0.1"); // TODO: make dynamic
+            SdtdConsole.Instance.Output("djkrose's Scripting Mod - v0.2"); // TODO: make dynamic
         }
     }
 }

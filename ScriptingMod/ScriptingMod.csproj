@@ -96,7 +96,7 @@
     <None Include="Build.targets">
       <SubType>Designer</SubType>
     </None>
-    <Content Include="Commands\luatest.lua">
+    <Content Include="Commands\lua-test.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Helpers\DataDumper.lua">
