@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using ObjectDumper;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.ScriptEngines
@@ -43,6 +44,12 @@ namespace ScriptingMod.ScriptEngines
                 RegexOptions.ExplicitCapture |
                 RegexOptions.Multiline |
                 RegexOptions.IgnorePatternWhitespace);
+        }
+
+        protected void InitValues()
+        {
+            this.SetValue("dump", new Action<object, int>(Dump));
+            this.SetValue("GameManager", GameManager.Instance);
         }
 
         // Used in constructor, so derived class MUST NOT use the object; just assume it's static
@@ -90,7 +97,7 @@ namespace ScriptingMod.ScriptEngines
                 var value = match.Value;
 
                 // Remove comment markers from all value lines
-                value = Regex.Replace(value, "^--", "", RegexOptions.Multiline);
+                value = Regex.Replace(value, "^" + Regex.Escape(CommentPrefix), "", RegexOptions.Multiline);
 
                 // Replace @key in match with equal amount of spaces to keep indentation
                 value = new Regex("@" + Regex.Escape(key)).Replace(value, new string(' ', key.Length + 1), 1);
@@ -108,5 +115,25 @@ namespace ScriptingMod.ScriptEngines
 
             return metadata;
         }
+
+        #region Methods exposed in scripts
+
+        protected virtual void Dump(object obj, int depth = 4)
+        {
+            var output = obj.DumpToString("object", new DumpOptions() { MaxDepth = depth });
+
+            if (output.Length > 1024)
+            {
+                var truncated = output.Substring(0, 1024);
+                SdtdConsole.Instance.Output(truncated + " [...]\r\n[output truncated; full output in log file]");
+                Log.Debug(output);
+            }
+            else
+            {
+                SdtdConsole.Instance.Output(output);
+            }
+        }
+
+        #endregion
     }
 }

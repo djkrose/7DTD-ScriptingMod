@@ -26,8 +26,7 @@ namespace ScriptingMod.ScriptEngines
             _lua = new Lua();
             _lua.LoadCLRPackage();
             _lua["print"] = new Action<object[]>(Print);
-            _lua["dump"] = new Action<object, int>(Dump);
-            //_lua["GameManager"] = GameManager.Instance;
+            InitValues();
         }
 
         public override void ExecuteFile(string filePath)
@@ -93,23 +92,7 @@ namespace ScriptingMod.ScriptEngines
                 return;
             string output = values.Select(v => v.ToString()).Aggregate((s, s1) => s + s1);
             SdtdConsole.Instance.Output(output);
-            Log.Debug(output);
-        }
-
-        private void Dump(object obj, int depth = 4)
-        {
-            var output = obj.DumpToString("object", new DumpOptions() {MaxDepth = depth});
-            var truncated = output.Substring(0, 1024);
-
-            if (output.Length > truncated.Length)
-            {
-                SdtdConsole.Instance.Output(truncated + " [...]\r\n[output truncated; full output in log file]");
-                Log.Debug(output);
-            }
-            else
-            {
-                SdtdConsole.Instance.Output(output);
-            }
+            Log.Debug("[CONSOLE] " + output);
         }
 
         #endregion

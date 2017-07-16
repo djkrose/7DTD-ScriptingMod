@@ -34,6 +34,7 @@ namespace ScriptingMod.Managers
                 catch (Exception ex)
                 {
                     Log.Warning($"Could not load command script \"{fileName}\": {ex.Message}");
+                    Log.Debug(ex.ToString());
                     continue;
                 }
 
@@ -53,7 +54,7 @@ namespace ScriptingMod.Managers
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath));
 
                 scriptEngine.SetValue("params", paramsList.ToArray());
-
+                
                 try
                 {
                     scriptEngine.ExecuteFile(filePath);

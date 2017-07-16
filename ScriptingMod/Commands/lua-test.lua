@@ -3,14 +3,13 @@
 -- must use single-line comment (--) and must appear before the first Lua statement at the
 -- beginning. The tags @commands and @description are mandatory, all others are optional.
 -- 
--- @commands           luatest lua
+-- @commands           lua-test lua
 -- @defaultPermission  0
 -- @description        Example command to demonstrate Lua scripting
 -- @help               This command demonstrates scripting capabilities of djkrose's Scripting Mod.
---                     It also tests the correct functionality of the mod and shows version numbers.
 --                     Usage:
---                       1. luatest
---                       2. luatest <firstname> <lastname>
+--                       1. lua-test
+--                       2. lua-test <firstname> <lastname>
 --
 --                     1. Test the Lua scripting functionality.
 --                     2. Test the Lua scripting functionality with parameter handling.
@@ -20,6 +19,7 @@
 -- 
 -- Global variables:
 --   params       string[]             Array of parameters to the command, e.g params[0], params[1]
+--   GameManager  GameManager.Instance The main access point for Unity game data
 --
 -- Global functions:
 --   print(text)                       Prints the text to console and log file
@@ -36,6 +36,8 @@ print("Version: " .. _VERSION)
 
 --[[
 
+-- OTHER EXAMPLES
+
 -- This Lua module allows dumping Lua objects to the console, similar to dump() for .Net objects
 -- Usage: inspect(variable)
 package.path = "../Helpers/?.lua;" .. package.path
@@ -50,10 +52,10 @@ local content = File.ReadAllText("luatest.lua")
 print("==== Here comes the content of luatest.lua ====")
 print(content)
 
---]]
-
+-- You can access all other .Net objects from Unity and 7DTD just by importing their Assembly
 import("Assembly-CSharp")
-dump(GameManager.Instance, 1)
 
--- Send to chat:
--- GameManager.Instance.GameMessageServer(null, EnumGameMessages.Chat, text, "Server", false, string.Empty, false);
+-- You can use dump(..) to print contents of objects to the console/log
+dump(GameManager, 1)
+
+--]]
