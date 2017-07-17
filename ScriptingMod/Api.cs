@@ -75,7 +75,8 @@ namespace ScriptingMod
 
         public override void CalcChunkColorsDone(Chunk _chunk)
         {
-            Log.Debug("Api.CalcChunkColorsDone called.");
+            // Logging makes too much noise
+            // Log.Debug("Api.CalcChunkColorsDone called.");
         }
     }
 }
