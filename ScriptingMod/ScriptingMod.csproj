@@ -82,9 +82,11 @@
     <Compile Include="FileHelper.cs" />
     <Compile Include="FriendlyMessageException.cs" />
     <Compile Include="GameData.cs" />
+    <Compile Include="Managers\ChunkManager.cs" />
     <Compile Include="Managers\CommandManager.cs" />
     <Compile Include="Managers\ScriptManager.cs" />
     <Compile Include="NativeCommands\BlockExport.cs" />
+    <Compile Include="NativeCommands\BlockImport.cs" />
     <Compile Include="NativeCommands\DynamicCommand.cs" />
     <Compile Include="NativeCommands\LuaReset.cs" />
     <Compile Include="NativeCommands\Version.cs" />
