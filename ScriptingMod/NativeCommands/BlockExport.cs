@@ -8,11 +8,6 @@ namespace ScriptingMod.NativeCommands
 {
     public class BlockExport : ConsoleCmdAbstract
     {
-        public class Params
-        {
-            public string fileName;
-            public int x1, y1, z1, x2, y2, z2;
-        }
 
         public override string[] GetCommands()
         {
@@ -27,7 +22,7 @@ namespace ScriptingMod.NativeCommands
         public override string GetHelp()
         {
             return "Exports an area into the /Data/Prefabs folder including all container and ownership data by using an\r\n" +
-                   "additional .te file next to the prefab .tts and .xml.\r\n" +
+                   "additional .te file next to the prefab .tts.\r\n" +
                    "Usage:\r\n" +
                    "  1. block-export <x1> <y1> <z1> <x2> <y2> <z2>\r\n" +
                    "\r\n" +
@@ -38,11 +33,12 @@ namespace ScriptingMod.NativeCommands
         {
             try
             {
-                Params p = ParseParams(paramz, senderInfo);
-                FixOrder(p);
-                SavePrefab(p);
-                SaveTileEntities(p);
-                SdtdConsole.Instance.Output($"Prefab {p.fileName} exported. Area mapped from {p.x1} {p.y1} {p.z1} to {p.x2} {p.y2} {p.z2}.");
+                (string fileName, Vector3i pos1, Vector3i pos2) = ParseParams(paramz, senderInfo);
+                FixOrder(ref pos1, ref pos2);
+                SavePrefab(fileName, pos1, pos2);
+                SaveTileEntities(fileName, pos1, pos2);
+
+                SdtdConsole.Instance.Output($"Prefab {fileName} exported. Area mapped from {pos1} to {pos2}.");
             }
             catch (FriendlyMessageException ex)
             {
@@ -55,73 +51,75 @@ namespace ScriptingMod.NativeCommands
             }
         }
 
-        private static Params ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
+        private static (string fileName, Vector3i pos1, Vector3i pos2) ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
         {
-            var p = new Params();
-
-            p.fileName = paramz[0];
+            var fileName = paramz[0];
+            var pos1 = Vector3i.zero;
+            var pos2 = Vector3i.zero;
 
             bool parseSuccess =
-                int.TryParse(paramz[1], out p.x1) &&
-                int.TryParse(paramz[2], out p.y1) &&
-                int.TryParse(paramz[3], out p.z1) &&
+                int.TryParse(paramz[1], out pos1.x) &&
+                int.TryParse(paramz[2], out pos1.y) &&
+                int.TryParse(paramz[3], out pos1.z) &&
 
-                int.TryParse(paramz[4], out p.x2) &&
-                int.TryParse(paramz[5], out p.y2) &&
-                int.TryParse(paramz[6], out p.z2);
+                int.TryParse(paramz[4], out pos2.x) &&
+                int.TryParse(paramz[5], out pos2.y) &&
+                int.TryParse(paramz[6], out pos2.z);
 
             if (!parseSuccess)
                 throw new FriendlyMessageException("At least one of the given coordinates is not valid.");
 
-            return p;
+            return (fileName, pos1, pos2);
         }
 
-        private static void SavePrefab(Params p)
+        private static void SavePrefab(string fileName, Vector3i pos1, Vector3i pos2)
         {
-            var size = new Vector3i(p.x2 - p.x1 + 1, p.y2 - p.y1 + 1, p.z2 - p.z1 + 1);
+            var size = new Vector3i(pos2.x - pos1.x + 1, pos2.y - pos1.y + 1, pos2.z - pos1.z + 1);
             var prefab = new Prefab(size);
-            prefab.CopyFromWorld(GameManager.Instance.World, new Vector3i(p.x1, p.y1, p.z1), new Vector3i(p.x2, p.y2, p.z2));
+            prefab.CopyFromWorld(GameManager.Instance.World, new Vector3i(pos1.x, pos1.y, pos1.z), new Vector3i(pos2.x, pos2.y, pos2.z));
             prefab.bCopyAirBlocks = true;
             // DO NOT SET THIS! It crashes the server!
             //prefab.bSleeperVolumes = true;
-            prefab.filename = p.fileName;
+            prefab.filename = fileName;
             prefab.addAllChildBlocks();
-            prefab.Save(p.fileName);
-            Log.Out($"Exported prefab from area {p.x1} {p.y1} {p.z1} to {p.x2} {p.y2} {p.z2} into {p.fileName}.tts/.xml");
+            prefab.Save(fileName);
+            Log.Out($"Exported prefab from area {pos1} to {pos2} into {fileName}.tts");
         }
 
-        private static void SaveTileEntities(Params p)
+        private static void SaveTileEntities(string fileName, Vector3i pos1, Vector3i pos2)
         {
             var world = GameManager.Instance.World;
+            var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
 
             // Collect all tile entities in the area
-            var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
-            for (int x = p.x1; x <= p.x2; x++)
+            for (int x = pos1.x; x <= pos2.x; x++)
             {
-                for (int z = p.z1; z <= p.z2; z++)
+                for (int z = pos1.z; z <= pos2.z; z++)
                 {
-                    Chunk chunk = (Chunk)world.GetChunkFromWorldPos(x, 0, z);
+                    var chunk = world.GetChunkFromWorldPos(x, 0, z) as Chunk;
                     if (chunk == null)
-                        throw new FriendlyMessageException("The area to export is far away. Chunk not loaded on that area.");
+                        throw new FriendlyMessageException("The area to export is too far away. Chunk not loaded on that area.");
 
-                    for (int y = p.y1; y <= p.y2; y++)
+                    for (int y = pos1.y; y <= pos2.y; y++)
                     {
                         var posInChunk = World.toBlock(x, y, z);
                         var posInWorld = new Vector3i(x, y, z);
-                        TileEntity tileEntity = chunk.GetTileEntity(posInChunk);
-                        if (tileEntity != null)
-                        {
-                            tileEntities.Add(posInWorld, tileEntity);
-                            Log.Debug($"Exported tile entity: {tileEntity}\r\n" +
-                                      $"posInChunk:  {posInChunk.x} {posInChunk.y} {posInChunk.z}\r\n" +
-                                      $"posInWorld:  {x} {y} {z}");
-                        }
+                        var tileEntity = chunk.GetTileEntity(posInChunk);
+
+                        if (tileEntity == null)
+                            continue; // so container/door/sign block
+
+                        tileEntities.Add(posInWorld, tileEntity);
+                        //Log.Debug($"Exported tile entity: {tileEntity}\r\n" +
+                        //          $"posInChunk:  {posInChunk.x} {posInChunk.y} {posInChunk.z}\r\n" +
+                        //          $"posInWorld:  {x} {y} {z}");
                     }
                 }
             }
 
+            var filePath = Utils.GetGameDir("Data/Prefabs/") + fileName + ".te";
+
             // Save all tile entities
-            var filePath = Utils.GetGameDir("Data/Prefabs/") + p.fileName + ".te";
             using (var writer = new BinaryWriter(new FileStream(filePath, FileMode.Create)))
             {
                 // see Assembly-CSharp::Chunk.write() -> search "tileentity.write"
@@ -130,43 +128,44 @@ namespace ScriptingMod.NativeCommands
                 {
                     var posInWorld  = keyValue.Key;
                     var tileEntity  = keyValue.Value;
-                    var posInPrefab = new Vector3i(posInWorld.x - p.x1, posInWorld.y - p.y1, posInWorld.z - p.z1);
+                    var posInPrefab = new Vector3i(posInWorld.x - pos1.x, posInWorld.y - pos1.y, posInWorld.z - pos1.z);
+
                     NetworkUtils.Write(writer, posInPrefab);                                // [3xInt32] position relative to prefab
                     writer.Write((int)tileEntity.GetTileEntityType());                      // [Int32]   TileEntityType enum
                     tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency);       // [dynamic] tile entity data depending on type
-                    Log.Debug($"Wrote tile entity: {tileEntity}\r\n" +
-                              $"posInPrefab: {posInPrefab.x} {posInPrefab.y} {posInPrefab.z}\r\n" +
-                              $"posInWorld:  {posInWorld.x} {posInWorld.y} {posInWorld.z}");
+                    //Log.Debug($"Wrote tile entity: {tileEntity}\r\n" +
+                    //          $"posInPrefab: {posInPrefab.x} {posInPrefab.y} {posInPrefab.z}\r\n" +
+                    //          $"posInWorld:  {posInWorld.x} {posInWorld.y} {posInWorld.z}");
                 }
             }
 
-            Log.Out($"Exported {tileEntities.Count} tile entities from area {p.x1} {p.y1} {p.z1} to {p.x2} {p.y2} {p.z2} into {p.fileName}.te");
+            Log.Out($"Exported {tileEntities.Count} tile entities from area {pos1} to {pos2} into {fileName}.te");
         }
 
         /// <summary>
         /// Fix the order of xyz1 xyz2, so that the first is always smaller or equal to the second.
         /// </summary>
-        private static void FixOrder(Params p)
+        private static void FixOrder(ref Vector3i pos1, ref Vector3i pos2)
         {
-            if (p.x2 < p.x1)
+            if (pos2.x < pos1.x)
             {
-                int val = p.x1;
-                p.x1 = p.x2;
-                p.x2 = val;
+                int val = pos1.x;
+                pos1.x = pos2.x;
+                pos2.x = val;
             }
 
-            if (p.y2 < p.y1)
+            if (pos2.y < pos1.y)
             {
-                int val = p.y1;
-                p.y1 = p.y2;
-                p.y2 = val;
+                int val = pos1.y;
+                pos1.y = pos2.y;
+                pos2.y = val;
             }
 
-            if (p.z2 < p.z1)
+            if (pos2.z < pos1.z)
             {
-                int val = p.z1;
-                p.z1 = p.z2;
-                p.z2 = val;
+                int val = pos1.z;
+                pos1.z = pos2.z;
+                pos2.z = val;
             }
         }
 

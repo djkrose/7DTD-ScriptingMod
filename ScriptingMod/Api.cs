@@ -64,7 +64,7 @@ namespace ScriptingMod
 
         public override void SavePlayerData(ClientInfo _cInfo, PlayerDataFile _playerDataFile)
         {
-            Log.Debug("Api.SavePlayerData called.");
+            //Log.Debug("Api.SavePlayerData called.");
         }
 
         public override bool ChatMessage(ClientInfo _cInfo, EnumGameMessages _type, string _msg, string _mainName, bool _localizeMain, string _secondaryName, bool _localizeSecondary)
@@ -75,7 +75,6 @@ namespace ScriptingMod
 
         public override void CalcChunkColorsDone(Chunk _chunk)
         {
-            // Logging makes too much noise
             // Log.Debug("Api.CalcChunkColorsDone called.");
         }
     }

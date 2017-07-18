@@ -73,6 +73,9 @@
       <HintPath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="ValueTuple">
+      <HintPath>lib\ValueTuple.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
