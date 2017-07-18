@@ -208,38 +208,6 @@ namespace ScriptingMod.NativeCommands
         }
 
         /// <summary>
-        /// Returns rotated coordinates of the given position within an area of area1 to area2.
-        /// Only x and z are rotated, y stays the same.
-        /// </summary>
-        /// <param name="pos">The point in the area to rotate</param>
-        /// <param name="area1">Most South/West point of the area, e.g. the smaller integers</param>
-        /// <param name="area2">Most North/East point of the area, e.g. the higher integers</param>
-        /// <param name="rotate">0 = unmodified, 1 = 90° right, 2 = 180°, 3 = 270° right</param>
-        /// <returns></returns>
-        private static Vector3i RotatePosition(Vector3i pos, Vector3i area1, Vector3i area2, int rotate)
-        {
-            var dx = pos.x - area1.x;
-            var dz = pos.z - area1.z;
-
-            switch (rotate)
-            {
-                case 0: // 0°
-                    return pos;
-                case 1: // 90° right
-                    return new Vector3i(area1.x + dz, pos.y, area2.z - dx);
-                //return new Vector3i(pos.z, pos.y, area2.z - pos.x);
-                case 2: // 180°
-                    return new Vector3i(area2.x - dx, pos.y, area2.z - dz);
-                //return new Vector3i(area2.x - pos.x, pos.y, area2.z - pos.z);
-                case 3: // 270°
-                    return new Vector3i(area2.x - dz, pos.y, area1.z + dx);
-                //return new Vector3i(area2.x - pos.z, pos.y, pos.x);
-                default:
-                    throw new ArgumentException("Rotation must be either 0, 1, 2, or 3", nameof(rotate));
-            }
-        }
-
-        /// <summary>
         /// Returns rotated coordinates of the given position within an area of 0,0,0 to pos2.
         /// Only x and z are rotated, y stays the same.
         /// </summary>
