@@ -82,7 +82,6 @@
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Extensions\VectorExtensions.cs" />
     <Compile Include="FileHelper.cs" />
     <Compile Include="Exceptions\FriendlyMessageException.cs" />
     <Compile Include="Managers\ChunkManager.cs" />

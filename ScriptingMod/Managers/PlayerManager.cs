@@ -5,6 +5,7 @@ using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
+using UnityEngine;
 
 namespace ScriptingMod.Managers
 {
@@ -31,7 +32,12 @@ namespace ScriptingMod.Managers
         {
             EntityPlayer ep = GameManager.Instance.World.Players.dict.GetValue(ci.entityId)
                 ?? throw new FriendlyMessageException("Unable to get your position.");
-            return ep.position.ToVector3i();
+
+            // Do NOT use "new Vector3i(Vector3 v)", because it calculates incorrectly by just casting to int, which rounds UP on negative numbers.
+            return new Vector3i(
+                (int)Math.Floor(ep.position.x),
+                (int)Math.Floor(ep.position.y),
+                (int)Math.Floor(ep.position.z));
         }
 
         /// <summary>

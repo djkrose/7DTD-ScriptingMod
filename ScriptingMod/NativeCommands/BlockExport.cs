@@ -9,8 +9,10 @@ using ScriptingMod.Managers;
 
 namespace ScriptingMod.NativeCommands
 {
-    // TODO [P3]: Allow omitting coordinates to either save from bedrock to top, or to use a previously saved pos1 and use player position as pos2
-    // TODO [P2]: Save my own current fileformat version with it and verify/adjust ion import
+    /*
+     * TODO [P2]: Save my own current fileformat version with it and verify/adjust ion import
+     */
+
     public class BlockExport : ConsoleCmdAbstract
     {
         private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
@@ -72,7 +74,7 @@ namespace ScriptingMod.NativeCommands
             }
 
             var fileName = paramz[0];
-            Vector3i pos1, pos2;;
+            Vector3i pos1, pos2;
 
             if (paramz.Count == 1)
             {
@@ -84,8 +86,12 @@ namespace ScriptingMod.NativeCommands
             }
             else
             {
-                pos1 = Vector3iEx.Parse(paramz[1], paramz[2], paramz[3]);
-                pos2 = Vector3iEx.Parse(paramz[4], paramz[5], paramz[6]);
+                try {
+                    pos1 = new Vector3i(int.Parse(paramz[1]), int.Parse(paramz[2]), int.Parse(paramz[3]));
+                    pos2 = new Vector3i(int.Parse(paramz[1]), int.Parse(paramz[2]), int.Parse(paramz[3]));
+                } catch (Exception) {
+                    throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
+                }
             }
 
             return (fileName, pos1, pos2);

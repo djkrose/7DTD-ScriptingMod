@@ -98,13 +98,20 @@ namespace ScriptingMod.NativeCommands
             }
             else
             {
-                pos1 = Vector3iEx.Parse(paramz[1], paramz[2], paramz[3]);
+                try
+                {
+                    pos1 = new Vector3i(int.Parse(paramz[1]), int.Parse(paramz[2]), int.Parse(paramz[3]));
+                }
+                catch (Exception)
+                {
+                    throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
+                }
             }
 
             if (paramz.Count == 2 || paramz.Count == 5)
             {
-                if (!int.TryParse(paramz[paramz.Count - 1], out rotate))
-                    throw new FriendlyMessageException("The rotation value is not valid. Allowed values: 0, 1, 2, or 3");
+                rotate = paramz[paramz.Count - 1].ToInt()
+                    ?? throw new FriendlyMessageException("The rotation value is not valid. Allowed values: 0, 1, 2, or 3");
             }
 
             return (fileName, pos1, rotate);
