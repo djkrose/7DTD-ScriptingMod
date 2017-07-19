@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
@@ -88,20 +89,19 @@
     <Compile Include="Managers\CommandManager.cs" />
     <Compile Include="Managers\PlayerManager.cs" />
     <Compile Include="Managers\ScriptManager.cs" />
-    <Compile Include="NativeCommands\BlockExport.cs" />
-    <Compile Include="NativeCommands\BlockImport.cs" />
-    <Compile Include="NativeCommands\DynamicCommand.cs" />
-    <Compile Include="NativeCommands\LuaReset.cs" />
-    <Compile Include="NativeCommands\Version.cs" />
+    <Compile Include="Commands\Export.cs" />
+    <Compile Include="Commands\Import.cs" />
+    <Compile Include="Commands\DynamicCommand.cs" />
+    <Compile Include="Commands\ResetLua.cs" />
+    <Compile Include="Commands\Version.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="ScriptEngines\JsEngine.cs" />
     <Compile Include="ScriptEngines\LuaEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScriptEngines\ScriptEngine.cs" />
-    <Compile Include="Managers\StateManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Commands\js-test.js">
+    <Content Include="scripts\js-test.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="ILMergeOrder.txt" />
@@ -113,10 +113,10 @@
     <None Include="Build.targets">
       <SubType>Designer</SubType>
     </None>
-    <Content Include="Commands\lua-test.lua">
+    <Content Include="scripts\lua-test.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Helpers\inspect.lua">
+    <Content Include="scripts\inspect.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="ILMerge.props" />

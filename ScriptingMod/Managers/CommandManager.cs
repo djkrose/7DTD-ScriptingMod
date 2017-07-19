@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using ScriptingMod.NativeCommands;
+using ScriptingMod.Commands;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Managers

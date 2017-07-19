@@ -1,44 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.Managers;
 
-namespace ScriptingMod.NativeCommands
+namespace ScriptingMod.Commands
 {
     /*
-     * TODO [P2]: Save my own current fileformat version with it and verify/adjust ion import
+     * TODO [P2]: Save my own current fileformat version with it and verify/adjust on import
+     * TODO [P3]: Copy trader entity and protected area correctly
      */
 
-    public class BlockExport : ConsoleCmdAbstract
+    public class Export : ConsoleCmdAbstract
     {
         private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
 
         public override string[] GetCommands()
         {
-            return new[] {"block-export"};
+            return new[] {"dj-export"};
         }
 
         public override string GetDescription()
         {
-            return "Exports an area of blocks including all container and ownership data.";
+            return "Exports a prefab including all container content, sign texts, ownership, etc.";
         }
 
         public override string GetHelp()
         {
+            // ----------------------------------(max length: 100 char)--------------------------------------------|
             return @"
-                Exports an area into the /Data/Prefabs folder including all container and ownership data by using an
-                additional .te file next to the prefab .tts.
+                Exports an area as prefab into the /Data/Prefabs folder. Additional block metadata like container
+                content, sign texts, ownership, etc. is stored in a separate ""tile entity"" file (.te).
                 Usage:
-                    1. block-export <name> <x1> <y1> <z1> <x2> <y2> <z2>
-                    2. block-export
-                    3. block-export <name>
-                1. Exports everything within the area from x1 y1 z1 to x2 y2 z2.
-                2. Saves the current player's position to be used with usage 3.
-                3. Exports everything within the area from the saved position to current players position.
+                    1. dj-export <name> <x1> <y1> <z1> <x2> <y2> <z2>
+                    2. dj-export
+                    3. dj-export <name>
+                1. Exports the prefab within the area from x1 y1 z1 to x2 y2 z2.
+                2. Saves the current player's position for usage 3.
+                3. Exports the prefab within the area from the saved position to current players position.
                 ".Unindent();
         }
 
@@ -51,7 +51,7 @@ namespace ScriptingMod.NativeCommands
                 SavePrefab(fileName, pos1, pos2);
                 SaveTileEntities(fileName, pos1, pos2);
 
-                SdtdConsole.Instance.Output($"Prefab {fileName} exported. Area mapped from {pos1} to {pos2}.");
+                SdtdConsole.Instance.Output($"Prefab {fileName} with block metadata exported. Area mapped from {pos1} to {pos2}.");
             }
             catch (FriendlyMessageException ex)
             {
@@ -59,7 +59,7 @@ namespace ScriptingMod.NativeCommands
             }
             catch (Exception ex)
             {
-                SdtdConsole.Instance.Output("An error occured during command execution: " + ex.Message + " [details in server log]");
+                SdtdConsole.Instance.Output("Error occured during command execution: " + ex.Message + " [details in server log]");
                 Log.Exception(ex);
             }
         }
@@ -88,7 +88,7 @@ namespace ScriptingMod.NativeCommands
             {
                 try {
                     pos1 = new Vector3i(int.Parse(paramz[1]), int.Parse(paramz[2]), int.Parse(paramz[3]));
-                    pos2 = new Vector3i(int.Parse(paramz[1]), int.Parse(paramz[2]), int.Parse(paramz[3]));
+                    pos2 = new Vector3i(int.Parse(paramz[4]), int.Parse(paramz[5]), int.Parse(paramz[6]));
                 } catch (Exception) {
                     throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
                 }
@@ -123,7 +123,7 @@ namespace ScriptingMod.NativeCommands
                 {
                     var chunk = world.GetChunkFromWorldPos(x, 0, z) as Chunk;
                     if (chunk == null)
-                        throw new FriendlyMessageException("The area to export is too far away. Chunk not loaded on that area.");
+                        throw new FriendlyMessageException("Area to export is too far away. Chunk not loaded on that area.");
 
                     for (int y = pos1.y; y <= pos2.y; y++)
                     {

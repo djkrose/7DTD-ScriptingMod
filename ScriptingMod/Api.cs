@@ -10,10 +10,6 @@ namespace ScriptingMod
 {
     public class Api : ModApiAbstract
     {
-        internal static string SaveGameFolder = GamePrefs.GetString(EnumGamePrefs.SaveGameFolder);
-        internal static string ScriptingModFolder = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Api)).Location);
-        internal static string CommandsFolder = Path.Combine(ScriptingModFolder, "Commands");
-
         public Api()
         {
             Log.Debug("Api constructor called.");
@@ -22,7 +18,14 @@ namespace ScriptingMod
         public override void GameAwake()
         {
             Log.Debug("Api.GameAwake called.");
-            StateManager.Awake();
+            try
+            {
+                ScriptManager.LoadCommands();
+            }
+            catch (Exception e)
+            {
+                Log.Exception(e);
+            }
         }
 
         public override void GameStartDone()
@@ -39,7 +42,6 @@ namespace ScriptingMod
         public override void GameShutdown()
         {
             Log.Debug("Api.GameShutdown called.");
-            StateManager.Shutdown();
         }
 
         public override void PlayerLogin(ClientInfo _cInfo, string _compatibilityVersion)

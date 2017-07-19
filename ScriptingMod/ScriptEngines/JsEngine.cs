@@ -54,7 +54,7 @@ namespace ScriptingMod.ScriptEngines
 
         public override void ExecuteFile(string filePath)
         {
-            var fileName = FileHelper.GetRelativePath(filePath, Api.CommandsFolder);
+            var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
 
             Log.Debug($"Starting JS script {fileName} ...");
 

@@ -1,30 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
 
-namespace ScriptingMod.NativeCommands
+namespace ScriptingMod.Commands
 {
     public class Version : ConsoleCmdAbstract
     {
 
         public override string[] GetCommands()
         {
-            return new string[] {"lua-version", "js-version"};
+            return new string[] {"dj-version"};
         }
 
         public override string GetDescription()
         {
-            return "Shows Scripting Mod version information.";
+            return "Shows djkrose's Scripting Mod version information.";
         }
 
         public override string GetHelp()
         {
-            return "Tests if djkrose's Scripting Mod is correctly installed and prints out version information.\n" +
-                   "Usage:\n" +
-                   $"   lua-version\r\n" +
-                   $"   js-version\r\n";
+            return @"Tests if djkrose's Scripting Mod is correctly installed and prints out version information.";
         }
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)

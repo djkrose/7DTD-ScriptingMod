@@ -31,7 +31,7 @@ namespace ScriptingMod.ScriptEngines
 
         public override void ExecuteFile(string filePath)
         {
-            var fileName = FileHelper.GetRelativePath(filePath, Api.CommandsFolder);
+            var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
 
             Log.Debug($"Starting Lua script {fileName} ...");
 

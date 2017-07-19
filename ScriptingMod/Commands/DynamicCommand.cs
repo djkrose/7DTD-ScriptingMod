@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Collections.Generic;
 
-namespace ScriptingMod.NativeCommands
+namespace ScriptingMod.Commands
 {
     /// <summary>
     /// Class used for all script commands; every command file gets one object

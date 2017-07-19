@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ScriptingMod.ScriptEngines;
 
-namespace ScriptingMod.NativeCommands
+namespace ScriptingMod.Commands
 {
-    public class LuaReset : ConsoleCmdAbstract
+    public class ResetLua : ConsoleCmdAbstract
     {
         public override string[] GetCommands()
         {
-            return new string[] { "lua-reset" };
+            return new string[] { "dj-reset-lua" };
         }
 
         public override string GetDescription()
