@@ -3,15 +3,25 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
+using ScriptingMod.Exceptions;
+using ScriptingMod.Extensions;
+using ScriptingMod.Managers;
+
 
 namespace ScriptingMod.NativeCommands
 {
-    // TODO [P3]: Allow omitting the x y z to import prefab at previous position. Previous position must be saved for this first!
-    // TODO [P2]: Tests outstanding:
-    // [ ] Check that overwritten land claim blocks disappear and the protection with them correctly
-    // [ ] Check that copied new land claim blocks found the claimed areas correctly
-    // [ ] Check if overwritten beds are unsetting player's home point correctly
-    // [ ] Check if imported beds are stored as new home point
+    /*
+     * TODO [P3]: Save prefabs in a subdirectory, but somehow allow also to load standard prefabs
+     * TODO [P3]: Allow omitting the x y z to import prefab at previous position.Previous position must be saved for this first!
+     * TODO [P2]: Tests outstanding:
+     * [ ] Check that overwritten land claim blocks disappear and the protection with them correctly
+     * [ ] Check that copied new land claim blocks found the claimed areas correctly
+     * [ ] Check if overwritten beds are unsetting player's home point correctly
+     * [ ] Check if imported beds are stored as new home point
+     * [x] Test importing using the current players location
+     */
+
     public class BlockImport : ConsoleCmdAbstract
     {
 
@@ -27,15 +37,23 @@ namespace ScriptingMod.NativeCommands
 
         public override string GetHelp()
         {
-            return "Imports an area previously exported with block-export, including all container and ownership data\r\n" +
-                   "that was saved in the additional .te file next to the prefab .tts. The area is always loaded from\r\n" +
-                   "the given position to the direction Noth-East, e.g. the position is the most eastern southern point.\r\n" +
-                   "Usage:\r\n" +
-                   "  1. block-import <x> <y> <z>\r\n" +
-                   "  2. block-import <x> <y> <z> <rotation>\r\n" +
-                   "\r\n" +
-                   "1. Imports the area without modifying it's rotation.\r\n" +
-                   "2. Imports the area rotated: 0 = unmodified, 1 = 90° right, 2 = 180°, 3 = 270° right";
+            return @"
+                Imports an area previously exported with block-export, including all container and ownership data
+                that was saved in the additional .te file next to the prefab .tts. The area is always loaded from
+                the given position facing North/East, e.g. the position is the most eastern southern point.
+                Usage:
+                    1. block-import <name>
+                    2. block-import <name> <rotation>
+                    3. block-import <name> <x> <y> <z>
+                    4. block-import <name> <x> <y> <z> <rotation>
+                   
+                1. Imports the area at the current position.
+                2. Imports the area at the current position with given rotation.
+                3. Imports the area at the given position.
+                4. Imports the area at the given position with the given rotation.
+
+                Rotation can be 0 = unmodified, 1 = 90° right, 2 = 180°, 3 = 270° right.
+                ".Unindent();
         }
 
         public override void Execute(List<string> paramz, CommandSenderInfo senderInfo)
@@ -45,6 +63,7 @@ namespace ScriptingMod.NativeCommands
                 (string fileName, Vector3i pos1, int rotate) = ParseParams(paramz, senderInfo);
 
                 // TODO: Either switch the following (TEST!) or pre-check if chunks are loaded
+                // Note: Cannot switch, because prefab.load creates tile entities for the containers
                 LoadPrefab(fileName, pos1, rotate, out Vector3i pos2);
 
                 HashSet<Chunk> affectedChunks = GetAffectedChunks(pos1, pos2);
@@ -70,24 +89,29 @@ namespace ScriptingMod.NativeCommands
         private static (string fileName, Vector3i pos1, int rotate) ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
         {
             var fileName = paramz[0];
-            var pos1     = Vector3i.zero;
             var rotate   = 0;
+            Vector3i pos1;
 
-            bool parseSuccess =
-                int.TryParse(paramz[1], out pos1.x) &&
-                int.TryParse(paramz[2], out pos1.y) &&
-                int.TryParse(paramz[3], out pos1.z);
+            if (paramz.Count == 1 || paramz.Count == 2)
+            {
+                pos1 = PlayerManager.GetPosition(senderInfo);
+            }
+            else
+            {
+                pos1 = Vector3iEx.Parse(paramz[1], paramz[2], paramz[3]);
+            }
 
-            if (paramz.Count == 5)
-                parseSuccess = parseSuccess && int.TryParse(paramz[4], out rotate);
-
-            if (!parseSuccess)
-                throw new FriendlyMessageException("At least one of the given coordinates or the rotation value is not valid.");
+            if (paramz.Count == 2 || paramz.Count == 5)
+            {
+                if (!int.TryParse(paramz[paramz.Count - 1], out rotate))
+                    throw new FriendlyMessageException("The rotation value is not valid. Allowed values: 0, 1, 2, or 3");
+            }
 
             return (fileName, pos1, rotate);
         }
 
-        private HashSet<Chunk> GetAffectedChunks(Vector3i pos1, Vector3i pos2)
+        [NotNull]
+        private static HashSet<Chunk> GetAffectedChunks(Vector3i pos1, Vector3i pos2)
         {
             var world = GameManager.Instance.World;
             var affectedChunks = new HashSet<Chunk>();
@@ -112,7 +136,7 @@ namespace ScriptingMod.NativeCommands
                 throw new FriendlyMessageException($"Prefab {fileName} could not be loaded.");
             prefab.bCopyAirBlocks = true;
 
-            // DO NOT USE!
+            // DO NOT USE! Saving with this crashes the server.
             //prefab.bSleeperVolumes = true;
 
             for (int i = 0; i < rotate; i++)
@@ -125,11 +149,11 @@ namespace ScriptingMod.NativeCommands
             pos2.y = pos1.y + prefab.size.y - 1;
             pos2.z = pos1.z + prefab.size.z - 1;
 
-            Log.Out($"Imported prefab into area {pos1} to {pos2} from {fileName}.tts");
+            Log.Out($"Imported prefab {fileName} into area {pos1} to {pos2}.");
         }
 
         /// <summary>
-        /// Reoves all tile entities from blocks in the given area defined by the two points.
+        /// Removes all tile entities from blocks in the given area defined by the two points.
         /// </summary>
         /// <param name="pos1">Point South/West/Down in the area, i.e. smallest numbers</param>
         /// <param name="pos2">Point North/East/Up in the area, i.e. highest numbers</param>
@@ -160,7 +184,7 @@ namespace ScriptingMod.NativeCommands
                     }
                 }
             }
-            Log.Out($"Removed {countRemoved} tile entities in area {pos1} to {pos2}.");
+            Log.Out($"Removed {countRemoved} tile entities from area {pos1} to {pos2}.");
         }
 
         private static void LoadTileEntities(string fileName, Vector3i pos1, Vector3i pos2, int rotate)
@@ -189,7 +213,7 @@ namespace ScriptingMod.NativeCommands
                     tileEntity.read(reader, TileEntity.StreamModeRead.Persistency);         // [dynamic] tile entity data depending on type
                     tileEntity.localChunkPos = posInChunk; // adjust to new location
 
-                    // Check cannot be done earlier, because we MUST do the file reads regardless
+                    // Check cannot be done earlier, because we MUST do the file reads regardless in order to continue reading
                     if (chunk == null)
                     {
                         Log.Warning($"Could not import tile entity for block {posInWorld} because the chunk is not loaded.");
@@ -197,14 +221,10 @@ namespace ScriptingMod.NativeCommands
                     }
 
                     chunk.AddTileEntity(tileEntity);
-                    //Log.Debug($"Imported tile entity: {tileEntity}\r\n" +
-                    //          $"posInPrefab: {posInPrefab}\r\n" +
-                    //          $"posInWorld:  {posInWorld}\r\n" +
-                    //          $"posInChunk:  {posInChunk}");
                 }
             }
 
-            Log.Out($"Imported {tileEntitiyCount} tile entities into area {pos1} to {pos2} from {fileName}.te");
+            Log.Out($"Imported {tileEntitiyCount} tile entities for prefab {fileName} into area {pos1} to {pos2}.");
         }
 
         /// <summary>

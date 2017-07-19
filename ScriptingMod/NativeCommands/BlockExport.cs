@@ -3,15 +3,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ScriptingMod.Exceptions;
+using ScriptingMod.Extensions;
+using ScriptingMod.Managers;
 
 namespace ScriptingMod.NativeCommands
 {
+    // TODO [P3]: Allow omitting coordinates to either save from bedrock to top, or to use a previously saved pos1 and use player position as pos2
+    // TODO [P2]: Save my own current fileformat version with it and verify/adjust ion import
     public class BlockExport : ConsoleCmdAbstract
     {
+        private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
 
         public override string[] GetCommands()
         {
-            return new [] {"block-export"};
+            return new[] {"block-export"};
         }
 
         public override string GetDescription()
@@ -21,12 +27,17 @@ namespace ScriptingMod.NativeCommands
 
         public override string GetHelp()
         {
-            return "Exports an area into the /Data/Prefabs folder including all container and ownership data by using an\r\n" +
-                   "additional .te file next to the prefab .tts.\r\n" +
-                   "Usage:\r\n" +
-                   "  1. block-export <x1> <y1> <z1> <x2> <y2> <z2>\r\n" +
-                   "\r\n" +
-                   "1. Exports everything within the 3-dimensional area from x1 y1 z1 to x2 y2 z2.";
+            return @"
+                Exports an area into the /Data/Prefabs folder including all container and ownership data by using an
+                additional .te file next to the prefab .tts.
+                Usage:
+                    1. block-export <name> <x1> <y1> <z1> <x2> <y2> <z2>
+                    2. block-export
+                    3. block-export <name>
+                1. Exports everything within the area from x1 y1 z1 to x2 y2 z2.
+                2. Saves the current player's position to be used with usage 3.
+                3. Exports everything within the area from the saved position to current players position.
+                ".Unindent();
         }
 
         public override void Execute(List<string> paramz, CommandSenderInfo senderInfo)
@@ -53,21 +64,29 @@ namespace ScriptingMod.NativeCommands
 
         private static (string fileName, Vector3i pos1, Vector3i pos2) ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
         {
+            if (paramz.Count == 0)
+            {
+                var ci = PlayerManager.GetClientInfo(senderInfo);
+                savedPos[ci.entityId] = PlayerManager.GetPosition(ci);
+                throw new FriendlyMessageException("Your current position was saved: " + savedPos[ci.entityId]);
+            }
+
             var fileName = paramz[0];
-            var pos1 = Vector3i.zero;
-            var pos2 = Vector3i.zero;
+            Vector3i pos1, pos2;;
 
-            bool parseSuccess =
-                int.TryParse(paramz[1], out pos1.x) &&
-                int.TryParse(paramz[2], out pos1.y) &&
-                int.TryParse(paramz[3], out pos1.z) &&
-
-                int.TryParse(paramz[4], out pos2.x) &&
-                int.TryParse(paramz[5], out pos2.y) &&
-                int.TryParse(paramz[6], out pos2.z);
-
-            if (!parseSuccess)
-                throw new FriendlyMessageException("At least one of the given coordinates is not valid.");
+            if (paramz.Count == 1)
+            {
+                var ci = PlayerManager.GetClientInfo(senderInfo);
+                if (!savedPos.ContainsKey(ci.entityId))
+                    throw new FriendlyMessageException("Please save start point of the area first. See help for details.");
+                pos1 = savedPos[ci.entityId];
+                pos2 = PlayerManager.GetPosition(ci);
+            }
+            else
+            {
+                pos1 = Vector3iEx.Parse(paramz[1], paramz[2], paramz[3]);
+                pos2 = Vector3iEx.Parse(paramz[4], paramz[5], paramz[6]);
+            }
 
             return (fileName, pos1, pos2);
         }
@@ -83,7 +102,7 @@ namespace ScriptingMod.NativeCommands
             prefab.filename = fileName;
             prefab.addAllChildBlocks();
             prefab.Save(fileName);
-            Log.Out($"Exported prefab from area {pos1} to {pos2} into {fileName}.tts");
+            Log.Out($"Exported prefab {fileName} from area {pos1} to {pos2}.");
         }
 
         private static void SaveTileEntities(string fileName, Vector3i pos1, Vector3i pos2)
@@ -110,9 +129,6 @@ namespace ScriptingMod.NativeCommands
                             continue; // so container/door/sign block
 
                         tileEntities.Add(posInWorld, tileEntity);
-                        //Log.Debug($"Exported tile entity: {tileEntity}\r\n" +
-                        //          $"posInChunk:  {posInChunk.x} {posInChunk.y} {posInChunk.z}\r\n" +
-                        //          $"posInWorld:  {x} {y} {z}");
                     }
                 }
             }
@@ -123,23 +139,20 @@ namespace ScriptingMod.NativeCommands
             using (var writer = new BinaryWriter(new FileStream(filePath, FileMode.Create)))
             {
                 // see Assembly-CSharp::Chunk.write() -> search "tileentity.write"
-                writer.Write(tileEntities.Count);                                           // [Int32]   number of tile entities
+                writer.Write(tileEntities.Count); // [Int32]   number of tile entities
                 foreach (var keyValue in tileEntities)
                 {
-                    var posInWorld  = keyValue.Key;
-                    var tileEntity  = keyValue.Value;
+                    var posInWorld = keyValue.Key;
+                    var tileEntity = keyValue.Value;
                     var posInPrefab = new Vector3i(posInWorld.x - pos1.x, posInWorld.y - pos1.y, posInWorld.z - pos1.z);
 
-                    NetworkUtils.Write(writer, posInPrefab);                                // [3xInt32] position relative to prefab
-                    writer.Write((int)tileEntity.GetTileEntityType());                      // [Int32]   TileEntityType enum
-                    tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency);       // [dynamic] tile entity data depending on type
-                    //Log.Debug($"Wrote tile entity: {tileEntity}\r\n" +
-                    //          $"posInPrefab: {posInPrefab.x} {posInPrefab.y} {posInPrefab.z}\r\n" +
-                    //          $"posInWorld:  {posInWorld.x} {posInWorld.y} {posInWorld.z}");
+                    NetworkUtils.Write(writer, posInPrefab); // [3xInt32] position relative to prefab
+                    writer.Write((int) tileEntity.GetTileEntityType()); // [Int32]   TileEntityType enum
+                    tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic] tile entity data depending on type
                 }
             }
 
-            Log.Out($"Exported {tileEntities.Count} tile entities from area {pos1} to {pos2} into {fileName}.te");
+            Log.Out($"Exported {tileEntities.Count} tile entities for prefab {fileName} from area {pos1} to {pos2}.");
         }
 
         /// <summary>
@@ -168,6 +181,5 @@ namespace ScriptingMod.NativeCommands
                 pos2.z = val;
             }
         }
-
     }
 }

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace ScriptingMod.Extensions
 {
-    public static class IEnumerableExtensions
+    internal static class IEnumerableExtensions
     {
         public static string Join<T>(this IEnumerable<T> self, string separator)
         {
