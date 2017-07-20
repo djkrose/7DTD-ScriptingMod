@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("7DTD Scripting Mod")]
-[assembly: AssemblyDescription("djkrose's Scripting Mod for 7DTD Dedicated Server")]
+[assembly: AssemblyTitle("djkrose's Scripting Mod")]
+[assembly: AssemblyDescription("Adds scripting support and other useful commands to 7 Days To Die dedicated server.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("7DTD Scripting Mod")]
+[assembly: AssemblyProduct("djkrose's Scripting Mod")]
 [assembly: AssemblyCopyright("Copyright © 2017 djkrose")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
