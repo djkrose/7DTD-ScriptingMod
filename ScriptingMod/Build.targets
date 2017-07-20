@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  
-  <!-- ILMerge integration -->
+
+  <Import Project="ILMerge.targets" Condition="Exists('ILMerge.targets')" />
+
+  <!-- Verify build tasks -->
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -9,22 +11,35 @@
     <Error Condition="!Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props'))" />
     <Error Condition="!Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets'))" />
   </Target>
-  <Import Project="ILMerge.targets" Condition="Exists('ILMerge.targets')" />
 
   <!-- Copy all mod files into 7DTD Mods folder -->
   <Target Name="InstallMod">
+    <ItemGroup>
+      <InstallFiles Include="$(OutputPath)**\*.*" />
+    </ItemGroup>
     <PropertyGroup>
       <ModsDirectory>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\Mods\</ModsDirectory>
     </PropertyGroup>
-    <ItemGroup>
-      <AllModFiles Include="$(OutputPath)**\*.*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(AllModFiles)" DestinationFolder="$(ModsDirectory)$(ProjectName)\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(InstallFiles)" DestinationFolder="$(ModsDirectory)$(ProjectName)\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
 
+  <!-- Pack all files together into a distribution zip file -->
+  <Target Name="MakeDistro">
+    <ItemGroup>
+      <CompressFiles Include="$(OutputPath)**\*.*" />
+    </ItemGroup>
+    <PropertyGroup>
+      <DistroFolder>$(OutputPath)..\Distro\</DistroFolder>
+    </PropertyGroup>
+    <MakeDir Directories="$(DistroFolder)"/>  
+    <Exec Command="PowerShell -command Compress-Archive -Force @(CompressFiles, ',') $(DistroFolder)ScriptingMod.zip" />
+    <!--<Zip TaskAction="Create" CompressFiles="@(CompressFiles)" ZipFileName="$(DistroFolder)ScriptingMod.zip" RemoveRoot="$(OutputPath)"/>-->
+  </Target>
+  
   <!-- Chain all previously defined targets after build -->
   <Target Name="AfterBuild">
-    <CallTarget Targets="InstallMod" Condition="Exists('$(ModsDirectory).')"/>
+    <CallTarget Targets="InstallMod" Condition="Exists('$(ModsDirectory).')" />
+    <CallTarget Targets="MakeDistro" Condition="'$(Configuration)' == 'Release'" />
   </Target>
 
 </Project>
