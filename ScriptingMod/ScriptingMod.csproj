@@ -95,6 +95,11 @@
     <Compile Include="Commands\ResetLua.cs" />
     <Compile Include="Commands\Version.cs" />
     <Compile Include="Log.cs" />
+    <Compile Include="Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="ScriptEngines\JsEngine.cs" />
     <Compile Include="ScriptEngines\LuaEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -130,6 +135,12 @@
       <Project>{3fdf28de-bfcf-439a-9430-0d564f1e6ec8}</Project>
       <Name>ObjectDumper</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

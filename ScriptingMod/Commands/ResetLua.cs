@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ScriptingMod.Managers;
 using ScriptingMod.ScriptEngines;
 
 namespace ScriptingMod.Commands
@@ -19,8 +20,15 @@ namespace ScriptingMod.Commands
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
-            LuaEngine.Instance.Reset();
-            SdtdConsole.Instance.Output("Lua engine was reset.");
+            try
+            {
+                LuaEngine.Instance.Reset();
+                SdtdConsole.Instance.Output("Lua engine was reset.");
+            }
+            catch (Exception ex)
+            {
+                CommandManager.HandleCommandException(ex);
+            }
         }
     }
 }

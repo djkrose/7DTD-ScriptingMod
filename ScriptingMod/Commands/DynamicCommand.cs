@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using ScriptingMod.Managers;
 
 namespace ScriptingMod.Commands
 {
@@ -66,7 +67,15 @@ namespace ScriptingMod.Commands
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
-            _action(_params, _senderInfo);
+            try
+            {
+                _action(_params, _senderInfo);
+
+            }
+            catch (Exception ex)
+            {
+                CommandManager.HandleCommandException(ex);
+            }
         }
     }
 }

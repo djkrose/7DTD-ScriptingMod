@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using ScriptingMod.Commands;
+using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Managers
@@ -178,6 +179,20 @@ namespace ScriptingMod.Managers
         {
             return _commandObjectPairs.Cast<object>().Any(o =>
                 command.Equals((string)_commandObjectPair_CommandField.GetValue(o), StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static void HandleCommandException(Exception ex)
+        {
+            if (ex is FriendlyMessageException)
+            {
+                SdtdConsole.Instance.Output(ex.Message);
+                Log.Out(ex.Message);
+            }
+            else
+            {
+                SdtdConsole.Instance.Output("Error occured during command execution: " + ex.Message + " [details in server log]");
+                Log.Exception(ex);
+            }
         }
 
     }

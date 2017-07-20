@@ -86,15 +86,9 @@ namespace ScriptingMod.Commands
                     ScriptingMod.Managers.ChunkManager.ReloadForClients(affectedChunks);
                 }
             }
-            catch (FriendlyMessageException ex)
-            {
-                SdtdConsole.Instance.Output(ex.Message);
-                Log.Out(ex.Message);
-            }
             catch (Exception ex)
             {
-                SdtdConsole.Instance.Output("Error occured during command execution: " + ex.Message + " [details in server log]");
-                Log.Exception(ex);
+                CommandManager.HandleCommandException(ex);
             }
         }
 

@@ -54,14 +54,9 @@ namespace ScriptingMod.Commands
 
                 SdtdConsole.Instance.Output($"Prefab {prefabName} with block metadata exported. Area mapped from {pos1} to {pos2}.");
             }
-            catch (FriendlyMessageException ex)
-            {
-                SdtdConsole.Instance.Output(ex.Message);
-            }
             catch (Exception ex)
             {
-                SdtdConsole.Instance.Output("Error occured during command execution: " + ex.Message + " [details in server log]");
-                Log.Exception(ex);
+                CommandManager.HandleCommandException(ex);
             }
         }
 

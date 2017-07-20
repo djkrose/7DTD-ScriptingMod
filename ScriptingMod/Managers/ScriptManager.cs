@@ -30,7 +30,7 @@ namespace ScriptingMod.Managers
                     var commandObject = CreateCommandObject(filePath);
                     if (commandObject == null)
                     {
-                        Log.Debug($"Script file {fileName} is ignored becaus it does not contain a command name definition.");
+                        Log.Debug($"Script file {fileName} is ignored because it does not contain a command name definition.");
                         continue;
                     }
 

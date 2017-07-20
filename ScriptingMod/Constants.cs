@@ -9,6 +9,7 @@ namespace ScriptingMod
 {
     internal static class Constants
     {
+        public const string ModNameFull            = "djkrose's Scripting Mod";
         public const string TileEntityFileMarker   = "7DTD-TE";
         public const int    TileEntityFileVersion  = 2;
         public const string TitEntityFileExtension = ".te";

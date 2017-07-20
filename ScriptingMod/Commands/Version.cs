@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using ModInfo;
+using ScriptingMod.Managers;
 
 namespace ScriptingMod.Commands
 {
@@ -24,7 +27,25 @@ namespace ScriptingMod.Commands
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
-            SdtdConsole.Instance.Output("djkrose's Scripting Mod - v0.2"); // TODO [P3]: make dynamic
+            try
+            {
+                var modInfo = ModManager.GetMod(Constants.ModNameFull)?.ModInfo;
+                if (modInfo == null)
+                {
+                    SdtdConsole.Instance.Output(Constants.ModNameFull);
+                    SdtdConsole.Instance.Output("Could not load mod infos. Have you modified the ModInfo.xml?");
+                    return;
+                }
+
+                SdtdConsole.Instance.Output($"{Constants.ModNameFull} - Version {modInfo.Version.Value}");
+                SdtdConsole.Instance.Output(modInfo.Description.Value);
+                if (!string.IsNullOrEmpty(modInfo.Website.Value))
+                    SdtdConsole.Instance.Output(modInfo.Website.Value);
+            }
+            catch (Exception ex)
+            {
+                CommandManager.HandleCommandException(ex);
+            }
         }
     }
 }
