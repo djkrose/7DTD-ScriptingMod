@@ -43,10 +43,9 @@ namespace ScriptingMod.Managers
                     Log.Debug(ex.ToString());
                     continue;
                 }
-
             }
 
-            Log.Out("All script commands added.");
+            Log.Debug("All script commands added.");
         }
 
         /// <summary>

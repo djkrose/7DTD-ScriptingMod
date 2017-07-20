@@ -15,16 +15,18 @@ namespace ScriptingMod
     {
         public Api()
         {
-            Log.Debug("Api constructor called.");
-            TryRestoreModInfo();
+            //Log.Debug("Api constructor called.");
         }
 
         public override void GameAwake()
         {
-            Log.Debug("Api.GameAwake called.");
+            //Log.Debug("Api.GameAwake called.");
             try
             {
+                Log.Out($"Initializing {Constants.ModNameFull} ...");
                 ScriptManager.LoadCommands();
+                TryRestoreModInfo();
+                Log.Out($"Done initializing {Constants.ModNameFull}.");
             }
             catch (Exception e)
             {
@@ -34,7 +36,7 @@ namespace ScriptingMod
 
         public override void GameStartDone()
         {
-            Log.Debug("Api.GameStartDone called.");
+            //Log.Debug("Api.GameStartDone called.");
         }
 
         public override void GameUpdate()
@@ -45,27 +47,27 @@ namespace ScriptingMod
 
         public override void GameShutdown()
         {
-            Log.Debug("Api.GameShutdown called.");
+            //Log.Debug("Api.GameShutdown called.");
         }
 
         public override void PlayerLogin(ClientInfo _cInfo, string _compatibilityVersion)
         {
-            Log.Debug("Api.PlayerLogin called.");
+            //Log.Debug("Api.PlayerLogin called.");
         }
 
         public override void PlayerSpawning(ClientInfo _cInfo, int _chunkViewDim, PlayerProfile _playerProfile)
         {
-            Log.Debug("Api.PlayerSpawning called.");
+            //Log.Debug("Api.PlayerSpawning called.");
         }
 
         public override void PlayerSpawnedInWorld(ClientInfo _cInfo, RespawnType _respawnReason, Vector3i _pos)
         {
-            Log.Debug("Api.PlayerSpawnedInWorld called.");
+            //Log.Debug("Api.PlayerSpawnedInWorld called.");
         }
 
         public override void PlayerDisconnected(ClientInfo _cInfo, bool _bShutdown)
         {
-            Log.Debug("Api.PlayerDisconnected called.");
+            //Log.Debug("Api.PlayerDisconnected called.");
         }
 
         public override void SavePlayerData(ClientInfo _cInfo, PlayerDataFile _playerDataFile)
@@ -75,7 +77,7 @@ namespace ScriptingMod
 
         public override bool ChatMessage(ClientInfo _cInfo, EnumGameMessages _type, string _msg, string _mainName, bool _localizeMain, string _secondaryName, bool _localizeSecondary)
         {
-            Log.Debug("Api.ChatMessage called.");
+            //Log.Debug("Api.ChatMessage called.");
             return true;
         }
 
