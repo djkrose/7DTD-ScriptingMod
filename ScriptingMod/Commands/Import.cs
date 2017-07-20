@@ -23,7 +23,8 @@ namespace ScriptingMod.Commands
 
     public class Import : ConsoleCmdAbstract
     {
-        private static string _prefabsFolder = Path.GetFullPath(Utils.GetGameDir(global::Constants.cDirPrefabs));
+        private const int minSupportedVersion = 2;
+        private const int maxSupportedVersion = 2;
 
         public override string[] GetCommands()
         {
@@ -38,10 +39,10 @@ namespace ScriptingMod.Commands
         public override string GetHelp()
         {
             // ----------------------------------(max length: 100 char)--------------------------------------------|
-            return @"
+            return $@"
                 Imports a prefab from the folder /Data/Prefabs into the world. With the optional parameter ""/all""
                 additional block metadata like container content, sign texts, ownership, etc. is also restored. For
-                this to work the prefab must be exported with dj-export and include a ""tile entity"" file (.te).
+                this to work the prefab must be exported with dj-export and include a ""tile entity"" file ({Constants.TitEntityFileExtension}).
                 The prefab is placed facing north/east/up from the given position.
                 Rotation can be 0 = unmodified, 1 = 90° right, 2 = 180°, 3 = 270° right.
                 Usage:
@@ -60,12 +61,12 @@ namespace ScriptingMod.Commands
         {
             try
             {
-                (string fileName, Vector3i pos1, int rotate, bool all) = ParseParams(paramz, senderInfo);
+                (string prefabName, Vector3i pos1, int rotate, bool all) = ParseParams(paramz, senderInfo);
 
                 // TODO [P2]: Either switch the following (TEST!) or pre-check if chunks are loaded
                 // Note: Cannot switch, because prefab.load creates tile entities for the containers
 
-                LoadPrefab(fileName, pos1, rotate, out Vector3i pos2);
+                LoadPrefab(prefabName, pos1, rotate, out Vector3i pos2);
                 HashSet<Chunk> affectedChunks = GetAffectedChunks(pos1, pos2);
 
                 // Even if loading tile entities fails, we still need to reload the already imported
@@ -74,13 +75,13 @@ namespace ScriptingMod.Commands
                 {
                     if (all)
                     {
-                        LoadTileEntities(fileName, pos1, pos2, rotate);
+                        LoadTileEntities(prefabName, pos1, pos2, rotate);
                     }
-                    SdtdConsole.Instance.Output($"Prefab {fileName} placed{(all ? " with block metdata" : "")} at {pos1} with rotation {rotate}.");
+                    SdtdConsole.Instance.Output($"Prefab {prefabName} placed{(all ? " with block metdata" : "")} at {pos1} with rotation {rotate}.");
                 }
                 catch (Exception)
                 {
-                    SdtdConsole.Instance.Output($"Prefab {fileName} placed at {pos1} with rotation {rotate}, but importing block metadata failed.");
+                    SdtdConsole.Instance.Output($"Prefab {prefabName} placed at {pos1} with rotation {rotate}, but importing block metadata failed.");
                     throw;
                 }
                 finally
@@ -88,8 +89,6 @@ namespace ScriptingMod.Commands
                     ScriptingMod.Managers.ChunkManager.ResetStability(affectedChunks);
                     ScriptingMod.Managers.ChunkManager.ReloadForClients(affectedChunks);
                 }
-
-                // TODO [P2]: Make a good alternative output when LoadTileEntities fails.
             }
             catch (FriendlyMessageException ex)
             {
@@ -103,11 +102,12 @@ namespace ScriptingMod.Commands
             }
         }
 
-        private static (string fileName, Vector3i pos1, int rotate, bool all)
+        private static (string prefabName, Vector3i pos1, int rotate, bool all)
             ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
         {
             var all = false;
 
+            // Parse /all parameter
             if (paramz.Contains("/all"))
             {
                 // Make copy and remove from list to make subsequent parsing easier
@@ -116,15 +116,30 @@ namespace ScriptingMod.Commands
                 all = true;
             }
 
-            var fileName = paramz[0];
-            var tts = global::Constants.cExtPrefabs; // Cannot interpolate in string: https://youtrack.jetbrains.com/issue/RSRP-465524
-            if (!File.Exists(Path.Combine(_prefabsFolder, fileName + ".xml")) || 
-                !File.Exists(Path.Combine(_prefabsFolder, fileName + tts)))
-                throw new FriendlyMessageException($"Could not find {fileName}.xml/{tts} in {_prefabsFolder}.");
+            // Parse prefab name
+            var prefabName = paramz[0];
 
-            if (all && !File.Exists(Path.Combine(_prefabsFolder, fileName + ".te")))
-                throw new FriendlyMessageException($"Could not find {fileName}.te in prefabs folder. This prefab does not have block metadata available, so you cannot use the /all option.");
+            // Verify existence of prefab files
+            const string tts = global::Constants.cExtPrefabs; // Cannot interpolate in string: https://youtrack.jetbrains.com/issue/RSRP-465524
+            if (!File.Exists(Path.Combine(Constants.PrefabsFolder, prefabName + ".xml")) || 
+                !File.Exists(Path.Combine(Constants.PrefabsFolder, prefabName + tts)))
+                throw new FriendlyMessageException($"Could not find {prefabName}.xml/{tts} in {Constants.PrefabsFolder}.");
 
+            // Verify existence and validity of tile entity file
+            if (all)
+            {
+                var fileName = prefabName + Constants.TitEntityFileExtension;
+                var filePath = Path.Combine(Constants.PrefabsFolder, fileName);
+                if (!File.Exists(filePath))
+                    throw new FriendlyMessageException($"Could not find {fileName} in prefabs folder. This prefab does not have block metadata available, so you cannot use the /all option.");
+
+                using (var reader = new BinaryReader(new FileStream(filePath, FileMode.Open)))
+                {
+                    VerifyTileEntityHeader(reader, fileName);
+                }
+            }
+
+            // Parse coordinates
             Vector3i pos1;
             if (paramz.Count == 1 || paramz.Count == 2)
             {
@@ -142,6 +157,7 @@ namespace ScriptingMod.Commands
                 }
             }
 
+            // Parse rotation
             var rotate   = 0;
             if (paramz.Count == 2 || paramz.Count == 5)
             {
@@ -149,7 +165,7 @@ namespace ScriptingMod.Commands
                     ?? throw new FriendlyMessageException("Rotation value is not valid. Allowed values: 0, 1, 2, or 3");
             }
 
-            return (fileName, pos1, rotate, all);
+            return (prefabName, pos1, rotate, all);
         }
 
         [NotNull]
@@ -171,11 +187,11 @@ namespace ScriptingMod.Commands
             return affectedChunks;
         }
 
-        private static void LoadPrefab(string fileName, Vector3i pos1, int rotate, out Vector3i pos2)
+        private static void LoadPrefab(string prefabName, Vector3i pos1, int rotate, out Vector3i pos2)
         {
             Prefab prefab = new Prefab();
-            if (!prefab.Load(fileName))
-                throw new FriendlyMessageException($"Prefab {fileName} could not be loaded.");
+            if (!prefab.Load(prefabName))
+                throw new FriendlyMessageException($"Prefab {prefabName} could not be loaded.");
 
             prefab.bCopyAirBlocks = true;
             prefab.bCopyAirBlocks = true;
@@ -192,61 +208,21 @@ namespace ScriptingMod.Commands
             pos2.y = pos1.y + prefab.size.y - 1;
             pos2.z = pos1.z + prefab.size.z - 1;
 
-            Log.Out($"Imported prefab {fileName} into area {pos1} to {pos2}.");
+            Log.Out($"Imported prefab {prefabName} into area {pos1} to {pos2}.");
         }
 
-        ///// <summary>
-        ///// Removes all tile entities from blocks in the given area defined by the two points.
-        ///// </summary>
-        ///// <param name="pos1">Point South/West/Down in the area, i.e. smallest numbers</param>
-        ///// <param name="pos2">Point North/East/Up in the area, i.e. highest numbers</param>
-        //private static void RemoveTileEntities(Vector3i pos1, Vector3i pos2)
-        //{
-        //    var world = GameManager.Instance.World;
-        //    var countRemoved = 0;
-
-        //    for (int x = pos1.x; x <= pos2.x; x++)
-        //    {
-        //        for (int z = pos1.z; z <= pos2.z; z++)
-        //        {
-        //            var chunk = world.GetChunkFromWorldPos(x, 0, z) as Chunk;
-        //            if (chunk == null)
-        //            {
-        //                Log.Warning($"Could not remove tile entities from blocks {x}, {pos1.y} to {pos2.y}, {z} because the chunk is not loaded.");
-        //                continue;
-        //            }
-
-        //            for (int y = pos1.y; y <= pos2.y; y++)
-        //            {
-        //                var posInChunk = World.toBlock(x, y, z);
-        //                if (chunk.GetTileEntity(posInChunk) == null)
-        //                    continue;
-
-        //                countRemoved++;
-        //                chunk.RemoveTileEntityAt<TileEntity>(world, posInChunk);
-        //            }
-        //        }
-        //    }
-        //    Log.Out($"Removed {countRemoved} tile entities from area {pos1} to {pos2}.");
-        //}
-
-        private static void LoadTileEntities(string fileName, Vector3i pos1, Vector3i pos2, int rotate)
+        private static void LoadTileEntities(string prefabName, Vector3i pos1, Vector3i pos2, int rotate)
         {
-            var filePath     = Path.Combine(_prefabsFolder, fileName + ".te");
+            var filePath     = Path.Combine(Constants.PrefabsFolder, prefabName + Constants.TitEntityFileExtension);
             var world        = GameManager.Instance.World;
             var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
             int tileEntitiyCount;
 
-            if (!File.Exists(filePath))
-            {
-                throw new FriendlyMessageException(
-                    $"Block metadata could not be imported because file {Path.GetFileName(filePath)} does not exist in Prefabs folder. " +
-                    "You can only import prefabs with the /all command if you exported them with the dj-export command before. See help for details.");
-            }
-
             // Read all tile entities from file into dictionary
             using (var reader = new BinaryReader(new FileStream(filePath, FileMode.Open)))
             {
+                VerifyTileEntityHeader(reader, prefabName + Constants.TitEntityFileExtension);
+
                 // See Assembly-CSharp::Chunk.read() -> search "tileentity.read"
                 tileEntitiyCount = reader.ReadInt32();                                      // [Int32]   number of tile entities
                 for (int i = 0; i < tileEntitiyCount; i++)
@@ -300,7 +276,27 @@ namespace ScriptingMod.Commands
                 }
             }
 
-            Log.Out($"Imported {tileEntitiyCount} tile entities for prefab {fileName} into area {pos1} to {pos2}.");
+            Log.Out($"Imported {tileEntitiyCount} tile entities for prefab {prefabName} into area {pos1} to {pos2}.");
+        }
+
+        /// <summary>
+        /// Reads and verifies the tile entity file's header. On errors, an exception is thrown.
+        /// The readerposition is advanced in the file accordingly.
+        /// </summary>
+        /// <param name="reader">Already opened reader stream</param>
+        /// <param name="fileName">File name of tile entity file without path, e.g. "mybase.te"</param>
+        /// <exception cref="FriendlyMessageException">Thrown when the header is incompatible with the import function</exception>
+        private static void VerifyTileEntityHeader(BinaryReader reader, string fileName)
+        {
+            var fileMarker = reader.ReadString();
+            if (fileMarker != Constants.TileEntityFileMarker)                           // [string]  constant "7DTD-TE"
+                throw new FriendlyMessageException($"File {fileName} is not a valid tile entity file for 7DTD.");
+
+            var fileVersion = reader.ReadInt32();                                       // [Int32]   file version number
+            if (fileVersion < minSupportedVersion)
+                throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {minSupportedVersion} or higher is supported.");
+            if (fileVersion > maxSupportedVersion)
+                throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {maxSupportedVersion} or lower is supported.");
         }
 
         /// <summary>

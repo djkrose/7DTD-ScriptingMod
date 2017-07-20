@@ -8,7 +8,6 @@ using ScriptingMod.Managers;
 namespace ScriptingMod.Commands
 {
     /*
-     * TODO [P2]: Save my own current fileformat version with it and verify/adjust on import
      * TODO [P3]: Copy trader entity and protected area correctly
      */
 
@@ -29,9 +28,9 @@ namespace ScriptingMod.Commands
         public override string GetHelp()
         {
             // ----------------------------------(max length: 100 char)--------------------------------------------|
-            return @"
+            return $@"
                 Exports an area as prefab into the /Data/Prefabs folder. Additional block metadata like container
-                content, sign texts, ownership, etc. is stored in a separate ""tile entity"" file (.te).
+                content, sign texts, ownership, etc. is stored in a separate ""tile entity"" file ({Constants.TitEntityFileExtension}).
                 Usage:
                     1. dj-export <name> <x1> <y1> <z1> <x2> <y2> <z2>
                     2. dj-export
@@ -46,12 +45,12 @@ namespace ScriptingMod.Commands
         {
             try
             {
-                (string fileName, Vector3i pos1, Vector3i pos2) = ParseParams(paramz, senderInfo);
+                (string prefabName, Vector3i pos1, Vector3i pos2) = ParseParams(paramz, senderInfo);
                 FixOrder(ref pos1, ref pos2);
-                SavePrefab(fileName, pos1, pos2);
-                SaveTileEntities(fileName, pos1, pos2);
+                SavePrefab(prefabName, pos1, pos2);
+                SaveTileEntities(prefabName, pos1, pos2);
 
-                SdtdConsole.Instance.Output($"Prefab {fileName} with block metadata exported. Area mapped from {pos1} to {pos2}.");
+                SdtdConsole.Instance.Output($"Prefab {prefabName} with block metadata exported. Area mapped from {pos1} to {pos2}.");
             }
             catch (FriendlyMessageException ex)
             {
@@ -64,7 +63,7 @@ namespace ScriptingMod.Commands
             }
         }
 
-        private static (string fileName, Vector3i pos1, Vector3i pos2) ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
+        private static (string prefabName, Vector3i pos1, Vector3i pos2) ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
         {
             if (paramz.Count == 0)
             {
@@ -73,7 +72,7 @@ namespace ScriptingMod.Commands
                 throw new FriendlyMessageException("Your current position was saved: " + savedPos[ci.entityId]);
             }
 
-            var fileName = paramz[0];
+            var prefabName = paramz[0];
             Vector3i pos1, pos2;
 
             if (paramz.Count == 1)
@@ -94,10 +93,10 @@ namespace ScriptingMod.Commands
                 }
             }
 
-            return (fileName, pos1, pos2);
+            return (prefabName, pos1, pos2);
         }
 
-        private static void SavePrefab(string fileName, Vector3i pos1, Vector3i pos2)
+        private static void SavePrefab(string prefabName, Vector3i pos1, Vector3i pos2)
         {
             var size = new Vector3i(pos2.x - pos1.x + 1, pos2.y - pos1.y + 1, pos2.z - pos1.z + 1);
             var prefab = new Prefab(size);
@@ -105,13 +104,13 @@ namespace ScriptingMod.Commands
             prefab.bCopyAirBlocks = true;
             // DO NOT SET THIS! It crashes the server!
             //prefab.bSleeperVolumes = true;
-            prefab.filename = fileName;
+            prefab.filename = prefabName;
             prefab.addAllChildBlocks();
-            prefab.Save(fileName);
-            Log.Out($"Exported prefab {fileName} from area {pos1} to {pos2}.");
+            prefab.Save(prefabName);
+            Log.Out($"Exported prefab {prefabName} from area {pos1} to {pos2}.");
         }
 
-        private static void SaveTileEntities(string fileName, Vector3i pos1, Vector3i pos2)
+        private static void SaveTileEntities(string prefabName, Vector3i pos1, Vector3i pos2)
         {
             var world = GameManager.Instance.World;
             var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
@@ -139,26 +138,29 @@ namespace ScriptingMod.Commands
                 }
             }
 
-            var filePath = Utils.GetGameDir("Data/Prefabs/") + fileName + ".te";
+            var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + Constants.TitEntityFileExtension);
 
             // Save all tile entities
             using (var writer = new BinaryWriter(new FileStream(filePath, FileMode.Create)))
             {
+                writer.Write(Constants.TileEntityFileMarker);                         // [string]  constant "7DTD-TE"
+                writer.Write(Constants.TileEntityFileVersion);                        // [Int32]   file version number
+
                 // see Assembly-CSharp::Chunk.write() -> search "tileentity.write"
-                writer.Write(tileEntities.Count); // [Int32]   number of tile entities
+                writer.Write(tileEntities.Count);                                     // [Int32]   number of tile entities
                 foreach (var keyValue in tileEntities)
                 {
                     var posInWorld = keyValue.Key;
                     var tileEntity = keyValue.Value;
                     var posInPrefab = new Vector3i(posInWorld.x - pos1.x, posInWorld.y - pos1.y, posInWorld.z - pos1.z);
 
-                    NetworkUtils.Write(writer, posInPrefab); // [3xInt32] position relative to prefab
-                    writer.Write((int) tileEntity.GetTileEntityType()); // [Int32]   TileEntityType enum
+                    NetworkUtils.Write(writer, posInPrefab);                          // [3xInt32] position relative to prefab
+                    writer.Write((int) tileEntity.GetTileEntityType());               // [Int32]   TileEntityType enum
                     tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic] tile entity data depending on type
                 }
             }
 
-            Log.Out($"Exported {tileEntities.Count} tile entities for prefab {fileName} from area {pos1} to {pos2}.");
+            Log.Out($"Exported {tileEntities.Count} tile entities for prefab {prefabName} from area {pos1} to {pos2}.");
         }
 
         /// <summary>
