@@ -9,7 +9,7 @@ namespace ScriptingMod.Commands
 {
     /*
      * TODO [P3]: Copy trader entity and protected area correctly
-     * TODO [P2]: Save origin location of prefab within .te or .xml and allow using it when importing
+     * TODO [P3]: Save origin location of prefab within .te or .xml and allow using it when importing
      */
 
     public class Export : ConsoleCmdAbstract
