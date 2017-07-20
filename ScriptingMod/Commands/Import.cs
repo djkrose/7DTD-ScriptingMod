@@ -11,14 +11,12 @@ using Enumerable = UniLinq.Enumerable;
 namespace ScriptingMod.Commands
 {
     /*
-     * TODO [P3]: Save prefabs in a subdirectory, but somehow allow also to load standard prefabs
-     * TODO [P3]: Allow omitting the x y z to import prefab at previous position.Previous position must be saved for this first!
-     * TODO [P2]: Tests outstanding:
-     * [ ] Check that overwritten land claim blocks disappear and the protection with them correctly
-     * [ ] Check that copied new land claim blocks found the claimed areas correctly
-     * [ ] Check if overwritten beds are unsetting player's home point correctly
-     * [ ] Check if imported beds are stored as new home point
-     * [x] Test importing using the current players location
+     * TODO [P3]: Save prefabs in a subdirectory, but somehow allow also to load standard prefabs. (or use default file name prefix)
+     * TODO [P3]: If a bed is overwritten during import, remove the player's home point
+     * TODO [P3]: Also reload adjacent chunks to fix terrain height gaps
+     * TODO [P3]: Enable/fix importing of spawners
+     * TODO [P2]: Replace loot placeholder blocks according to loot.xml
+     * TODO [P2]: Allow changing the directon into which the prefab is loaded (other north/east/up)
      */
 
     public class Import : ConsoleCmdAbstract
@@ -63,9 +61,7 @@ namespace ScriptingMod.Commands
             {
                 (string prefabName, Vector3i pos1, int rotate, bool all) = ParseParams(paramz, senderInfo);
 
-                // TODO [P2]: Either switch the following (TEST!) or pre-check if chunks are loaded
-                // Note: Cannot switch, because prefab.load creates tile entities for the containers
-
+                // Will not do anything if chunks are not loaded; so no need to pre-check
                 LoadPrefab(prefabName, pos1, rotate, out Vector3i pos2);
                 HashSet<Chunk> affectedChunks = GetAffectedChunks(pos1, pos2);
 

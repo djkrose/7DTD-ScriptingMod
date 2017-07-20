@@ -9,6 +9,7 @@ namespace ScriptingMod.Commands
 {
     /*
      * TODO [P3]: Copy trader entity and protected area correctly
+     * TODO [P2]: Save origin location of prefab within .te or .xml and allow using it when importing
      */
 
     public class Export : ConsoleCmdAbstract
@@ -47,8 +48,9 @@ namespace ScriptingMod.Commands
             {
                 (string prefabName, Vector3i pos1, Vector3i pos2) = ParseParams(paramz, senderInfo);
                 FixOrder(ref pos1, ref pos2);
-                SavePrefab(prefabName, pos1, pos2);
+                // Saving tile entities first, because that also checks if chunks are loaded
                 SaveTileEntities(prefabName, pos1, pos2);
+                SavePrefab(prefabName, pos1, pos2);
 
                 SdtdConsole.Instance.Output($"Prefab {prefabName} with block metadata exported. Area mapped from {pos1} to {pos2}.");
             }
