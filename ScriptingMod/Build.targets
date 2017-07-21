@@ -25,15 +25,26 @@
 
   <!-- Pack all files together into a distribution zip file -->
   <Target Name="MakeDistro">
+    <ReadLinesFromFile File="ModInfo.xml">
+      <Output TaskParameter="Lines" ItemName="ItemsFromFile" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <In>@(ItemsFromFile)</In>
+      <Pattern>&lt;Version value="([0-9.]+)"/&gt;</Pattern>
+      <Version>$([System.Text.RegularExpressions.Regex]::Match($(In), $(Pattern)).Groups[1].Value)</Version>
+      <ZipFile>$(DistroFolder)ScriptingMod_v$(Version).zip</ZipFile>
+      <DistroFolder>$(OutputPath)..\Distro\</DistroFolder>
+      <DistroModsFolder>$(DistroFolder)\Mods\</DistroModsFolder>
+      <DistroZipRoot>$(DistroModsFolder)$(TargetName)\</DistroZipRoot>
+    </PropertyGroup>
+    <RemoveDir Directories="$(DistroFolder)"/>
+    <MakeDir Directories="$(DistroZipRoot)"/>
     <ItemGroup>
       <CompressFiles Include="$(OutputPath)**\*.*" />
     </ItemGroup>
-    <PropertyGroup>
-      <DistroFolder>$(OutputPath)..\Distro\</DistroFolder>
-    </PropertyGroup>
-    <MakeDir Directories="$(DistroFolder)"/>  
-    <Exec Command="PowerShell -command Compress-Archive -Force @(CompressFiles, ',') $(DistroFolder)ScriptingMod.zip" />
-    <!--<Zip TaskAction="Create" CompressFiles="@(CompressFiles)" ZipFileName="$(DistroFolder)ScriptingMod.zip" RemoveRoot="$(OutputPath)"/>-->
+    <Copy SourceFiles="@(CompressFiles)" DestinationFiles="@(CompressFiles->'$(DistroZipRoot)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Exec Command="PowerShell -command Compress-Archive -Force -Path $(DistroFolder)\* -DestinationPath $(DistroFolder)$(ZipFile)" />
+    <RemoveDir Directories="$(DistroZipRoot).."/>
   </Target>
   
   <!-- Chain all previously defined targets after build -->
