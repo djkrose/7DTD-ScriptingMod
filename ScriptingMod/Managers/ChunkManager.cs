@@ -85,6 +85,9 @@ namespace ScriptingMod.Managers
             // ------ Force chunk reload ------
             foreach (var client in reloadforclients.Keys)
             {
+                if (!entities.ContainsKey(client.entityId))
+                    continue; // client is not an entity
+
                 var player = entities[client.entityId] as EntityPlayer;
                 if (player == null)
                     continue; // entity is not a player
