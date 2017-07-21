@@ -1,19 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-  <Import Project="ILMerge.targets" Condition="Exists('ILMerge.targets')" />
-
-  <!-- Verify build tasks -->
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props'))" />
-    <Error Condition="!Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets'))" />
-  </Target>
-
-  <!-- Copy all mod files into 7DTD Mods folder -->
-  <Target Name="InstallMod">
+  <!--
+  Extend the Visual Studio Build Process: https://msdn.microsoft.com/en-us/library/ms366724(v=vs.80).aspx
+  Build target order: https://stackoverflow.com/a/5927512/785111
+  -->
+  
+  <!-- Copy all mod files into 7DTD Mods folder after the build -->
+  <Target Name="InstallMod" AfterTargets="AfterBuild" Condition="Exists('$(ModsDirectory).')">
     <ItemGroup>
       <InstallFiles Include="$(OutputPath)**\*.*" />
     </ItemGroup>
@@ -23,8 +16,8 @@
     <Copy SourceFiles="@(InstallFiles)" DestinationFolder="$(ModsDirectory)$(ProjectName)\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
 
-  <!-- Pack all files together into a distribution zip file -->
-  <Target Name="MakeDistro">
+  <!-- Pack all files together into a distribution zip file after the build and confusion -->
+  <Target Name="PackMod" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
     <ReadLinesFromFile File="ModInfo.xml">
       <Output TaskParameter="Lines" ItemName="ItemsFromFile" />
     </ReadLinesFromFile>
@@ -32,25 +25,18 @@
       <In>@(ItemsFromFile)</In>
       <Pattern>&lt;Version value="([0-9.]+)"/&gt;</Pattern>
       <Version>$([System.Text.RegularExpressions.Regex]::Match($(In), $(Pattern)).Groups[1].Value)</Version>
-      <ZipFile>$(DistroFolder)ScriptingMod_v$(Version).zip</ZipFile>
-      <DistroFolder>$(OutputPath)..\Distro\</DistroFolder>
-      <DistroModsFolder>$(DistroFolder)\Mods\</DistroModsFolder>
-      <DistroZipRoot>$(DistroModsFolder)$(TargetName)\</DistroZipRoot>
+      <ZipPath>$(OutputPath)ScriptingMod_v$(Version).zip</ZipPath>
+      <TempFolder>$(OutputPath)temp\</TempFolder>
+      <ModsFolder>$(TempFolder)Mods\$(TargetName)\</ModsFolder>
     </PropertyGroup>
-    <RemoveDir Directories="$(DistroFolder)"/>
-    <MakeDir Directories="$(DistroZipRoot)"/>
+    <RemoveDir Directories="$(TempFolder)"/>
     <ItemGroup>
       <CompressFiles Include="$(OutputPath)**\*.*" />
     </ItemGroup>
-    <Copy SourceFiles="@(CompressFiles)" DestinationFiles="@(CompressFiles->'$(DistroZipRoot)%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Exec Command="PowerShell -command Compress-Archive -Force -Path $(DistroFolder)\* -DestinationPath $(DistroFolder)$(ZipFile)" />
-    <RemoveDir Directories="$(DistroZipRoot).."/>
+    <MakeDir Directories="$(ModsFolder)"/>
+    <Copy SourceFiles="@(CompressFiles)" DestinationFiles="@(CompressFiles->'$(ModsFolder)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Exec Command="PowerShell -command Compress-Archive -Force -Path $(TempFolder)* -DestinationPath $(ZipPath)" />
+    <RemoveDir Directories="$(TempFolder)"/>
   </Target>
   
-  <!-- Chain all previously defined targets after build -->
-  <Target Name="AfterBuild">
-    <CallTarget Targets="InstallMod" Condition="Exists('$(ModsDirectory).')" />
-    <CallTarget Targets="MakeDistro" Condition="'$(Configuration)' == 'Release'" />
-  </Target>
-
 </Project>

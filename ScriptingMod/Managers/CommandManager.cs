@@ -16,7 +16,7 @@ namespace ScriptingMod.Managers
      * TODO [P2]: Find private fields dynamically based on types and/or position.
      */
 
-    public static class CommandManager
+    internal static class CommandManager
     {
         private static FieldInfo _commandObjectsField;                // List<IConsoleCommand> SdtdConsole.TD
         private static FieldInfo _commandObjectPairsField;            // List<SdtdConsole.YU> SdtdConsole.OD

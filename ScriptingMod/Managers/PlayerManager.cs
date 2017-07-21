@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace ScriptingMod.Managers
 {
-    public class PlayerManager
+    internal class PlayerManager
     {
         /// <summary>
         /// Returns the RemoteClientInfo of the given senderInfo object, or throws an exception if it is null

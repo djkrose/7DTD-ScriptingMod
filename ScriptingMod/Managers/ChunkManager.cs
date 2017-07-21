@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace ScriptingMod.Managers
 {
-    public static class ChunkManager
+    internal static class ChunkManager
     {
 
         /// <summary>
