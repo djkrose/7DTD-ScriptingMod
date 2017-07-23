@@ -25,14 +25,14 @@ namespace ScriptingMod.ScriptEngines
 
         private void InitJs()
         {
-            FixZimeZoneInfoLocal();
+            FixTimeZoneInfoLocal();
             _jint = new Engine(cfg => cfg.AllowClr());
             _jint.SetValue("console", new Console());
             _jint.SetValue("require", new Action<object>(Require));
             InitValues();
         }
 
-        private void FixZimeZoneInfoLocal()
+        private void FixTimeZoneInfoLocal()
         {
             // Mono CLR's implementation of System.TimeZoneInfo.Local has a _bug that throws System.TimeZoneNotFoundException
             // on Windows: https://bugzilla.xamarin.com/show_bug.cgi?id=11817
@@ -67,6 +67,12 @@ namespace ScriptingMod.ScriptEngines
         public override void SetValue(string name, object value)
         {
             _jint.SetValue(name, value);
+        }
+
+        public void Reset()
+        {
+            _jint = null;
+            InitJs();
         }
 
         #region Methods exposed in JS
