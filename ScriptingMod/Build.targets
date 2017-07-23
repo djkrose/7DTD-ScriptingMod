@@ -5,19 +5,30 @@
   Build target order: https://stackoverflow.com/a/5927512/785111
   -->
   
+  <!-- Properties used in multiple targets -->
+  <PropertyGroup>
+    <ModsFolder>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\Mods\</ModsFolder>
+    <InstallFolder>$(ModsFolder)$(ProjectName)\</InstallFolder>
+  </PropertyGroup>
+  
+  <!-- Remove old release zip files, which would otherwise be installed as mod or get packed itself into the new release -->
+  <Target Name="RemoveZipMod" BeforeTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <ZipFiles Include="$(OutputPath)*.zip" />
+    </ItemGroup>
+    <Delete Files="@(ZipFiles)" />
+  </Target>
+  
   <!-- Copy all mod files into 7DTD Mods folder after the build -->
-  <Target Name="InstallMod" AfterTargets="AfterBuild" Condition="Exists('$(ModsDirectory).')">
+  <Target Name="InstallMod" AfterTargets="AfterBuild" Condition="Exists('$(ModsFolder).')">
     <ItemGroup>
       <InstallFiles Include="$(OutputPath)**\*.*" />
     </ItemGroup>
-    <PropertyGroup>
-      <ModsDirectory>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\Mods\</ModsDirectory>
-    </PropertyGroup>
-    <Copy SourceFiles="@(InstallFiles)" DestinationFolder="$(ModsDirectory)$(ProjectName)\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(InstallFiles)" DestinationFolder="$(InstallFolder)%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
 
-  <!-- Pack all files together into a distribution zip file after the build and confusion -->
-  <Target Name="PackMod" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+  <!-- Pack all files together into a distribution zip file after the build -->
+  <Target Name="ZipMod" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
     <ReadLinesFromFile File="ModInfo.xml">
       <Output TaskParameter="Lines" ItemName="ItemsFromFile" />
     </ReadLinesFromFile>
@@ -25,18 +36,29 @@
       <In>@(ItemsFromFile)</In>
       <Pattern>&lt;Version value="([0-9.]+)"/&gt;</Pattern>
       <Version>$([System.Text.RegularExpressions.Regex]::Match($(In), $(Pattern)).Groups[1].Value)</Version>
-      <ZipPath>$(OutputPath)ScriptingMod_v$(Version).zip</ZipPath>
+      <ReleaseZipPath>$(OutputPath)ScriptingMod_v$(Version).zip</ReleaseZipPath>
       <TempFolder>$(OutputPath)temp\</TempFolder>
-      <ModsFolder>$(TempFolder)Mods\$(TargetName)\</ModsFolder>
+      <TempInstallFolder>$(TempFolder)Mods\$(TargetName)\</TempInstallFolder>
     </PropertyGroup>
     <RemoveDir Directories="$(TempFolder)"/>
     <ItemGroup>
       <CompressFiles Include="$(OutputPath)**\*.*" />
     </ItemGroup>
-    <MakeDir Directories="$(ModsFolder)"/>
-    <Copy SourceFiles="@(CompressFiles)" DestinationFiles="@(CompressFiles->'$(ModsFolder)%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Exec Command="PowerShell -command Compress-Archive -Force -Path $(TempFolder)* -DestinationPath $(ZipPath)" />
+    <MakeDir Directories="$(TempInstallFolder)"/>
+    <Copy SourceFiles="@(CompressFiles)" DestinationFiles="@(CompressFiles->'$(TempInstallFolder)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Exec Command="PowerShell -command Compress-Archive -Force -Path $(TempFolder)* -DestinationPath $(ReleaseZipPath)" />
     <RemoveDir Directories="$(TempFolder)"/>
   </Target>
   
+  <!-- Remove the bin and obj folders for a full clean -->
+  <Target Name="CleanBinObj" AfterTargets="AfterClean">
+    <RemoveDir Directories="bin/" />
+    <RemoveDir Directories="obj/" />
+  </Target>
+
+  <!-- Remove installed mod from 7dtd as part of clean -->
+  <Target Name="CleanInstalledMod" AfterTargets="AfterClean" Condition="Exists('$(ModsFolder).')">
+    <RemoveDir Directories="$(InstallFolder)" />
+  </Target>
+
 </Project>
