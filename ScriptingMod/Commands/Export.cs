@@ -31,7 +31,7 @@ namespace ScriptingMod.Commands
             // ----------------------------------(max length: 100 char)--------------------------------------------|
             return $@"
                 Exports an area as prefab into the /Data/Prefabs folder. Additional block metadata like container
-                content, sign texts, ownership, etc. is stored in a separate ""tile entity"" file ({Constants.TitEntityFileExtension}).
+                content, sign texts, ownership, etc. is stored in a separate ""tile entity"" file ({Constants.TileEntityFileExtension}).
                 Usage:
                     1. dj-export <name> <x1> <y1> <z1> <x2> <y2> <z2>
                     2. dj-export
@@ -135,7 +135,7 @@ namespace ScriptingMod.Commands
                 }
             }
 
-            var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + Constants.TitEntityFileExtension);
+            var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + Constants.TileEntityFileExtension);
 
             // Save all tile entities
             using (var writer = new BinaryWriter(new FileStream(filePath, FileMode.Create)))

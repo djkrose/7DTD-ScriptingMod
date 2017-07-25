@@ -40,7 +40,7 @@ namespace ScriptingMod.Commands
             return $@"
                 Imports a prefab from the folder /Data/Prefabs into the world. With the optional parameter ""/all""
                 additional block metadata like container content, sign texts, ownership, etc. is also restored. For
-                this to work the prefab must be exported with dj-export and include a ""tile entity"" file ({Constants.TitEntityFileExtension}).
+                this to work the prefab must be exported with dj-export and include a ""tile entity"" file ({Constants.TileEntityFileExtension}).
                 The prefab is placed facing north/east/up from the given position.
                 Rotation can be 0 = unmodified, 1 = 90° right, 2 = 180°, 3 = 270° right.
                 Usage:
@@ -118,7 +118,7 @@ namespace ScriptingMod.Commands
             // Verify existence and validity of tile entity file
             if (all)
             {
-                var fileName = prefabName + Constants.TitEntityFileExtension;
+                var fileName = prefabName + Constants.TileEntityFileExtension;
                 var filePath = Path.Combine(Constants.PrefabsFolder, fileName);
                 if (!File.Exists(filePath))
                     throw new FriendlyMessageException($"Could not find {fileName} in prefabs folder. This prefab does not have block metadata available, so you cannot use the /all option.");
@@ -203,7 +203,7 @@ namespace ScriptingMod.Commands
 
         private static void LoadTileEntities(string prefabName, Vector3i pos1, Vector3i pos2, int rotate)
         {
-            var filePath     = Path.Combine(Constants.PrefabsFolder, prefabName + Constants.TitEntityFileExtension);
+            var filePath     = Path.Combine(Constants.PrefabsFolder, prefabName + Constants.TileEntityFileExtension);
             var world        = GameManager.Instance.World;
             var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
             int tileEntitiyCount;
@@ -211,7 +211,7 @@ namespace ScriptingMod.Commands
             // Read all tile entities from file into dictionary
             using (var reader = new BinaryReader(new FileStream(filePath, FileMode.Open)))
             {
-                VerifyTileEntityHeader(reader, prefabName + Constants.TitEntityFileExtension);
+                VerifyTileEntityHeader(reader, prefabName + Constants.TileEntityFileExtension);
 
                 // See Assembly-CSharp::Chunk.read() -> search "tileentity.read"
                 tileEntitiyCount = reader.ReadInt32();                                      // [Int32]   number of tile entities
