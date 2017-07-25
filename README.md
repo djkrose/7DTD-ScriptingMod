@@ -65,6 +65,7 @@ console.log("Hello JavaScript World!");
 * Import/export prefabs <b>with container content, ownership, lock status, sign texts</b>, and all other metadata.<br>
   &ndash;&nbsp; Fully restore griefed bases with one command!<br>
   &ndash;&nbsp; Copy buildings from server to server or between server versions after world reset.
+* [more to come shortly]
 
 ## Download
 [coming in a few days]
@@ -86,17 +87,28 @@ console.log("Hello JavaScript World!");
 ## Source Code
 During this early phase of development the source code is not yet publicly available. The GitHub repository is just used for issue tracking and documentation. When the mod has reached stable status (version 1.0) the source code will be published and others are invited to contribute to it or use parts in their own mods.
 
-## Support
-Nice people like me might be able to help here:
- - [djkrose's Discord: #scriptingmod](https://discord.gg/y26jNDz)
- - [Official 7DTD Discord](https://discord.gg/taYNEUS)
+## Road Map
+The mod is still in early development and I want to add a lot more to it. Here are some ideas:
 
-Just remember: This software is provided free of charge, as is, without any guarantee or support. You are not *entitled* to support, nor is anyone liable for data loss. If it doesn't work for you, that is just bad luck. If data is lost, you should've made a backup.
+* Expose more standard game variables and functions to scripts through an easy ScriptingMod API with clear documentation
+* Many more example scripts in Lua and JavaScript to get you started more quickly
+* Event system to execute scripts based on game events like player logged in, player killed, bloodmoon starting,  etc.
+* Option to execute commands through chat messages rather than console commands, for instance /home or !home
+* Command to regenerate a custom area, for example to fix griefed areas and  refresh POI's
+* Integration with  https://7daystodie-servers.com/ voting system to execute custom scripts on player's vote
 
-The ScriptingMod is not affiliated with the official [7DTD game](http://store.steampowered.com/app/251570/7_Days_to_Die/) or with [The Fun Pimps](http://thefunpimps.com/) in any way.
+This is just a rough outline; everything is subject to change depending on your feedback, on feasibility, on my real life commitments, and simply on my  pleasure to continue in any direction or at all.
+
+## Contact
+Feedback is welcome! If you have any suggestions, questions, or concerns please send me a message:
+* [djkrose's Discord: #scriptingmod](https://discord.gg/y26jNDz)
+* [djkrose in 7DTD Forum](https://7daystodie.com/forums/private.php?do=newpm&amp;u=46733)
+ 
+For bugs and other specific issues please  use the [GitHub Issue Tracker](issues).
+
+Just remember: This software is provided free of charge, as is, without any guarantee or support. You are not *entitled* to support, nor is anyone but you liable for data loss. If it doesn't work, that is just bad luck. If data is lost, you should've made a backup.
 
 ## License
-
 [![Creative Commons License](https://i.creativecommons.org/l/by-nc/4.0/88x31.png)](http://creativecommons.org/licenses/by-nc/4.0/) djkrose's Scripting Mod is licensed under a [CC BY-NC 4.0](http://creativecommons.org/licenses/by-nc/4.0/). That means, you are free to use the mod and the source code (once published) for non-commercial purposes; just leave the credit notes intact.
 
-Of course, *The Fun Pimps* themselves are free to take over any part of the code into their awesome game!
+This mod is a private project and not affiliated with the official [7DTD game](http://store.steampowered.com/app/251570/7_Days_to_Die/) or with [The Fun Pimps](http://thefunpimps.com/) in any way.
