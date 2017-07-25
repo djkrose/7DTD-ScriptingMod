@@ -1,7 +1,7 @@
 # djkrose's Scripting Mod
 Adds scripting support and other useful functionality to 7 Days To Die dedicated server.
 
-<!-- [Download](#) | [Documentation](#) | [FAQ](#) |  [Discord Channel](https://discord.gg/y26jNDz) -->
+[**Download**](https://github.com/djkrose/7DTD-ScriptingMod/releases/latest)
 
 ## Scripting Examples
 
