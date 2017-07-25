@@ -67,9 +67,6 @@ console.log("Hello JavaScript World!");
   &ndash;&nbsp; Copy buildings from server to server or between server versions after world reset.
 * [more to come shortly]
 
-## Download
-[coming in a few days]
-
 ## Compatibility
 
  * **Dedicated Server** of [7 Days to Die](http://store.steampowered.com/app/251570/7_Days_to_Die/). The mod is not meant to be used with the desktop client.
