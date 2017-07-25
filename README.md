@@ -87,8 +87,8 @@ During this early phase of development the source code is not yet publicly avail
 ## Road Map
 The mod is still in early development and I want to add a lot more to it. Here are some ideas:
 
-* Expose more standard game variables and functions to scripts through an easy ScriptingMod API with clear documentation
-* Many more example scripts in Lua and JavaScript to get you started more quickly
+* Expose more game variables and functions to scripts through an easy ScriptingMod API with clear documentation
+* Many more example scripts in Lua and JavaScript to get you started quicker
 * Event system to execute scripts based on game events like player logged in, player killed, bloodmoon starting,  etc.
 * Option to execute commands through chat messages rather than console commands, for instance /home or !home
 * Command to regenerate a custom area, for example to fix griefed areas and  refresh POI's
@@ -101,8 +101,6 @@ Feedback is welcome! If you have any suggestions, questions, or concerns please 
 * [djkrose's Discord: #scriptingmod](https://discord.gg/y26jNDz)
 * [djkrose in 7DTD Forum](https://7daystodie.com/forums/private.php?do=newpm&amp;u=46733)
  
-For bugs and other specific issues please  use the [GitHub Issue Tracker](issues).
-
 Just remember: This software is provided free of charge, as is, without any guarantee or support. You are not *entitled* to support, nor is anyone but you liable for data loss. If it doesn't work, that is just bad luck. If data is lost, you should've made a backup.
 
 ## License
