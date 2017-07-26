@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ModInfo;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using ScriptingMod.Managers;
+using UnityEngine;
 
 namespace ScriptingMod.Commands
 {
@@ -34,13 +36,27 @@ namespace ScriptingMod.Commands
                 {
                     SdtdConsole.Instance.Output(Constants.ModNameFull);
                     SdtdConsole.Instance.Output("Could not load mod infos. Have you modified the ModInfo.xml?");
-                    return;
+                }
+                else
+                {
+                    SdtdConsole.Instance.Output(Constants.ModNameFull + " - Version " +modInfo.Version.Value);
+                    SdtdConsole.Instance.Output(modInfo.Description.Value);
+                    if (!string.IsNullOrEmpty(modInfo.Website.Value))
+                        SdtdConsole.Instance.Output("Website: " + modInfo.Website.Value);
                 }
 
-                SdtdConsole.Instance.Output($"{Constants.ModNameFull} - Version {modInfo.Version.Value}");
-                SdtdConsole.Instance.Output(modInfo.Description.Value);
-                if (!string.IsNullOrEmpty(modInfo.Website.Value))
-                    SdtdConsole.Instance.Output(modInfo.Website.Value);
+                SdtdConsole.Instance.Output("");
+
+                SdtdConsole.Instance.Output("Operating System: " + Environment.OSVersion);
+                SdtdConsole.Instance.Output("Unity version: " + Application.unityVersion);
+
+                var displayName = Type.GetType("Mono.Runtime")?.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static);
+                if (displayName != null)
+                    SdtdConsole.Instance.Output("Mono display name: " + displayName.Invoke(null, null));
+
+                var monoRuntimeVersion = Type.GetType("Mono.Runtime")?.Assembly.ImageRuntimeVersion;
+                if (monoRuntimeVersion != null)
+                    SdtdConsole.Instance.Output("Mono runtime version: " + monoRuntimeVersion);
             }
             catch (Exception ex)
             {
