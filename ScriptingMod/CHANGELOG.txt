@@ -1,0 +1,30 @@
+﻿Version 0.5
+
+
+
+
+Version 0.4 - compatible ONLY with 7DTD A16.1 (b1)
+
+- Built-in maintenance commands: dj-version, dj-reset-lua, dj-reset-js
+- Added obfuscation until source code is released
+
+
+Version 0.3-internal - compatible ONLY with 7DTD A16.1 (b1)
+
+- Update to A16.1 (b1)
+- Fixed bug where dj-import would throw exception when players with corrupt chunks are online
+- Two example scripts that show .Net and Unity access
+- Built-in export/import command for prefabs incl. full block metadata (containers, signs, doors, etc.)
+
+
+Version 0.2-internal - compatible ONLY with 7DTD A16.0 (b1)
+
+- Added support for JavaScript
+- Added some simple example scripts
+
+
+Version 0.1-internal - compatible ONLY with 7DTD A16.0 (b1)
+
+- First basic mod infrastructure
+- Dynamic command loading
+- Added support for Lua script
