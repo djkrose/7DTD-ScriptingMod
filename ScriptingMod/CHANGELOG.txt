@@ -1,6 +1,6 @@
-﻿Version 0.5
+﻿Version 0.5 - tested with 7DTD A16.1 (b1)
 
-
+- Improved compatibility with Assembly-CSharp.dll to (hopefully) support future versions
 
 
 Version 0.4 - compatible ONLY with 7DTD A16.1 (b1)
