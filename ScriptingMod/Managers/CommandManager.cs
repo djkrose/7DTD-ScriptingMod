@@ -6,29 +6,29 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using JetBrains.Annotations;
+using ObjectDumper;
 using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Managers
 {
-    /*
-     * TODO [P2]: Find private fields dynamically based on types and/or position.
-     */
 
     internal static class CommandManager
     {
-        private static FieldInfo _commandObjectsField;                // List<IConsoleCommand> SdtdConsole.TD
-        private static FieldInfo _commandObjectPairsField;            // List<SdtdConsole.YU> SdtdConsole.OD
-        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private static Type      _commandObjectPairType;              // private struct YU (last in source)
-        private static FieldInfo _commandObjectsReadOnlyField;        // ReadOnlyCollection<IConsoleCommand> SdtdConsole.ZD
-        private static FieldInfo _commandObjectPair_CommandField;     // string SdtdConsole.YU.LD
-        private static ConstructorInfo _commandObjectPairConstructor; // SdtdConsole.YU(string _param1, IConsoleCommand _param2)
+        private static FieldInfo _commandObjectsField;                 // List<IConsoleCommand> SdtdConsole.TD
+        private static FieldInfo _commandObjectPairsField;             // List<SdtdConsole.YU> SdtdConsole.OD
+                                                                       // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+        private static Type      _commandObjectPairType;               // private struct YU (last in source)
+        private static FieldInfo _commandObjectsReadOnlyField;         // ReadOnlyCollection<IConsoleCommand> SdtdConsole.ZD
+        private static FieldInfo _commandObjectPair_CommandField;      // string SdtdConsole.YU.LD
+        private static ConstructorInfo _commandObjectPair_Constructor; // SdtdConsole.YU(string _param1, IConsoleCommand _param2)
 
         /// <summary>
         /// List of command objects.
         /// </summary>
+        [NotNull]
         private static List<IConsoleCommand> _commandObjects => (List<IConsoleCommand>)_commandObjectsField.GetValue(SdtdConsole.Instance)
             ?? throw new NullReferenceException("Received null value through reflection from _commandObjects.");
 
@@ -36,42 +36,76 @@ namespace ScriptingMod.Managers
         /// List of pairs of (command name, command object), one for each command name.
         /// Must use type-unspecific IList here instead of List&lt;something&gt;
         /// </summary>
+        [NotNull]
         private static IList _commandObjectPairs => (IList)_commandObjectPairsField.GetValue(SdtdConsole.Instance)
             ?? throw new NullReferenceException("Received null value through reflection for _commandObjectPairs.");
 
         static CommandManager()
         {
-            // Hard-coded reflection names are only valid for Alpha 16 b135!!!
             try
             {
+                // Get references to private fields/methods/types by their signatures,
+                // because the internal names change on every 7DTD release due to obfuscation.
+
+                // One way to do it:
+                //_commandObjectsField = typeof(SdtdConsole).GetMemberByPattern(@"^System\.Collections\.Generic\.List`1\[IConsoleCommand\] [a-zA-Z0-9_]+$").First() as FieldInfo;
+                //if (_commandObjectsField == null)
+                //    throw new TargetException(
+                //        "Could not find field through reflection: _commandObjectsField");
+                //Log.Dump(_commandObjectsField);
+
+                // Another way:
+                Log.Debug("Getting private field from SdtdConsole: private List<IConsoleCommand> TD ...");
                 _commandObjectsField = typeof(SdtdConsole)
-                    .GetField("TD", BindingFlags.NonPublic | BindingFlags.Instance);
+                    .GetFieldsByType(typeof(List<IConsoleCommand>))
+                    .Single();
 
-                _commandObjectPairsField = typeof(SdtdConsole)
-                    .GetField("OD", BindingFlags.NonPublic | BindingFlags.Instance);
+                // Old way:
+                //_commandObjectsField = typeof(SdtdConsole)
+                //    .GetField("TD", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                _commandObjectsReadOnlyField = typeof(SdtdConsole)
-                    .GetField("ZD", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (_commandObjectsReadOnlyField == null)
-                    throw new TargetException(
-                        "Could not find field through reflection: _commandObjectsReadOnlyField");
+                // Example for generic types
+                //Log.Debug("Getting private field from SdtdConsole: private List<SdtdConsole.YU> OD ...");
+                //Type generic = typeof(List<>);
+                //Log.Dump(generic);
+                //Type constructed = generic.MakeGenericType(new Type[] {typeof(string)});
+                //Log.Dump(constructed);
 
+                Log.Debug($"Getting private nested struct YU from {typeof(SdtdConsole)} that contains field: public IConsoleCommand DD ...");
                 _commandObjectPairType = typeof(SdtdConsole)
-                    .GetNestedType("YU", BindingFlags.NonPublic);
-                // ReSharper disable once JoinNullCheckWithUsage
-                if (_commandObjectPairType == null)
-                    throw new TargetException("Could not find type through reflection: commandObjectPairType");
+                    .GetNestedTypesByContainingField(typeof(IConsoleCommand))
+                    .Single();
 
-                _commandObjectPairConstructor = _commandObjectPairType.GetConstructor(
+                Log.Debug($"Getting private field from {typeof(SdtdConsole)}: private List<SdtdConsole.YU> OD ...");
+                _commandObjectPairsField = typeof(SdtdConsole)
+                    .GetFieldsByType(typeof(List<>).MakeGenericType(_commandObjectPairType))
+                    .Single();
+
+                //_commandObjectPairsField = typeof(SdtdConsole)
+                //    .GetField("OD", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                Log.Debug($"Getting private field from {typeof(SdtdConsole)}: private ReadOnlyCollection<IConsoleCommand> ZD ...");
+                _commandObjectsReadOnlyField = typeof(SdtdConsole)
+                    .GetFieldsByType(typeof(ReadOnlyCollection<IConsoleCommand>))
+                    .Single();
+
+                //_commandObjectPairType = typeof(SdtdConsole)
+                //    .GetNestedType("YU", BindingFlags.NonPublic);
+                //// ReSharper disable once JoinNullCheckWithUsage
+                //if (_commandObjectPairType == null)
+                //    throw new TargetException("Could not find type through reflection: commandObjectPairType");
+
+                Log.Debug($"Getting constructor of {_commandObjectPairType} ...");
+                _commandObjectPair_Constructor = _commandObjectPairType.GetConstructor(
                     BindingFlags.Public | BindingFlags.Instance, null,
                     new[] {typeof(string), typeof(IConsoleCommand)}, null);
-                if (_commandObjectPairConstructor == null)
-                    throw new TargetException(
-                        "Could not find constructor through reflection: _commandObjectPairConstructor");
+                if (_commandObjectPair_Constructor == null)
+                    throw new TargetException($"Could not find constructor of {_commandObjectPairType}.");
 
-                _commandObjectPair_CommandField = _commandObjectPairType.GetField("LD");
-                if (_commandObjectPair_CommandField == null)
-                    throw new TargetException("Could not find field through reflection: commandObjectPairType");
+                Log.Debug($"Getting private field from {_commandObjectPairType}: public string LD ...");
+                _commandObjectPair_CommandField = _commandObjectPairType
+                    .GetFieldsByType(typeof(string))
+                    .Single();
             }
             catch (Exception ex)
             {
@@ -111,7 +145,7 @@ namespace ScriptingMod.Managers
                 if (CommandExists(command))
                     throw new ArgumentException($"The command \"{command}\" already exists and cannot be registered twice.");
 
-                object commandObjectPair = _commandObjectPairConstructor.Invoke(new object[] {command, commandObject});
+                object commandObjectPair = _commandObjectPair_Constructor.Invoke(new object[] {command, commandObject});
                 AddSortedCommandObjectPair(commandObjectPair);
             }
 
