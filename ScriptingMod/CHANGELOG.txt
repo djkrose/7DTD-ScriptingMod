@@ -1,6 +1,7 @@
 ﻿Version 0.5 - tested with 7DTD A16.1 (b1)
 
 - Improved compatibility with Assembly-CSharp.dll to (hopefully) support future versions
+- Added LICENSE.txt to credit the mod and all included third-party software properly
 
 
 Version 0.4 - compatible ONLY with 7DTD A16.1 (b1)

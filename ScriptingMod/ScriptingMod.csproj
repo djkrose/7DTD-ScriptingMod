@@ -109,8 +109,12 @@
     <Compile Include="ScriptEngines\ScriptEngine.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="CHANGELOG.txt" />
-    <Content Include="LICENSE.txt" />
+    <Content Include="CHANGELOG.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="scripts\js-test.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
