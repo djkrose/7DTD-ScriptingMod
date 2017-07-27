@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using ObjectDumper;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.ScriptEngines
@@ -120,7 +119,7 @@ namespace ScriptingMod.ScriptEngines
 
         protected virtual void Dump(object obj, int depth = 4)
         {
-            var output = obj.DumpToString("object", new DumpOptions() { MaxDepth = depth });
+            var output = ObjectDumper.Dump(obj, depth);
 
             if (output.Length > 1024)
             {

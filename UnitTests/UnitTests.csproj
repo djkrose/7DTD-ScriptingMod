@@ -67,10 +67,19 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="LogLibrary">
+      <HintPath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed\LogLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework, Version=3.7.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
       <HintPath>..\packages\NUnit.3.7.1\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="UnityEngine">
+      <HintPath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -81,15 +90,10 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
-    <Compile Include="ObjectDumperExtensionsTests.cs" />
+    <Compile Include="ObjectDumperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ObjectDumper\ObjectDumper.csproj">
-      <Project>{3fdf28de-bfcf-439a-9430-0d564f1e6ec8}</Project>
-      <Name>ObjectDumper</Name>
-      <Aliases>unmerged</Aliases>
-    </ProjectReference>
     <ProjectReference Include="..\ScriptingMod\ScriptingMod.csproj">
       <Project>{57c91715-4294-43e8-b1cd-94f4ece2a7a3}</Project>
       <Name>ScriptingMod</Name>

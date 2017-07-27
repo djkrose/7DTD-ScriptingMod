@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using NLua;
 using NLua.Exceptions;
-using ObjectDumper;
 
 namespace ScriptingMod.ScriptEngines
 {

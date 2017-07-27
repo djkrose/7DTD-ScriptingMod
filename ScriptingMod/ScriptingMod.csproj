@@ -80,6 +80,7 @@
     <Compile Include="Api.cs" />
     <Compile Include="Commands\ResetJs.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="ObjectDumper.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="Commands\ResetLua.cs" />
     <Compile Include="Commands\Version.cs" />
     <Compile Include="Log.cs" />
+    <Compile Include="ObjectDumperOptions.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -108,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="CHANGELOG.txt" />
+    <Content Include="LICENSE.txt" />
     <Content Include="scripts\js-test.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -134,12 +137,6 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ObjectDumper\ObjectDumper.csproj">
-      <Project>{3fdf28de-bfcf-439a-9430-0d564f1e6ec8}</Project>
-      <Name>ObjectDumper</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx">

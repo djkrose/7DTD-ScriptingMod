@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
-using ObjectDumper;
 using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
