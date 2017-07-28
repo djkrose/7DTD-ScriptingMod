@@ -11,9 +11,6 @@ namespace ScriptingMod
     {
         public const string ModNameFull             = "djkrose's Scripting Mod";
         public const string ModInfoFile             = "ModInfo.xml";
-        public const string TileEntityFileMarker    = "7DTD-TE";
-        public const int    TileEntityFileVersion   = 2;
-        public const string TileEntityFileExtension = ".te";
 
         public static readonly string ScriptingModFolder = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Api)).Location);
         public static readonly string ScriptsFolder      = Path.Combine(ScriptingModFolder, "scripts");

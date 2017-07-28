@@ -80,6 +80,7 @@
     <Compile Include="Api.cs" />
     <Compile Include="Commands\ResetJs.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="FakeDataStream.cs" />
     <Compile Include="ObjectDumper.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />

@@ -9,11 +9,14 @@ namespace ScriptingMod.Commands
 {
     /*
      * TODO [P3]: Copy trader entity and protected area correctly
-     * TODO [P3]: Save origin location of prefab within .te or .xml and allow using it when importing
      */
 
     public class Export : ConsoleCmdAbstract
     {
+        internal const string TileEntityFileMarker    = "7DTD-TE";
+        internal const string TileEntityFileExtension = ".te";
+        internal const int    TileEntityFileVersion   = 3;
+
         private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
 
         public override string[] GetCommands()
@@ -31,7 +34,7 @@ namespace ScriptingMod.Commands
             // ----------------------------------(max length: 100 char)--------------------------------------------|
             return $@"
                 Exports an area as prefab into the /Data/Prefabs folder. Additional block metadata like container
-                content, sign texts, ownership, etc. is stored in a separate ""tile entity"" file ({Constants.TileEntityFileExtension}).
+                content, sign texts, ownership, etc. is stored in a separate ""tile entity"" file ({TileEntityFileExtension}).
                 Usage:
                     1. dj-export <name> <x1> <y1> <z1> <x2> <y2> <z2>
                     2. dj-export
@@ -83,8 +86,8 @@ namespace ScriptingMod.Commands
             else
             {
                 try {
-                    pos1 = new Vector3i(int.Parse(paramz[1]), int.Parse(paramz[2]), int.Parse(paramz[3]));
-                    pos2 = new Vector3i(int.Parse(paramz[4]), int.Parse(paramz[5]), int.Parse(paramz[6]));
+                    pos1 = new Vector3i(Int32.Parse(paramz[1]), Int32.Parse(paramz[2]), Int32.Parse(paramz[3]));
+                    pos2 = new Vector3i(Int32.Parse(paramz[4]), Int32.Parse(paramz[5]), Int32.Parse(paramz[6]));
                 } catch (Exception) {
                     throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
                 }
@@ -128,32 +131,34 @@ namespace ScriptingMod.Commands
                         var tileEntity = chunk.GetTileEntity(posInChunk);
 
                         if (tileEntity == null)
-                            continue; // so container/door/sign block
+                            continue; // no container/door/sign block
 
                         tileEntities.Add(posInWorld, tileEntity);
                     }
                 }
             }
 
-            var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + Constants.TileEntityFileExtension);
+            var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + TileEntityFileExtension);
 
             // Save all tile entities
             using (var writer = new BinaryWriter(new FileStream(filePath, FileMode.Create)))
             {
-                writer.Write(Constants.TileEntityFileMarker);                         // [string]  constant "7DTD-TE"
-                writer.Write(Constants.TileEntityFileVersion);                        // [Int32]   file version number
+                writer.Write(TileEntityFileMarker);                                   // [string]   constant "7DTD-TE"
+                writer.Write(TileEntityFileVersion);                                  // [Int32]    file version number
+                NetworkUtils.Write(writer, pos1);                                     // [Vector3i] original area worldPos1
+                NetworkUtils.Write(writer, pos2);                                     // [Vector3i] original area worldPos2
 
                 // see Assembly-CSharp::Chunk.write() -> search "tileentity.write"
-                writer.Write(tileEntities.Count);                                     // [Int32]   number of tile entities
+                writer.Write(tileEntities.Count);                                     // [Int32]    number of tile entities
                 foreach (var keyValue in tileEntities)
                 {
                     var posInWorld = keyValue.Key;
                     var tileEntity = keyValue.Value;
                     var posInPrefab = new Vector3i(posInWorld.x - pos1.x, posInWorld.y - pos1.y, posInWorld.z - pos1.z);
 
-                    NetworkUtils.Write(writer, posInPrefab);                          // [3xInt32] position relative to prefab
-                    writer.Write((int) tileEntity.GetTileEntityType());               // [Int32]   TileEntityType enum
-                    tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic] tile entity data depending on type
+                    NetworkUtils.Write(writer, posInPrefab);                          // [3xInt32]  position relative to prefab
+                    writer.Write((int) tileEntity.GetTileEntityType());               // [Int32]    TileEntityType enum
+                    tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic]  tile entity data depending on type
                 }
             }
 

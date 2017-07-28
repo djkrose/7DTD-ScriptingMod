@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
@@ -21,8 +24,29 @@ namespace ScriptingMod.Commands
 
     public class Import : ConsoleCmdAbstract
     {
-        private const int minSupportedVersion = 2;
-        private const int maxSupportedVersion = 2;
+        private static FieldInfo _wireChildrenField; // TileEntityPowered -> private List<Vector3i> ADD
+        private static FieldInfo _wireParentField; // TileEntityPowered -> private Vector3i IDD
+
+        static Import()
+        {
+            try
+            {
+                // Get references to private fields/methods/types by their signatures,
+                // because the internal names change on every 7DTD release due to obfuscation.
+                Log.Debug("Getting private field from TileEntityPowered: private List<Vector3i> ADD ...");
+                _wireChildrenField = typeof(TileEntityPowered).GetFieldsByType(typeof(List<Vector3i>)).Single();
+
+                Log.Debug("Getting private field from TileEntityPowered: private Vector3i IDD ...");
+                _wireParentField = typeof(TileEntityPowered).GetFieldsByType(typeof(Vector3i)).Single();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error while establishing references to 7DTD's \"private parts\". Your game version might not be compatible with this Scripting Mod version." + Environment.NewLine + ex);
+                throw;
+            }
+
+            Log.Debug(typeof(Import) + " established reflection references.");
+        }
 
         public override string[] GetCommands()
         {
@@ -40,7 +64,7 @@ namespace ScriptingMod.Commands
             return $@"
                 Imports a prefab from the folder /Data/Prefabs into the world. With the optional parameter ""/all""
                 additional block metadata like container content, sign texts, ownership, etc. is also restored. For
-                this to work the prefab must be exported with dj-export and include a ""tile entity"" file ({Constants.TileEntityFileExtension}).
+                this to work the prefab must be exported with dj-export and include a ""tile entity"" file ({Export.TileEntityFileExtension}).
                 The prefab is placed facing north/east/up from the given position.
                 Rotation can be 0 = unmodified, 1 = 90° right, 2 = 180°, 3 = 270° right.
                 Usage:
@@ -118,7 +142,7 @@ namespace ScriptingMod.Commands
             // Verify existence and validity of tile entity file
             if (all)
             {
-                var fileName = prefabName + Constants.TileEntityFileExtension;
+                var fileName = prefabName + Export.TileEntityFileExtension;
                 var filePath = Path.Combine(Constants.PrefabsFolder, fileName);
                 if (!File.Exists(filePath))
                     throw new FriendlyMessageException($"Could not find {fileName} in prefabs folder. This prefab does not have block metadata available, so you cannot use the /all option.");
@@ -201,17 +225,40 @@ namespace ScriptingMod.Commands
             Log.Out($"Imported prefab {prefabName} into area {pos1} to {pos2}.");
         }
 
+        //private void ReadInt32(byte[] buffer, int offset, int value)
+        //{
+        //    Log.Debug($"Modifying tile entity read buffer. Returning {value} at position {Position - 4} ...");
+        //    buffer[offset + 0] = (byte)value;
+        //    buffer[offset + 1] = (byte)(value >> 8);
+        //    buffer[offset + 2] = (byte)(value >> 16);
+        //    buffer[offset + 3] = (byte)(value >> 24);
+        //}
+
+        // File format expected:
+        // 0..1     [UInt16] tile entity format version
+        // 2..5     [Int32]  TileEntity.localChunkPos.x
+        // 6..9     [Int32]  TileEntity.localChunkPos.y
+        // 10..13   [Int32]  TileEntity.localChunkPos.x
+
+
         private static void LoadTileEntities(string prefabName, Vector3i pos1, Vector3i pos2, int rotate)
         {
-            var filePath     = Path.Combine(Constants.PrefabsFolder, prefabName + Constants.TileEntityFileExtension);
+            var filePath     = Path.Combine(Constants.PrefabsFolder, prefabName + Export.TileEntityFileExtension);
             var world        = GameManager.Instance.World;
             var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
             int tileEntitiyCount;
 
-            // Read all tile entities from file into dictionary
-            using (var reader = new BinaryReader(new FileStream(filePath, FileMode.Open)))
+            // Read all tile entities from file into dictionary using a fake reader inbetween to allow modifying read data
+            var fakeReader = new FakeDataStream(new FileStream(filePath, FileMode.Open));
+            using (var reader = new BinaryReader(fakeReader))
             {
-                VerifyTileEntityHeader(reader, prefabName + Constants.TileEntityFileExtension);
+                // TODO: Check if TileEntity.entityId needs to be changed/recreated on read to avoid duplicate entityId's
+                // TODO: Adjust localpos during read
+
+                VerifyTileEntityHeader(reader, prefabName + Export.TileEntityFileExtension);
+
+                var originalPos1 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos1
+                var originalPos2 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos2
 
                 // See Assembly-CSharp::Chunk.read() -> search "tileentity.read"
                 tileEntitiyCount = reader.ReadInt32();                                      // [Int32]   number of tile entities
@@ -227,8 +274,20 @@ namespace ScriptingMod.Commands
 
                     var tileEntityType = (TileEntityType)reader.ReadInt32();                // [Int32]   TileEntityType enum
                     TileEntity tileEntity = TileEntity.Instantiate(tileEntityType, chunk ?? new Chunk()); // read(..) fails if chunk is null
+
+                    // Instruct the stream to fake the localChunkPos during read to use the new posInChunk instead.
+                    // This is necessary because the localChunkPos is used IMMEDIATEY during read to initialize all other sorts of data,
+                    // like creating item entities for items in powered blocks (see TileEntityPowerSource.read).
+                    byte[] fakeBytes = new byte[3 * sizeof(int)];   // for Vector3i = x, y, z
+                    NetworkUtils.Write(new BinaryWriter(new MemoryStream(fakeBytes)), posInChunk);
+                    fakeReader.FakeRead(fakeBytes, sizeof(ushort)); // delay for reading file version in TileEntity.read;
+
                     tileEntity.read(reader, TileEntity.StreamModeRead.Persistency);         // [dynamic] tile entity data depending on type
-                    tileEntity.localChunkPos = posInChunk; // adjust to new location
+
+                    if (tileEntity.localChunkPos != posInChunk)
+                        Log.Warning($"Tile entity {tileEntity} should have localChunkPos {posInChunk} but has {tileEntity.localChunkPos} instead!");
+
+                    AdjustTileEntitiy(tileEntity, posInPrefab, pos1, originalPos1);
 
                     // Check cannot be done earlier, because we MUST do the file reads regardless in order to continue reading
                     if (chunk == null)
@@ -236,6 +295,8 @@ namespace ScriptingMod.Commands
                         Log.Warning($"Could not import tile entity for block {posInWorld} because the chunk is not loaded.");
                         continue;
                     }
+
+                    Log.Debug("imported tile entity: " + ObjectDumper.Dump(tileEntity, 2));
 
                     tileEntities.Add(posInWorld, tileEntity);
                 }
@@ -269,6 +330,32 @@ namespace ScriptingMod.Commands
             Log.Out($"Imported {tileEntitiyCount} tile entities for prefab {prefabName} into area {pos1} to {pos2}.");
         }
 
+        private static void AdjustTileEntitiy(TileEntity tileEntity, Vector3i posInPrefab, Vector3i pos1, Vector3i originalPos1)
+        {
+            // No need to adjust anything if TE stays at same position
+            if (pos1 == originalPos1)
+                return;
+
+            // Adjust wire endpoints from original worldPos to new worldPos
+            var posDelta = pos1 - originalPos1;
+            var tileEntityPowered = tileEntity as TileEntityPowered;
+            if (tileEntityPowered != null)
+            {
+                // Adjust child wires
+                List<Vector3i> wireChildren = (List<Vector3i>)_wireChildrenField.GetValue(tileEntityPowered) ?? new List<Vector3i>();
+                for (int i = 0; i < wireChildren.Count; i++)
+                {
+                    Log.Debug($"Changing child wire on block {pos1 + posInPrefab} from {wireChildren[i]} to {wireChildren[i] + posDelta}");
+                    wireChildren[i] += posDelta;
+                }
+
+                // Adjust parent wire
+                var parentWire = (Vector3i) _wireParentField.GetValue(tileEntityPowered);
+                Log.Debug($"Changing parent wire on block {pos1 + posInPrefab} from {parentWire} to {parentWire + posDelta}");
+                _wireParentField.SetValue(tileEntityPowered, parentWire + posDelta);
+            }
+        }
+
         /// <summary>
         /// Reads and verifies the tile entity file's header. On errors, an exception is thrown.
         /// The readerposition is advanced in the file accordingly.
@@ -279,14 +366,12 @@ namespace ScriptingMod.Commands
         private static void VerifyTileEntityHeader(BinaryReader reader, string fileName)
         {
             var fileMarker = reader.ReadString();
-            if (fileMarker != Constants.TileEntityFileMarker)                           // [string]  constant "7DTD-TE"
+            if (fileMarker != Export.TileEntityFileMarker)                           // [string]  constant "7DTD-TE"
                 throw new FriendlyMessageException($"File {fileName} is not a valid tile entity file for 7DTD.");
 
             var fileVersion = reader.ReadInt32();                                       // [Int32]   file version number
-            if (fileVersion < minSupportedVersion)
-                throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {minSupportedVersion} or higher is supported.");
-            if (fileVersion > maxSupportedVersion)
-                throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {maxSupportedVersion} or lower is supported.");
+            if (fileVersion != Export.TileEntityFileVersion)
+                throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {Export.TileEntityFileVersion} is supported.");
         }
 
         /// <summary>

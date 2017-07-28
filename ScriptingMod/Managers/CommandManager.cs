@@ -112,7 +112,7 @@ namespace ScriptingMod.Managers
                 throw;
             }
 
-            Log.Debug("Established references to 7DTD's \"private parts\" through reflection.");
+            Log.Debug(typeof(CommandManager) + " established reflection references.");
         }
 
 
