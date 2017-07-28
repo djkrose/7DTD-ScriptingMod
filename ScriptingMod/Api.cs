@@ -27,7 +27,6 @@ namespace ScriptingMod
                 ScriptManager.LoadCommands();
                 TryRestoreModInfo();
                 Log.Out($"Done initializing {Constants.ModNameFull}.");
-                Log.Dump(GameManager.Instance);
             }
             catch (Exception e)
             {

@@ -33,11 +33,18 @@ namespace ScriptingMod.Managers
             EntityPlayer ep = GameManager.Instance.World.Players.dict.GetValue(ci.entityId)
                 ?? throw new FriendlyMessageException("Unable to get your position.");
 
+            // Do NOT use "ep.position" because that doesn't consider underground positions when using noclip (thanks StompiNZ)
+            //return new Vector3i(
+            //    (int)Math.Floor(ep.position.x),
+            //    (int)Math.Floor(ep.position.y),
+            //    (int)Math.Floor(ep.position.z));
+
             // Do NOT use "new Vector3i(Vector3 v)", because it calculates incorrectly by just casting to int, which rounds UP on negative numbers.
+
             return new Vector3i(
-                (int)Math.Floor(ep.position.x),
-                (int)Math.Floor(ep.position.y),
-                (int)Math.Floor(ep.position.z));
+                (int)Math.Floor(ep.serverPos.x / 32f),
+                (int)Math.Floor(ep.serverPos.y / 32f),
+                (int)Math.Floor(ep.serverPos.z / 32f));
         }
 
         /// <summary>
