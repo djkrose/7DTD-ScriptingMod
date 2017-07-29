@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.Managers;
@@ -15,7 +16,7 @@ namespace ScriptingMod.Commands
     {
         internal const string TileEntityFileMarker    = "7DTD-TE";
         internal const string TileEntityFileExtension = ".te";
-        internal const int    TileEntityFileVersion   = 3;
+        internal const int    TileEntityFileVersion   = 4;
 
         private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
 
@@ -159,6 +160,29 @@ namespace ScriptingMod.Commands
                     NetworkUtils.Write(writer, posInPrefab);                          // [3xInt32]  position relative to prefab
                     writer.Write((int) tileEntity.GetTileEntityType());               // [Int32]    TileEntityType enum
                     tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic]  tile entity data depending on type
+
+                    var tileEntityPowered = tileEntity as TileEntityPowered;
+                    if (tileEntityPowered != null)
+                    {
+                        writer.Write(PowerManager.FileVersion);                       // [byte]     power item format version
+                        var powerItem = tileEntityPowered.GetPowerItem()
+                            ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
+
+
+                        //var oldPrio = Thread.CurrentThread.Priority;
+                        //Thread.CurrentThread.Priority = ThreadPriority.Highest;
+
+                        //var oldChildren = powerItem.Children;
+                        //powerItem.Children = new List<PowerItem>();
+                        powerItem.write(writer);                                      // [dynamic]  power item
+                        //powerItem.Children = oldChildren;
+
+                        //Thread.CurrentThread.Priority = oldPrio;
+
+
+                        Log.Debug("Exported a PowerItem attached to tile entity: " + tileEntity);
+                        Log.Dump(powerItem, 2);
+                    }
                 }
             }
 

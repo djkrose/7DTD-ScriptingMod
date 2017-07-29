@@ -28,6 +28,13 @@ namespace ScriptingMod
 #endif
         }
 
+        public static void Dump(object obj, int depth)
+        {
+#if DEBUG
+            Log.Debug(ObjectDumper.Dump(obj, depth));
+#endif
+        }
+
         public static void Debug(string _format, params object[] _values)
         {
 #if DEBUG

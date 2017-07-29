@@ -81,33 +81,34 @@ namespace ScriptingMod.Commands
 
         public override void Execute(List<string> paramz, CommandSenderInfo senderInfo)
         {
+            HashSet<Chunk> affectedChunks = null;
             try
             {
                 (string prefabName, Vector3i pos1, int rotate, bool all) = ParseParams(paramz, senderInfo);
 
                 // Will not do anything if chunks are not loaded; so no need to pre-check
                 LoadPrefab(prefabName, pos1, rotate, out Vector3i pos2);
-                HashSet<Chunk> affectedChunks = GetAffectedChunks(pos1, pos2);
+                affectedChunks = GetAffectedChunks(pos1, pos2);
 
-                // Even if loading tile entities fails, we still need to reload the already imported
-                // prefab and print a success message about that (without metadata).
-                try
+                if (all)
                 {
-                    if (all)
-                    {
-                        LoadTileEntities(prefabName, pos1, pos2, rotate);
-                    }
-                    SdtdConsole.Instance.Output($"Prefab {prefabName} placed{(all ? " with block metdata" : "")} at {pos1} with rotation {rotate}.");
+                    LoadTileEntities(prefabName, pos1, pos2, rotate);
                 }
-                catch (Exception)
+
+                SdtdConsole.Instance.Output($"Prefab {prefabName} placed{(all ? " with block metdata" : "")} at {pos1} with rotation {rotate}.");
+            }
+            catch (Exception ex)
+            {
+                CommandManager.HandleCommandException(ex);
+            }
+
+            // Error could have happened after prefab load, so we must reset/reload regardless
+            try
+            {
+                if (affectedChunks != null)
                 {
-                    SdtdConsole.Instance.Output($"Prefab {prefabName} placed at {pos1} with rotation {rotate}, but importing block metadata failed.");
-                    throw;
-                }
-                finally
-                {
-                    ScriptingMod.Managers.ChunkManager.ResetStability(affectedChunks);
-                    ScriptingMod.Managers.ChunkManager.ReloadForClients(affectedChunks);
+                    Managers.ChunkManager.ResetStability(affectedChunks);
+                    Managers.ChunkManager.ReloadForClients(affectedChunks);
                 }
             }
             catch (Exception ex)
@@ -289,14 +290,44 @@ namespace ScriptingMod.Commands
 
                     AdjustTileEntitiy(tileEntity, posInPrefab, pos1, originalPos1);
 
+                    var tileEntityPowered = tileEntity as TileEntityPowered;
+                    if (tileEntityPowered != null)                                          // [bool] has power item
+                    {
+
+                        var powerItemVersion = reader.ReadByte();
+                        // TileEntityPowered.read creates and adds an empty PowerItem already
+                        var powerItem = tileEntityPowered.GetPowerItem();
+
+                        Log.Debug("Power Manager status BEFORE importing power item of tile entity " + tileEntity + ":");
+                        new Dump().Execute(null, new CommandSenderInfo());
+
+                        powerItem.read(reader, powerItemVersion);                           // [dynamic] power item
+
+                        // Adjust position of power item in world
+                        powerItem.Position = posInWorld;
+
+                        // NOTES!
+                        // Only parent is set in powerItem, not child
+                        // Wire up all parents/childs
+                        // does read() already overwrite some existing poweritem with the original world location?
+
+
+                        // Not necessary for THIS poweritem, because TileEntity.read already attached it
+                        //// Attach power item back to tile entity; this implicitly calls TileEntity.CreateWireDataFromPowerItem(),
+                        //// which recreates all wire data, so we don't need to adjust wire data position manually! 
+                        //powerItem.TileEntity = null;
+                        //powerItem.AddTileEntity(tileEntityPowered);
+
+                        Log.Debug("Power Manager status AFTER importing power item of tile entity " + tileEntity + ":");
+                        new Dump().Execute(null, new CommandSenderInfo());
+                    }
+
                     // Check cannot be done earlier, because we MUST do the file reads regardless in order to continue reading
                     if (chunk == null)
                     {
                         Log.Warning($"Could not import tile entity for block {posInWorld} because the chunk is not loaded.");
                         continue;
                     }
-
-                    Log.Debug("imported tile entity: " + ObjectDumper.Dump(tileEntity, 2));
 
                     tileEntities.Add(posInWorld, tileEntity);
                 }
@@ -351,8 +382,11 @@ namespace ScriptingMod.Commands
 
                 // Adjust parent wire
                 var parentWire = (Vector3i) _wireParentField.GetValue(tileEntityPowered);
-                Log.Debug($"Changing parent wire on block {pos1 + posInPrefab} from {parentWire} to {parentWire + posDelta}");
-                _wireParentField.SetValue(tileEntityPowered, parentWire + posDelta);
+                if (parentWire != new Vector3i(-9999, -9999, -9999))
+                {
+                    Log.Debug($"Changing parent wire on block {pos1 + posInPrefab} from {parentWire} to {parentWire + posDelta}");
+                    _wireParentField.SetValue(tileEntityPowered, parentWire + posDelta);
+                }
             }
         }
 

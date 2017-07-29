@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ScriptingMod.Commands;
 using ScriptingMod.Managers;
 
 namespace ScriptingMod
@@ -15,7 +16,7 @@ namespace ScriptingMod
     {
         public Api()
         {
-            //Log.Debug("Api constructor called.");
+            Log.Debug("Api constructor called.");
         }
 
         public override void GameAwake()
