@@ -15,15 +15,22 @@ namespace UnitTests
         [Test()]
         public void ObjectDumperTest()
         {
+            // Test object without any properties or fields
             Console.WriteLine(ObjectDumper.Dump(this));
 
-            Console.WriteLine(ObjectDumper.Dump(DateTime.Now, "DateTime.Now"));
-
+            // Test standard behavior
             Console.WriteLine(ObjectDumper.Dump(CultureInfo.CurrentCulture, "CurrentCulture"));
 
-            Console.WriteLine(ObjectDumper.Dump(CultureInfo.CurrentCulture, "CurrentCulture", 1));
-
-            Console.WriteLine(ObjectDumper.Dump(ScriptEngine.GetInstance(ScriptTypeEnum.LUA), "LuaEngine", 2));
+            // Test all options
+            Console.WriteLine(ObjectDumper.Dump(CultureInfo.CurrentCulture, "CurrentCulture",
+                new ObjectDumperOptions() {
+                    MaxDepth = 2,
+                    WithNonPublic = false,
+                    WithStatic = true,
+                    WithFields = false,
+                    IterateEnumerable = true,
+                    WithEnumerableMembers = false,
+                }));
         }
     }
 }
