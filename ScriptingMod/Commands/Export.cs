@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.Managers;
@@ -113,6 +114,46 @@ namespace ScriptingMod.Commands
 
         private static void SaveTileEntities(string prefabName, Vector3i pos1, Vector3i pos2)
         {
+            Dictionary<Vector3i, TileEntity> tileEntities = CollectTileEntities(pos1, pos2);
+
+            var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + TileEntityFileExtension);
+
+            // Save all tile entities
+            using (var writer = new BinaryWriter(new FileStream(filePath, FileMode.Create)))
+            {
+                writer.Write(TileEntityFileMarker);                                   // [string]   constant "7DTD-TE"
+                writer.Write(TileEntityFileVersion);                                  // [Int32]    file version number
+                NetworkUtils.Write(writer, pos1);                                     // [Vector3i] original area worldPos1
+                NetworkUtils.Write(writer, pos2);                                     // [Vector3i] original area worldPos2
+
+                // see Assembly-CSharp::Chunk.write() -> search "tileentity.write"
+                writer.Write(tileEntities.Count);                                     // [Int32]    number of tile entities
+                foreach (var keyValue in tileEntities)
+                {
+                    var posInWorld = keyValue.Key;
+                    var tileEntity = keyValue.Value;
+                    var posInPrefab = new Vector3i(posInWorld.x - pos1.x, posInWorld.y - pos1.y, posInWorld.z - pos1.z);
+
+                    NetworkUtils.Write(writer, posInPrefab);                          // [3xInt32]  position relative to prefab
+                    writer.Write((int)tileEntity.GetTileEntityType());                // [Int32]    TileEntityType enum
+                    tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic]  tile entity data depending on type
+                    Log.Debug($"Wrote tile entity {tileEntity}.");
+
+                    var tileEntityPowered = tileEntity as TileEntityPowered;
+                    if (tileEntityPowered != null)
+                    {
+                        var powerItem = tileEntityPowered.GetPowerItem()
+                            ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
+                        SavePowerItem(writer, powerItem);
+                    }
+                }
+            }
+
+            Log.Out($"Exported {tileEntities.Count} tile entities for prefab {prefabName} from area {pos1} to {pos2}.");
+        }
+
+        private static Dictionary<Vector3i, TileEntity> CollectTileEntities(Vector3i pos1, Vector3i pos2)
+        {
             var world = GameManager.Instance.World;
             var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
 
@@ -139,54 +180,111 @@ namespace ScriptingMod.Commands
                 }
             }
 
-            var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + TileEntityFileExtension);
+            return tileEntities;
+        }
 
-            // Save all tile entities
-            using (var writer = new BinaryWriter(new FileStream(filePath, FileMode.Create)))
+        private static void SavePowerItem(BinaryWriter writer, [NotNull] PowerItem powerItem)
+        {
+            // Doing everything here that the PowerItem classes do in write(..) methods, but only for itself, not parents or childs.
+            // Intentionally not using ELSE to because of PowerItem inheritence, see: https://abload.de/img/2017-07-3011_04_50-scwwpdu.png
+
+            if (powerItem is PowerPressurePlate) // -> PowerTrigger
             {
-                writer.Write(TileEntityFileMarker);                                   // [string]   constant "7DTD-TE"
-                writer.Write(TileEntityFileVersion);                                  // [Int32]    file version number
-                NetworkUtils.Write(writer, pos1);                                     // [Vector3i] original area worldPos1
-                NetworkUtils.Write(writer, pos2);                                     // [Vector3i] original area worldPos2
-
-                // see Assembly-CSharp::Chunk.write() -> search "tileentity.write"
-                writer.Write(tileEntities.Count);                                     // [Int32]    number of tile entities
-                foreach (var keyValue in tileEntities)
+                // nothing to write
+            }
+            if (powerItem is PowerTripWireRelay) // -> PowerTrigger
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerTimerRelay) // -> PowerTrigger
+            {
+                var pi = (PowerTimerRelay) powerItem;
+                writer.Write(pi.StartTime);
+                writer.Write(pi.EndTime);
+            }
+            if (powerItem is PowerElectricWireRelay) // -> PowerConsumer
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerTrigger) // -> PowerConsumer
+            {
+                var pi = (PowerTrigger)powerItem;
+                writer.Write((byte)pi.TriggerType);
+                if (pi.TriggerType == PowerTrigger.TriggerTypes.Switch)
+                    writer.Write(pi.GetIsTriggered());
+                else
+                    writer.Write(pi.GetIsActive());
+                if (pi.TriggerType != PowerTrigger.TriggerTypes.Switch)
                 {
-                    var posInWorld = keyValue.Key;
-                    var tileEntity = keyValue.Value;
-                    var posInPrefab = new Vector3i(posInWorld.x - pos1.x, posInWorld.y - pos1.y, posInWorld.z - pos1.z);
-
-                    NetworkUtils.Write(writer, posInPrefab);                          // [3xInt32]  position relative to prefab
-                    writer.Write((int) tileEntity.GetTileEntityType());               // [Int32]    TileEntityType enum
-                    tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic]  tile entity data depending on type
-
-                    var tileEntityPowered = tileEntity as TileEntityPowered;
-                    if (tileEntityPowered != null)
-                    {
-                        writer.Write(PowerManager.FileVersion);                       // [byte]     power item format version
-                        var powerItem = tileEntityPowered.GetPowerItem()
-                            ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
-
-
-                        //var oldPrio = Thread.CurrentThread.Priority;
-                        //Thread.CurrentThread.Priority = ThreadPriority.Highest;
-
-                        //var oldChildren = powerItem.Children;
-                        //powerItem.Children = new List<PowerItem>();
-                        powerItem.write(writer);                                      // [dynamic]  power item
-                        //powerItem.Children = oldChildren;
-
-                        //Thread.CurrentThread.Priority = oldPrio;
-
-
-                        Log.Debug("Exported a PowerItem attached to tile entity: " + tileEntity);
-                        Log.Dump(powerItem, 2);
-                    }
+                    writer.Write((byte)pi.TriggerPowerDelay);
+                    writer.Write((byte)pi.TriggerPowerDuration);
+                    writer.Write(pi.GetDelayStartTime());
+                    writer.Write(pi.GetPowerTime());
                 }
+                if (pi.TriggerType != PowerTrigger.TriggerTypes.Motion)
+                    return;
+                writer.Write((int)pi.TargetType);
+            }
+            if (powerItem is PowerConsumerToggle)
+            {
+                var pi = (PowerConsumerToggle)powerItem;
+                writer.Write(pi.GetIsToggled());
+            }
+            if (powerItem is PowerRangedTrap)
+            {
+                var pi = (PowerRangedTrap)powerItem;
+                writer.Write(pi.GetIsLocked());
+                GameUtils.WriteItemStack(writer, pi.Stacks);
+                writer.Write((int)pi.TargetType);
+            }
+            if (powerItem is PowerBatteryBank)
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerGenerator)
+            {
+                var pi = (PowerGenerator)powerItem;
+                writer.Write(pi.CurrentFuel);
+            }
+            if (powerItem is PowerSolarPanel)
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerConsumer)
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerSource)
+            {
+                var pi = (PowerSource)powerItem;
+                writer.Write(pi.CurrentPower);
+                writer.Write(pi.IsOn);
+                GameUtils.WriteItemStack(writer, pi.Stacks);
+            }
+            if (powerItem is PowerConsumerSingle)
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerItem)
+            {
+                var pi = (PowerItem)powerItem;
+
+                // None of this is needed for import
+
+                //writer.Write(pi.BlockID);
+                //NetworkUtils.Write(writer, pi.Position);
+                writer.Write(pi.Parent != null);
+                if (pi.Parent != null)
+                    NetworkUtils.Write(writer, pi.Parent.Position);
+                //writer.Write((byte)pi.Children.Count);
+                //for (int index = 0; index < pi.Children.Count; ++index)
+                //{
+                //    writer.Write((byte)pi.Children[index].PowerItemType);
+                //    pi.Children[index].write(writer);
+                //}
             }
 
-            Log.Out($"Exported {tileEntities.Count} tile entities for prefab {prefabName} from area {pos1} to {pos2}.");
+            Log.Debug($"Wrote power item {powerItem.GetType()} at position {powerItem.Position}.");
         }
 
         /// <summary>

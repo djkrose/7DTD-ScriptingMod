@@ -82,6 +82,8 @@
     <Compile Include="Commands\LogPowerManager.cs" />
     <Compile Include="Commands\ResetJs.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Exceptions\ReflectionException.cs" />
+    <Compile Include="Extensions\ReflectionExtensions.cs" />
     <Compile Include="FakeDataStream.cs" />
     <Compile Include="ObjectDumper.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />

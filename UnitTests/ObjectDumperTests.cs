@@ -9,10 +9,10 @@ using ScriptingMod.ScriptEngines;
 
 namespace UnitTests
 {
-    [TestFixture()]
+    [TestFixture]
     public class ObjectDumperTests
     {
-        [Test()]
+        [Test]
         public void ObjectDumperTest()
         {
             // Test object without any properties or fields

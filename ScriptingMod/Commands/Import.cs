@@ -226,22 +226,6 @@ namespace ScriptingMod.Commands
             Log.Out($"Imported prefab {prefabName} into area {pos1} to {pos2}.");
         }
 
-        //private void ReadInt32(byte[] buffer, int offset, int value)
-        //{
-        //    Log.Debug($"Modifying tile entity read buffer. Returning {value} at position {Position - 4} ...");
-        //    buffer[offset + 0] = (byte)value;
-        //    buffer[offset + 1] = (byte)(value >> 8);
-        //    buffer[offset + 2] = (byte)(value >> 16);
-        //    buffer[offset + 3] = (byte)(value >> 24);
-        //}
-
-        // File format expected:
-        // 0..1     [UInt16] tile entity format version
-        // 2..5     [Int32]  TileEntity.localChunkPos.x
-        // 6..9     [Int32]  TileEntity.localChunkPos.y
-        // 10..13   [Int32]  TileEntity.localChunkPos.x
-
-
         private static void LoadTileEntities(string prefabName, Vector3i pos1, Vector3i pos2, int rotate)
         {
             var filePath     = Path.Combine(Constants.PrefabsFolder, prefabName + Export.TileEntityFileExtension);
@@ -270,6 +254,7 @@ namespace ScriptingMod.Commands
 
                     var posInWorld  = new Vector3i(pos1.x + posInPrefab.x, pos1.y + posInPrefab.y, pos1.z + posInPrefab.z);
                     var posInChunk  = World.toBlock(posInWorld);
+                    var posDelta    = pos1 - originalPos1;
 
                     var chunk = world.GetChunkFromWorldPos(posInWorld) as Chunk;
 
@@ -284,42 +269,19 @@ namespace ScriptingMod.Commands
                     fakeReader.FakeRead(fakeBytes, sizeof(ushort)); // delay for reading file version in TileEntity.read;
 
                     tileEntity.read(reader, TileEntity.StreamModeRead.Persistency);         // [dynamic] tile entity data depending on type
+                    Log.Debug($"Read tile entity {tileEntity}.");
 
                     if (tileEntity.localChunkPos != posInChunk)
                         Log.Warning($"Tile entity {tileEntity} should have localChunkPos {posInChunk} but has {tileEntity.localChunkPos} instead!");
 
-                    AdjustTileEntitiy(tileEntity, posInPrefab, pos1, originalPos1);
+                    AdjustTileEntitiy(tileEntity, posInPrefab, posDelta);
 
                     var tileEntityPowered = tileEntity as TileEntityPowered;
                     if (tileEntityPowered != null)                                          // [bool] has power item
                     {
-
-                        var powerItemVersion = reader.ReadByte();
-                        // TileEntityPowered.read creates and adds an empty PowerItem already
+                        // TileEntityPowered.read has made SURE that the tile entity has a power item
                         var powerItem = tileEntityPowered.GetPowerItem();
-
-                        Log.Debug("Power Manager status BEFORE importing power item of tile entity " + tileEntity + ":");
-                        new Dump().Execute(null, new CommandSenderInfo());
-
-                        powerItem.read(reader, powerItemVersion);                           // [dynamic] power item
-
-                        // Adjust position of power item in world
-                        powerItem.Position = posInWorld;
-
-                        // NOTES!
-                        // Only parent is set in powerItem, not child
-                        // Wire up all parents/childs
-                        // does read() already overwrite some existing poweritem with the original world location?
-
-
-                        // Not necessary for THIS poweritem, because TileEntity.read already attached it
-                        //// Attach power item back to tile entity; this implicitly calls TileEntity.CreateWireDataFromPowerItem(),
-                        //// which recreates all wire data, so we don't need to adjust wire data position manually! 
-                        //powerItem.TileEntity = null;
-                        //powerItem.AddTileEntity(tileEntityPowered);
-
-                        Log.Debug("Power Manager status AFTER importing power item of tile entity " + tileEntity + ":");
-                        new Dump().Execute(null, new CommandSenderInfo());
+                        LoadPowerItem(reader, powerItem, posDelta);
                     }
 
                     // Check cannot be done earlier, because we MUST do the file reads regardless in order to continue reading
@@ -361,14 +323,127 @@ namespace ScriptingMod.Commands
             Log.Out($"Imported {tileEntitiyCount} tile entities for prefab {prefabName} into area {pos1} to {pos2}.");
         }
 
-        private static void AdjustTileEntitiy(TileEntity tileEntity, Vector3i posInPrefab, Vector3i pos1, Vector3i originalPos1)
+        private static void LoadPowerItem(BinaryReader reader, [NotNull] PowerItem powerItem, Vector3i posDelta)
+        {
+            // Doing everything here that the PowerItem classes do in read(..) methods, but only for itself, not parents or childs.
+            // Intentionally not using ELSE to because of PowerItem inheritence, see: https://abload.de/img/2017-07-3011_04_50-scwwpdu.png
+
+            if (powerItem is PowerPressurePlate) // -> PowerTrigger
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerTripWireRelay) // -> PowerTrigger
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerTimerRelay) // -> PowerTrigger
+            {
+                var pi = (PowerTimerRelay)powerItem;
+                pi.StartTime = reader.ReadByte();
+                pi.EndTime = reader.ReadByte();
+            }
+            if (powerItem is PowerElectricWireRelay) // -> PowerConsumer
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerTrigger) // -> PowerConsumer
+            {
+                var pi = (PowerTrigger)powerItem;
+                pi.TriggerType = (PowerTrigger.TriggerTypes)reader.ReadByte();
+                if (pi.TriggerType == PowerTrigger.TriggerTypes.Switch)
+                    pi.SetIsTriggered(reader.ReadBoolean());
+                else
+                    pi.SetIsActive(reader.ReadBoolean());
+                if (pi.TriggerType != PowerTrigger.TriggerTypes.Switch)
+                {
+                    pi.TriggerPowerDelay = (PowerTrigger.TriggerPowerDelayTypes)reader.ReadByte();
+                    pi.TriggerPowerDuration = (PowerTrigger.TriggerPowerDurationTypes)reader.ReadByte();
+                    pi.SetDelayStartTime(reader.ReadSingle());
+                    pi.SetPowerTime(reader.ReadSingle());
+                }
+                if (pi.TriggerType != PowerTrigger.TriggerTypes.Motion)
+                    return;
+                pi.TargetType = (PowerTrigger.TargetTypes)reader.ReadInt32();
+            }
+            if (powerItem is PowerConsumerToggle)
+            {
+                var pi = (PowerConsumerToggle)powerItem;
+                pi.SetIsToggled(reader.ReadBoolean());
+            }
+            if (powerItem is PowerRangedTrap)
+            {
+                var pi = (PowerRangedTrap)powerItem;
+                pi.SetIsLocked(reader.ReadBoolean());
+                pi.SetSlots(GameUtils.ReadItemStack(reader));
+                pi.TargetType = (PowerRangedTrap.TargetTypes)reader.ReadInt32();
+            }
+            if (powerItem is PowerBatteryBank)
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerGenerator)
+            {
+                var pi = (PowerGenerator)powerItem;
+                pi.CurrentFuel = reader.ReadUInt16();
+            }
+            if (powerItem is PowerSolarPanel)
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerConsumer)
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerSource)
+            {
+                var pi = (PowerSource)powerItem;
+                pi.LastCurrentPower = pi.CurrentPower = reader.ReadUInt16();
+                pi.IsOn = reader.ReadBoolean();
+                pi.SetSlots(GameUtils.ReadItemStack(reader));
+                pi.SetHasChangesLocal(true);
+            }
+            if (powerItem is PowerConsumerSingle)
+            {
+                // nothing to write
+            }
+            if (powerItem is PowerItem)
+            {
+                var pi = (PowerItem)powerItem;
+
+                // None of this is needed for import
+
+                //pi.BlockID = reader.ReadUInt16();
+                //pi.SetValuesFromBlock();
+                //pi.Position = NetworkUtils.ReadVector3i(reader);
+
+                if (reader.ReadBoolean())
+                {
+                    // adjust parent position to new position before finding parent power item
+                    var parentPos = NetworkUtils.ReadVector3i(reader);
+                    Log.Debug($"Changing parent power item on {powerItem.Position} from {parentPos} to {parentPos + posDelta}.");
+                    parentPos = parentPos + posDelta;
+                    PowerManager.Instance.SetParent(pi, PowerManager.Instance.GetPowerItemByWorldPos(parentPos));
+                }
+
+                //int num = (int)reader.ReadByte();
+                //pi.Children.Clear();
+                //for (int index = 0; index < num; ++index)
+                //{
+                //    PowerItem node = PowerItem.CreateItem((PowerItem.PowerItemTypes)reader.ReadByte());
+                //    node.read(reader, _version);
+                //    PowerManager.Instance.AddPowerNode(node, pi);
+                //}
+            }
+
+            Log.Debug($"Read power item {powerItem.GetType()} at position {powerItem.Position}.");
+        }
+
+        private static void AdjustTileEntitiy(TileEntity tileEntity, Vector3i posInPrefab, Vector3i posDelta)
         {
             // No need to adjust anything if TE stays at same position
-            if (pos1 == originalPos1)
+            if (posDelta == Vector3i.zero)
                 return;
 
-            // Adjust wire endpoints from original worldPos to new worldPos
-            var posDelta = pos1 - originalPos1;
             var tileEntityPowered = tileEntity as TileEntityPowered;
             if (tileEntityPowered != null)
             {
@@ -376,7 +451,7 @@ namespace ScriptingMod.Commands
                 List<Vector3i> wireChildren = (List<Vector3i>)_wireChildrenField.GetValue(tileEntityPowered) ?? new List<Vector3i>();
                 for (int i = 0; i < wireChildren.Count; i++)
                 {
-                    Log.Debug($"Changing child wire on block {pos1 + posInPrefab} from {wireChildren[i]} to {wireChildren[i] + posDelta}");
+                    Log.Debug($"Changing child wire on {tileEntity} from {wireChildren[i]} to {wireChildren[i] + posDelta}");
                     wireChildren[i] += posDelta;
                 }
 
@@ -384,7 +459,7 @@ namespace ScriptingMod.Commands
                 var parentWire = (Vector3i) _wireParentField.GetValue(tileEntityPowered);
                 if (parentWire != new Vector3i(-9999, -9999, -9999))
                 {
-                    Log.Debug($"Changing parent wire on block {pos1 + posInPrefab} from {parentWire} to {parentWire + posDelta}");
+                    Log.Debug($"Changing parent wire on {tileEntity} from {parentWire} to {parentWire + posDelta}");
                     _wireParentField.SetValue(tileEntityPowered, parentWire + posDelta);
                 }
             }
