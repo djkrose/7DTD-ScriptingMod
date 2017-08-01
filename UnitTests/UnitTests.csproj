@@ -90,7 +90,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
-    <Compile Include="ObjectDumperTests.cs" />
+    <Compile Include="DumperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReflectionSpeedTests.cs" />
   </ItemGroup>

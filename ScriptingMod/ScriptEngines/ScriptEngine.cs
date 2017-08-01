@@ -119,7 +119,7 @@ namespace ScriptingMod.ScriptEngines
 
         protected virtual void Dump(object obj, int depth = 4)
         {
-            var output = ObjectDumper.Dump(obj, depth);
+            var output = Dumper.Dump(obj, depth);
 
             if (output.Length > 1024)
             {

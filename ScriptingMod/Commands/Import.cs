@@ -244,6 +244,7 @@ namespace ScriptingMod.Commands
 
                 var originalPos1 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos1
                 var originalPos2 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos2
+                var posDelta     = pos1 - originalPos1;
 
                 // See Assembly-CSharp::Chunk.read() -> search "tileentity.read"
                 tileEntitiyCount = reader.ReadInt32();                                      // [Int32]   number of tile entities
@@ -251,15 +252,33 @@ namespace ScriptingMod.Commands
                 {
                     var posInPrefab = NetworkUtils.ReadVector3i(reader);                    // [3xInt32] position relative to prefab
                     posInPrefab     = RotatePosition(posInPrefab, pos2 - pos1, rotate);
-
                     var posInWorld  = new Vector3i(pos1.x + posInPrefab.x, pos1.y + posInPrefab.y, pos1.z + posInPrefab.z);
                     var posInChunk  = World.toBlock(posInWorld);
-                    var posDelta    = pos1 - originalPos1;
+                    var chunk       = world.GetChunkFromWorldPos(posInWorld) as Chunk;
 
-                    var chunk = world.GetChunkFromWorldPos(posInWorld) as Chunk;
+#if DEBUG
+                    var oldPosInWorld = posInWorld - posDelta;
+                    var oldPosInChunk  = World.toBlock(oldPosInWorld);
+                    var oldChunk = world.GetChunkFromWorldPos(oldPosInWorld) as Chunk;
+                    var oldTileEntity = oldChunk?.GetTileEntity(oldPosInChunk);
+                    if (oldTileEntity != null)
+                    {
+                        Log.Debug($"Importing tile entity from {oldPosInWorld} to {posInWorld} ...");
+                        Log.Dump(oldTileEntity, "oldTileEntity", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+                        var oldTileEntityPowered = oldTileEntity as TileEntityPowered;
+                        if (oldTileEntityPowered != null)
+                        {
+                            Log.Dump(oldTileEntityPowered.GetPowerItem(), "oldPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+                        }
+                    }
+#endif
 
                     var tileEntityType = (TileEntityType)reader.ReadInt32();                // [Int32]   TileEntityType enum
-                    TileEntity tileEntity = TileEntity.Instantiate(tileEntityType, chunk ?? new Chunk()); // read(..) fails if chunk is null
+                    var tileEntity = TileEntity.Instantiate(tileEntityType, chunk ?? new Chunk()); // read(..) fails if chunk is null; check occurs later
+
+#if DEBUG
+                    Log.Dump(tileEntity, "newTileEntity", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+#endif
 
                     // Instruct the stream to fake the localChunkPos during read to use the new posInChunk instead.
                     // This is necessary because the localChunkPos is used IMMEDIATEY during read to initialize all other sorts of data,
@@ -272,16 +291,28 @@ namespace ScriptingMod.Commands
                     Log.Debug($"Read tile entity {tileEntity}.");
 
                     if (tileEntity.localChunkPos != posInChunk)
-                        Log.Warning($"Tile entity {tileEntity} should have localChunkPos {posInChunk} but has {tileEntity.localChunkPos} instead!");
-
-                    AdjustTileEntitiy(tileEntity, posInPrefab, posDelta);
+                        throw new ApplicationException($"Tile entity {tileEntity} should have localChunkPos {posInChunk} but has {tileEntity.localChunkPos} instead!");
 
                     var tileEntityPowered = tileEntity as TileEntityPowered;
                     if (tileEntityPowered != null)                                          // [bool] has power item
                     {
+                        //AdjustWires(tileEntityPowered, posInPrefab, posDelta);
                         // TileEntityPowered.read has made SURE that the tile entity has a power item
                         var powerItem = tileEntityPowered.GetPowerItem();
+#if DEBUG
+                        Log.Dump(powerItem, "newPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+#endif
                         LoadPowerItem(reader, powerItem, posDelta);
+#if DEBUG
+                        Log.Dump(powerItem, "newPowerItem[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+                        Log.Dump(tileEntity, "newTileEntity[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+                        Log.Dump(oldTileEntity, "oldTileEntity[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+                        var oldTileEntityPowered = oldTileEntity as TileEntityPowered;
+                        if (oldTileEntityPowered != null)
+                        {
+                            Log.Dump(oldTileEntityPowered.GetPowerItem(), "oldPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+                        }
+#endif
                     }
 
                     // Check cannot be done earlier, because we MUST do the file reads regardless in order to continue reading
@@ -438,30 +469,26 @@ namespace ScriptingMod.Commands
             Log.Debug($"Read power item {powerItem.GetType()} at position {powerItem.Position}.");
         }
 
-        private static void AdjustTileEntitiy(TileEntity tileEntity, Vector3i posInPrefab, Vector3i posDelta)
+        private static void AdjustWires(TileEntityPowered tileEntityPowered, Vector3i posInPrefab, Vector3i posDelta)
         {
             // No need to adjust anything if TE stays at same position
             if (posDelta == Vector3i.zero)
                 return;
 
-            var tileEntityPowered = tileEntity as TileEntityPowered;
-            if (tileEntityPowered != null)
+            // Adjust child wires
+            List<Vector3i> wireChildren = (List<Vector3i>)_wireChildrenField.GetValue(tileEntityPowered) ?? new List<Vector3i>();
+            for (int i = 0; i < wireChildren.Count; i++)
             {
-                // Adjust child wires
-                List<Vector3i> wireChildren = (List<Vector3i>)_wireChildrenField.GetValue(tileEntityPowered) ?? new List<Vector3i>();
-                for (int i = 0; i < wireChildren.Count; i++)
-                {
-                    Log.Debug($"Changing child wire on {tileEntity} from {wireChildren[i]} to {wireChildren[i] + posDelta}");
-                    wireChildren[i] += posDelta;
-                }
+                Log.Debug($"Changing child wire on {tileEntityPowered} from {wireChildren[i]} to {wireChildren[i] + posDelta}");
+                wireChildren[i] += posDelta;
+            }
 
-                // Adjust parent wire
-                var parentWire = (Vector3i) _wireParentField.GetValue(tileEntityPowered);
-                if (parentWire != new Vector3i(-9999, -9999, -9999))
-                {
-                    Log.Debug($"Changing parent wire on {tileEntity} from {parentWire} to {parentWire + posDelta}");
-                    _wireParentField.SetValue(tileEntityPowered, parentWire + posDelta);
-                }
+            // Adjust parent wire
+            var parentWire = (Vector3i) _wireParentField.GetValue(tileEntityPowered);
+            if (parentWire != new Vector3i(-9999, -9999, -9999))
+            {
+                Log.Debug($"Changing parent wire on {tileEntityPowered} from {parentWire} to {parentWire + posDelta}");
+                _wireParentField.SetValue(tileEntityPowered, parentWire + posDelta);
             }
         }
 

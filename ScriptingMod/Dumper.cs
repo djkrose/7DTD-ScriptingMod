@@ -50,7 +50,7 @@ namespace ScriptingMod
     /// Class is based on ObjectDumper 1.0.0.12 but adjusted for ScriptingMod by djkrose.
     /// See: https://www.nuget.org/packages/ObjectDumper/
     /// </summary>
-    public static class ObjectDumper
+    public static class Dumper
     {
         private const int INDENTATION_SPACE = 2;
 
@@ -63,7 +63,7 @@ namespace ScriptingMod
         /// <exception cref="ArgumentNullException">name is null or empty.</exception>
         public static string Dump(object value, string name = null)
         {
-            return Dump(value, name, ObjectDumperOptions.Default);
+            return Dump(value, name, DumperOptions.Default);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace ScriptingMod
         /// <returns>The dumped contents of the object as multi-line string</returns>
         public static string Dump(object value, int maxDepth)
         {
-            return Dump(value, null, new ObjectDumperOptions() { MaxDepth = maxDepth });
+            return Dump(value, null, new DumperOptions() { MaxDepth = maxDepth });
         }
 
         /// <summary>
@@ -86,7 +86,18 @@ namespace ScriptingMod
         /// <returns>The dumped contents of the object as multi-line string</returns>
         public static string Dump(object value, string name, int maxDepth)
         {
-            return Dump(value, name, new ObjectDumperOptions() { MaxDepth = maxDepth });
+            return Dump(value, name, new DumperOptions() { MaxDepth = maxDepth });
+        }
+
+        /// <summary>
+        /// Dumps the contents of the specified value and returns the dumped contents as a string.
+        /// </summary>
+        /// <param name="value">The object to dump</param>
+        /// <param name="options">A DumpOptions object that defines options for what the dump contains</param>
+        /// <returns>The dumped contents of the object as multi-line string</returns>
+        public static string Dump(object value, DumperOptions options)
+        {
+            return Dump(value, null, options);
         }
 
         /// <summary>
@@ -96,7 +107,7 @@ namespace ScriptingMod
         /// <param name="name">Name to give to the object in the dump; if null the name is just "object"</param>
         /// <param name="options">A DumpOptions object that defines options for what the dump contains</param>
         /// <returns>The dumped contents of the object as multi-line string</returns>
-        public static string Dump(object value, string name, ObjectDumperOptions options)
+        public static string Dump(object value, string name, DumperOptions options)
         {
             using (var writer = new StringWriter(CultureInfo.InvariantCulture))
             {
@@ -114,7 +125,7 @@ namespace ScriptingMod
         /// <exception cref="ArgumentNullException">name is null or empty, or writer is null</exception>
         public static void Dump(object value, string name, TextWriter writer)
         {
-            Dump(value, name, writer, ObjectDumperOptions.Default);
+            Dump(value, name, writer, DumperOptions.Default);
         }
 
         /// <summary>
@@ -124,7 +135,7 @@ namespace ScriptingMod
         /// <param name="name">The name of the value being dumped</param>
         /// <param name="writer">The TextWriter to dump the value to</param>
         /// <param name="options">A DumpOptions object that defines options for what the dump contains</param>
-        public static void Dump(object value, string name, TextWriter writer, ObjectDumperOptions options)
+        public static void Dump(object value, string name, TextWriter writer, DumperOptions options)
         {
             if (name == null)
                 name = "object";
@@ -139,7 +150,7 @@ namespace ScriptingMod
 
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
         private static void InternalDump(int indentationLevel, string name, object value, MemberInfo memberInfo, int? index,
-            TextWriter writer, ObjectIDGenerator idGenerator, bool recursiveDump, ObjectDumperOptions options)
+            TextWriter writer, ObjectIDGenerator idGenerator, bool recursiveDump, DumperOptions options)
         {
             var indentation = new string(' ', indentationLevel * INDENTATION_SPACE);
             var indentation2 = new string(' ', (indentationLevel + 1) * INDENTATION_SPACE);
@@ -310,13 +321,9 @@ namespace ScriptingMod
                     }
                     catch (TargetInvocationException ex)
                     {
-                        InternalDump(indentationLevel + 2, property.Name, ex, property, null, writer, idGenerator, false, options);
+                        InternalDump(indentationLevel + 2, property.Name, ex.InnerException, property, null, writer, idGenerator, false, options);
                     }
-                    catch (ArgumentException ex)
-                    {
-                        InternalDump(indentationLevel + 2, property.Name, ex, property, null, writer, idGenerator, false, options);
-                    }
-                    catch (RemotingException ex)
+                    catch (Exception ex)
                     {
                         InternalDump(indentationLevel + 2, property.Name, ex, property, null, writer, idGenerator, false, options);
                     }

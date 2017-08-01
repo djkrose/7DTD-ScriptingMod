@@ -5,25 +5,24 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using ScriptingMod;
-using ScriptingMod.ScriptEngines;
 
 namespace UnitTests
 {
     [TestFixture]
-    public class ObjectDumperTests
+    public class DumperTests
     {
         [Test]
-        public void ObjectDumperTest()
+        public void DumperTest()
         {
             // Test object without any properties or fields
-            Console.WriteLine(ObjectDumper.Dump(this));
+            Console.WriteLine(Dumper.Dump(this));
 
             // Test standard behavior
-            Console.WriteLine(ObjectDumper.Dump(CultureInfo.CurrentCulture, "CurrentCulture"));
+            Console.WriteLine(Dumper.Dump(CultureInfo.CurrentCulture, "CurrentCulture"));
 
             // Test all options
-            Console.WriteLine(ObjectDumper.Dump(CultureInfo.CurrentCulture, "CurrentCulture",
-                new ObjectDumperOptions() {
+            Console.WriteLine(Dumper.Dump(CultureInfo.CurrentCulture, "CurrentCulture",
+                new DumperOptions() {
                     MaxDepth = 2,
                     WithNonPublic = false,
                     WithStatic = true,

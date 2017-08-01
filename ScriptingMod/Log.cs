@@ -24,14 +24,28 @@ namespace ScriptingMod
         public static void Dump(object obj)
         {
 #if DEBUG
-            Log.Debug(ObjectDumper.Dump(obj));
+            Log.Debug(Dumper.Dump(obj));
 #endif
         }
 
         public static void Dump(object obj, int depth)
         {
 #if DEBUG
-            Log.Debug(ObjectDumper.Dump(obj, depth));
+            Log.Debug(Dumper.Dump(obj, depth));
+#endif
+        }
+
+        public static void Dump(object obj, DumperOptions options)
+        {
+#if DEBUG
+            Log.Debug(Dumper.Dump(obj, options));
+#endif
+        }
+
+        public static void Dump(object obj, string name, DumperOptions options)
+        {
+#if DEBUG
+            Log.Debug(Dumper.Dump(obj, name, options));
 #endif
         }
 

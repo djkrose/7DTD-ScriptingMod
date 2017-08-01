@@ -85,7 +85,7 @@
     <Compile Include="Exceptions\ReflectionException.cs" />
     <Compile Include="Extensions\ReflectionExtensions.cs" />
     <Compile Include="FakeDataStream.cs" />
-    <Compile Include="ObjectDumper.cs" />
+    <Compile Include="Dumper.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
@@ -102,7 +102,7 @@
     <Compile Include="Commands\ResetLua.cs" />
     <Compile Include="Commands\Version.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="ObjectDumperOptions.cs" />
+    <Compile Include="DumperOptions.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

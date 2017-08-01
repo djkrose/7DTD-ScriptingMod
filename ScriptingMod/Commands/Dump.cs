@@ -51,10 +51,10 @@ namespace ScriptingMod.Commands
         {
             Log.Debug("Current thread: " + Thread.CurrentThread.Name);
             PowerManager.Instance.LogPowerManager();
-            Log.Debug(ObjectDumper.Dump(_powerItemsField.GetValue(PowerManager.Instance), "PowerItems", 3));
-            Log.Debug(ObjectDumper.Dump(_powerSourcesField.GetValue(PowerManager.Instance), "PowerSources", 3));
-            Log.Debug(ObjectDumper.Dump(_powerTriggersField.GetValue(PowerManager.Instance), "PowerTriggers", 3));
-            Log.Debug(ObjectDumper.Dump(_powerItemsDictField.GetValue(PowerManager.Instance), "PowerItemsDict", 3));
+            Log.Debug(Dumper.Dump(_powerItemsField.GetValue(PowerManager.Instance), "PowerItems", 3));
+            Log.Debug(Dumper.Dump(_powerSourcesField.GetValue(PowerManager.Instance), "PowerSources", 3));
+            Log.Debug(Dumper.Dump(_powerTriggersField.GetValue(PowerManager.Instance), "PowerTriggers", 3));
+            Log.Debug(Dumper.Dump(_powerItemsDictField.GetValue(PowerManager.Instance), "PowerItemsDict", 3));
             SdtdConsole.Instance.Output("All data dumped to log file.");
         }
     }

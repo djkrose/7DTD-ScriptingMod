@@ -6,9 +6,9 @@ using UnityEngine;
 
 namespace ScriptingMod
 {
-    public class ObjectDumperOptions
+    public class DumperOptions
     {
-        public static ObjectDumperOptions Default = new ObjectDumperOptions();
+        public static DumperOptions Default = new DumperOptions();
 
         public bool WithFields { get; set; }
 
@@ -24,7 +24,7 @@ namespace ScriptingMod
 
         public List<Type> DontDumpTypes { get; set; }
 
-        public ObjectDumperOptions()
+        public DumperOptions()
         {
             WithFields = true;
             WithStatic = false;
