@@ -19,6 +19,15 @@
     <Delete Files="@(ZipFiles)" />
   </Target>
   
+  <!-- Create Mono CLR symbol files (.mdb) -->
+  <Target Name="GenerateMonoSymbols" AfterTargets="AfterBuild" Condition=" Exists('$(OutputPath)\$(AssemblyName).pdb') ">
+    <PropertyGroup>
+      <MonoMdbGenerator>$(SolutionDir)packages\Mono.pdb2mdb.0.1.0.20130128\tools\pdb2mdb.exe</MonoMdbGenerator>
+    </PropertyGroup>
+    <Message Text="$(ProjectName) -&gt; $(TargetPath).mdb" Importance="High" />
+    <Exec Command="$(MonoMdbGenerator) $(TargetPath)" WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" />
+  </Target>
+
   <!-- Copy all mod files into 7DTD Mods folder after the build -->
   <Target Name="InstallMod" AfterTargets="AfterBuild" Condition="Exists('$(ModsFolder).')">
     <ItemGroup>
