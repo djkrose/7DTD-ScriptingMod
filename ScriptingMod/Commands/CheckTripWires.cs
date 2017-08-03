@@ -7,7 +7,6 @@ using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Commands
 {
-#if DEBUG
     public class CheckTripWires : ConsoleCmdAbstract
     {
         public override string[] GetCommands()
@@ -151,5 +150,4 @@ namespace ScriptingMod.Commands
         }
 
     }
-#endif
 }
