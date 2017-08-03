@@ -65,12 +65,13 @@ console.log("Hello JavaScript World!");
 * Import/export prefabs <b>with container content, ownership, lock status, sign texts</b>, and all other metadata.<br>
   &ndash;&nbsp; Fully restore griefed bases with one command!<br>
   &ndash;&nbsp; Copy buildings from server to server or between server versions after world reset.
+* Fix for broken tripwires causing NullReferenceException [...] at TileEntityPoweredTrigger.write
 * [more to come shortly]
 
 ## Compatibility
 
  * **Dedicated Server** of [7 Days to Die](http://store.steampowered.com/app/251570/7_Days_to_Die/). The mod is not meant to be used with the desktop client.
- * Current version is compatible with **Alpha 16.1 (b1)** only.
+ * Tested with 7DTD **Alpha 16.1 (b1)** but future versions might also work
  * Developed and tested on **Windows**. Linux may or may not work; reports are welcome!
  * **No dependencies**: No other mods or other software is required.
  * Successfully tested together with these great mods:
