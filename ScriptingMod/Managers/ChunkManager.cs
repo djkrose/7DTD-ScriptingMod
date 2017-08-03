@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Managers
 {
@@ -76,7 +77,9 @@ namespace ScriptingMod.Managers
                         Log.Error($"Error forcing {client.playerName} to remove chunk {_chunkKey}:\r\n" + ex);
                     }
                 }
-                Log.Out($"Forced {client.playerName} to remove {reloadforclients[client].Count} of {chunksLoaded.Count} chunks.");
+                var countForcedReloads = reloadforclients.GetValue(client)?.Count ?? 0;
+                if (countForcedReloads > 0)
+                    Log.Out($"Forced {client.playerName} to remove {countForcedReloads} of {chunksLoaded.Count} chunks.");
             }
 
             // Delay to allow remove chunk packets to reach clients
