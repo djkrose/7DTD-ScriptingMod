@@ -139,13 +139,13 @@ namespace ScriptingMod.Commands
                     tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic]  tile entity data depending on type
                     Log.Debug($"Wrote tile entity {tileEntity}.");
 
-                    var tileEntityPowered = tileEntity as TileEntityPowered;
-                    if (tileEntityPowered != null)
-                    {
-                        var powerItem = tileEntityPowered.GetPowerItem()
-                            ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
-                        SavePowerItem(writer, powerItem);
-                    }
+                    //var tileEntityPowered = tileEntity as TileEntityPowered;
+                    //if (tileEntityPowered != null)
+                    //{
+                    //    var powerItem = tileEntityPowered.GetPowerItem()
+                    //        ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
+                    //    SavePowerItem(writer, powerItem);
+                    //}
                 }
             }
 

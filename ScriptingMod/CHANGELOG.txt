@@ -4,7 +4,7 @@
 - Added LICENSE.txt to credit the mod and all included third-party software properly
 - Fixed import/export commands to correctly consider player's underground positions when clipping is off
 - Fixed a bug where reloading chunks after dj-import could lead to a KeyNotFoundException
-
+- Added command dj-check-tripwires to check and repair corrupt tripwire data
 
 Version 0.4 - compatible ONLY with 7DTD A16.1 (b1)
 

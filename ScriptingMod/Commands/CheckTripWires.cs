@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Commands
@@ -72,7 +71,7 @@ namespace ScriptingMod.Commands
             }
             else // scan all chunks
             {
-                SdtdConsole.Instance.Output($"Scanning all loaded chunks for broken tripwires ...");
+                SdtdConsole.Instance.Output("Scanning all loaded chunks for broken tripwires ...");
                 var chunks = GameManager.Instance.World.ChunkClusters[0].GetChunkArray();
                 countBroken = chunks.Sum(chunk => FindBrokenTripWires(chunk, isFixMode));
                 countChunks = chunks.Count;
