@@ -238,8 +238,6 @@ namespace ScriptingMod.Commands
             using (var reader = new BinaryReader(fakeReader))
             {
                 // TODO: Check if TileEntity.entityId needs to be changed/recreated on read to avoid duplicate entityId's
-                // TODO: Adjust localpos during read
-
                 VerifyTileEntityHeader(reader, prefabName + Export.TileEntityFileExtension);
 
                 var originalPos1 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos1
@@ -261,24 +259,24 @@ namespace ScriptingMod.Commands
                     var oldPosInChunk  = World.toBlock(oldPosInWorld);
                     var oldChunk = world.GetChunkFromWorldPos(oldPosInWorld) as Chunk;
                     var oldTileEntity = oldChunk?.GetTileEntity(oldPosInChunk);
-                    if (oldTileEntity != null)
-                    {
-                        Log.Debug($"Importing tile entity from {oldPosInWorld} to {posInWorld} ...");
-                        Log.Dump(oldTileEntity, "oldTileEntity", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
-                        var oldTileEntityPowered = oldTileEntity as TileEntityPowered;
-                        if (oldTileEntityPowered != null)
-                        {
-                            Log.Dump(oldTileEntityPowered.GetPowerItem(), "oldPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
-                        }
-                    }
+//                    if (oldTileEntity != null)
+//                    {
+//                        Log.Debug($"Importing tile entity from {oldPosInWorld} to {posInWorld} ...");
+//                        Log.Dump(oldTileEntity, "oldTileEntity", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+//                        var oldTileEntityPowered = oldTileEntity as TileEntityPowered;
+//                        if (oldTileEntityPowered != null)
+//                        {
+//                            Log.Dump(oldTileEntityPowered.GetPowerItem(), "oldPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+//                        }
+//                    }
 #endif
 
                     var tileEntityType = (TileEntityType)reader.ReadInt32();                // [Int32]   TileEntityType enum
                     var tileEntity = TileEntity.Instantiate(tileEntityType, chunk ?? new Chunk()); // read(..) fails if chunk is null; check occurs later
 
-#if DEBUG
-                    Log.Dump(tileEntity, "newTileEntity", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
-#endif
+//#if DEBUG
+//                    Log.Dump(tileEntity, "newTileEntity", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+//#endif
 
                     // Instruct the stream to fake the localChunkPos during read to use the new posInChunk instead.
                     // This is necessary because the localChunkPos is used IMMEDIATEY during read to initialize all other sorts of data,
@@ -296,23 +294,24 @@ namespace ScriptingMod.Commands
                     var tileEntityPowered = tileEntity as TileEntityPowered;
                     if (tileEntityPowered != null)                                          // [bool] has power item
                     {
-                        //AdjustWires(tileEntityPowered, posInPrefab, posDelta);
+                        AdjustWires(tileEntityPowered, posInPrefab, posDelta);
+
                         // TileEntityPowered.read has made SURE that the tile entity has a power item
                         var powerItem = tileEntityPowered.GetPowerItem();
-#if DEBUG
-                        Log.Dump(powerItem, "newPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
-#endif
+//#if DEBUG
+//                        Log.Dump(powerItem, "newPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+//#endif
                         LoadPowerItem(reader, powerItem, posDelta);
-#if DEBUG
-                        Log.Dump(powerItem, "newPowerItem[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
-                        Log.Dump(tileEntity, "newTileEntity[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
-                        Log.Dump(oldTileEntity, "oldTileEntity[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
-                        var oldTileEntityPowered = oldTileEntity as TileEntityPowered;
-                        if (oldTileEntityPowered != null)
-                        {
-                            Log.Dump(oldTileEntityPowered.GetPowerItem(), "oldPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
-                        }
-#endif
+//#if DEBUG
+//                        Log.Dump(powerItem, "newPowerItem[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+//                        Log.Dump(tileEntity, "newTileEntity[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+//                        Log.Dump(oldTileEntity, "oldTileEntity[AFTER]", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+//                        var oldTileEntityPowered = oldTileEntity as TileEntityPowered;
+//                        if (oldTileEntityPowered != null)
+//                        {
+//                            Log.Dump(oldTileEntityPowered.GetPowerItem(), "oldPowerItem", new DumperOptions() { MaxDepth = 2, WithNonPublic = true });
+//                        }
+//#endif
                     }
 
                     // Check cannot be done earlier, because we MUST do the file reads regardless in order to continue reading
