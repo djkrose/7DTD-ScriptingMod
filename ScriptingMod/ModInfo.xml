@@ -2,9 +2,9 @@
 <xml>
   <ModInfo>
     <Name value="djkrose's Scripting Mod"/>
-    <Description value="Adds scripting support and other useful functionality to 7 Days To Die dedicated server. [Alpha 16.1 (b1)]"/>
+    <Description value="Adds scripting support and other useful functionality to 7 Days To Die dedicated server."/>
     <Author value="djkrose"/>
-    <Version value="0.5"/>
+    <Version value="0.6"/>
     <Website value="https://github.com/djkrose/7DTD-ScriptingMod"/>
   </ModInfo>
 </xml>

@@ -213,8 +213,7 @@ namespace ScriptingMod.Commands
             // DO NOT USE! Saving with this crashes the server.
             //prefab.bSleeperVolumes = true;
 
-            for (int i = 0; i < rotate; i++)
-                prefab.RotateY(false);
+            prefab.RotateY(false, rotate);
 
             prefab.CopyIntoLocal(GameManager.Instance.World.ChunkCache, new Vector3i(pos1.x, pos1.y, pos1.z), true, true);
 
