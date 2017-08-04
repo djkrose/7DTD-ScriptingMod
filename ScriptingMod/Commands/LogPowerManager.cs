@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
 
 namespace ScriptingMod.Commands
 {
 
 #if DEBUG
+    [UsedImplicitly]
     public class LogPowerManager : ConsoleCmdAbstract
     {
         public override string[] GetCommands()

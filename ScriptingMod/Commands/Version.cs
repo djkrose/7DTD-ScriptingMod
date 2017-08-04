@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 using ScriptingMod.Managers;
 using UnityEngine;
 
 namespace ScriptingMod.Commands
 {
+    [UsedImplicitly]
     public class Version : ConsoleCmdAbstract
     {
 

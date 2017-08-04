@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
 using ScriptingMod.Commands;
 using ScriptingMod.Managers;
 
@@ -12,6 +13,7 @@ namespace ScriptingMod
      * TODO [P3]: Implement dj-reload-scripts to reload all command scripts
      */
 
+    [UsedImplicitly]
     public class Api : ModApiAbstract
     {
         public Api()

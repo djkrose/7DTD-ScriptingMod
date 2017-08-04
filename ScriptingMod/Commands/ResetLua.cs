@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using ScriptingMod.Managers;
 using ScriptingMod.ScriptEngines;
 
 namespace ScriptingMod.Commands
 {
+    [UsedImplicitly]
     public class ResetLua : ConsoleCmdAbstract
     {
         public override string[] GetCommands()

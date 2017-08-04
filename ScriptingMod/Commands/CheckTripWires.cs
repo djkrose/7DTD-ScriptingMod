@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Commands
 {
+    [UsedImplicitly]
     public class CheckTripWires : ConsoleCmdAbstract
     {
         public override string[] GetCommands()

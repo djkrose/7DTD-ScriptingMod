@@ -4,12 +4,14 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using JetBrains.Annotations;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Commands
 {
 
 #if DEBUG
+    [UsedImplicitly]
     public class Dump : ConsoleCmdAbstract
     {
         private static FieldInfo _powerItemsField;     // PowerManager -> private List<PowerItem> list_0;
@@ -34,7 +36,7 @@ namespace ScriptingMod.Commands
                 throw;
             }
 
-            Log.Debug(typeof(Import) + " established reflection references.");
+            Log.Debug(typeof(Dump) + " established reflection references.");
         }
 
         public override string[] GetCommands()

@@ -22,6 +22,7 @@ namespace ScriptingMod.Commands
      * TODO [P2]: Allow changing the directon into which the prefab is loaded (other north/east/up)
      */
 
+    [UsedImplicitly]
     public class Import : ConsoleCmdAbstract
     {
         private static FieldInfo _wireChildrenField; // TileEntityPowered -> private List<Vector3i> ADD
