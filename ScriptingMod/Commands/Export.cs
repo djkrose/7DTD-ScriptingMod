@@ -17,7 +17,7 @@ namespace ScriptingMod.Commands
     {
         internal const string TileEntityFileMarker    = "7DTD-TE";
         internal const string TileEntityFileExtension = ".te";
-        internal const int    TileEntityFileVersion   = 4;
+        internal const int    TileEntityFileVersion   = 5;
 
         private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
 

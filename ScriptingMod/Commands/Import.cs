@@ -96,16 +96,8 @@ namespace ScriptingMod.Commands
         private static (string prefabName, Vector3i pos1, int rotate, bool all)
             ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
         {
-            var all = false;
-
             // Parse /all parameter
-            if (paramz.Contains("/all"))
-            {
-                // Make copy and remove from list to make subsequent parsing easier
-                paramz = new List<string>(paramz);
-                paramz.Remove("/all");
-                all = true;
-            }
+            var all = paramz.Remove("/all");
 
             // Parse prefab name
             var prefabName = paramz[0];
@@ -205,7 +197,7 @@ namespace ScriptingMod.Commands
         {
             var filePath     = Path.Combine(Constants.PrefabsFolder, prefabName + Export.TileEntityFileExtension);
             var world        = GameManager.Instance.World;
-            var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
+            //var tileEntities = new Dictionary<Vector3i, TileEntity>(); // posInWorld => TileEntity
             int tileEntitiyCount;
 
             // Read all tile entities from file into dictionary using a fake reader inbetween to allow modifying read data
@@ -216,7 +208,12 @@ namespace ScriptingMod.Commands
 
                 var originalPos1 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos1
                 var originalPos2 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos2
+                var expectedSize = pos2 - pos1;
+                var actualSize   = originalPos2 - originalPos1;
                 var posDelta     = pos1 - originalPos1;
+
+                if (actualSize != expectedSize)
+                    throw new ApplicationException($"Dimensions of tile entitiy file ({actualSize}) does not match with expected dimensions ({expectedSize}).");
 
                 // See Assembly-CSharp::Chunk.read() -> search "tileentity.read"
                 tileEntitiyCount = reader.ReadInt32();                                      // [Int32]   number of tile entities
@@ -224,32 +221,41 @@ namespace ScriptingMod.Commands
                 {
                     var posInPrefab = NetworkUtils.ReadVector3i(reader);                    // [3xInt32] position relative to prefab
                     posInPrefab     = RotatePosition(posInPrefab, pos2 - pos1, rotate);
+
                     var posInWorld  = new Vector3i(pos1.x + posInPrefab.x, pos1.y + posInPrefab.y, pos1.z + posInPrefab.z);
                     var posInChunk  = World.toBlock(posInWorld);
                     var chunk       = world.GetChunkFromWorldPos(posInWorld) as Chunk;
+                    if (chunk == null)
+                        throw new FriendlyMessageException("Area to export is too far away. Chunk not loaded on that area.");
 
 #if DEBUG
+                    // ReSharper disable UnusedVariable
                     var oldPosInWorld = posInWorld - posDelta;
-                    var oldPosInChunk  = World.toBlock(oldPosInWorld);
-                    var oldChunk = world.GetChunkFromWorldPos(oldPosInWorld) as Chunk;
+                    var oldPosInChunk = World.toBlock(oldPosInWorld);
+                    var oldChunk      = world.GetChunkFromWorldPos(oldPosInWorld) as Chunk;
                     var oldTileEntity = oldChunk?.GetTileEntity(oldPosInChunk);
+                    // ReSharper restore UnusedVariable
 #endif
 
-                    var tileEntityType = (TileEntityType)reader.ReadInt32();                // [Int32]   TileEntityType enum
-                    var tileEntity = TileEntity.Instantiate(tileEntityType, chunk ?? new Chunk()); // read(..) fails if chunk is null; check occurs later
+                    var tileEntity = chunk.GetTileEntity(posInChunk);
+                    if (tileEntity == null)
+                        throw new ApplicationException($"Could't find TileEntity at position {posInWorld}. It sould've been created by Prefab.read(..).");
 
                     // Instruct the stream to fake the localChunkPos during read to use the new posInChunk instead.
                     // This is necessary because the localChunkPos is used IMMEDIATEY during read to initialize all other sorts of data,
                     // like creating item entities for items in powered blocks (see TileEntityPowerSource.read).
-                    byte[] fakeBytes = new byte[3 * sizeof(int)];   // for Vector3i = x, y, z
-                    NetworkUtils.Write(new BinaryWriter(new MemoryStream(fakeBytes)), posInChunk);
-                    fakeReader.FakeRead(fakeBytes, sizeof(ushort)); // delay for reading file version in TileEntity.read;
+                    // Second parameter "sizeof(ushort)" adds delay for reading file version in TileEntity.read;
+
+                    //byte[] fakeBytes = new byte[3 * sizeof(int)];   // for Vector3i = x, y, z
+                    //NetworkUtils.Write(new BinaryWriter(new MemoryStream(fakeBytes)), posInChunk);
+                    //fakeReader.FakeRead(fakeBytes, sizeof(ushort)); 
+                    fakeReader.FakeRead(posInChunk.ToBytes(), sizeof(ushort));
 
                     tileEntity.read(reader, TileEntity.StreamModeRead.Persistency);         // [dynamic] tile entity data depending on type
-                    Log.Debug($"Read tile entity {tileEntity}.");
+                    Log.Debug($"Loaded tile entity {tileEntity}.");
 
                     if (tileEntity.localChunkPos != posInChunk)
-                        throw new ApplicationException($"Tile entity {tileEntity} should have localChunkPos {posInChunk} but has {tileEntity.localChunkPos} instead!");
+                        throw new ApplicationException($"Tile entity {tileEntity} should have localChunkPos {posInChunk} but has {tileEntity.localChunkPos} instead.");
 
                     //var tileEntityPowered = tileEntity as TileEntityPowered;
                     //if (tileEntityPowered != null)                                          // [bool] has power item
@@ -261,41 +267,41 @@ namespace ScriptingMod.Commands
                     //    LoadPowerItem(reader, powerItem, posDelta);
                     //}
 
-                    // Check cannot be done earlier, because we MUST do the file reads regardless in order to continue reading
-                    if (chunk == null)
-                    {
-                        Log.Warning($"Could not import tile entity for block {posInWorld} because the chunk is not loaded.");
-                        continue;
-                    }
+                    //// Check cannot be done earlier, because we MUST do the file reads regardless in order to continue reading
+                    //if (chunk == null)
+                    //{
+                    //    Log.Warning($"Could not import tile entity for block {posInWorld} because the chunk is not loaded.");
+                    //    continue;
+                    //}
 
-                    tileEntities.Add(posInWorld, tileEntity);
+                    //tileEntities.Add(posInWorld, tileEntity);
                 }
             }
 
-            // Go through every block and replace tile entities
-            for (int x = pos1.x; x <= pos2.x; x++)
-            {
-                for (int z = pos1.z; z <= pos2.z; z++)
-                {
-                    var chunk = world.GetChunkFromWorldPos(x, 0, z) as Chunk;
-                    if (chunk == null)
-                    {
-                        Log.Warning($"Could not remove tile entities from blocks {x}, {pos1.y} to {pos2.y}, {z} because the chunk is not loaded.");
-                        continue;
-                    }
+            //// Go through every block and replace tile entities
+            //for (int x = pos1.x; x <= pos2.x; x++)
+            //{
+            //    for (int z = pos1.z; z <= pos2.z; z++)
+            //    {
+            //        var chunk = world.GetChunkFromWorldPos(x, 0, z) as Chunk;
+            //        if (chunk == null)
+            //        {
+            //            Log.Warning($"Could not remove tile entities from blocks {x}, {pos1.y} to {pos2.y}, {z} because the chunk is not loaded.");
+            //            continue;
+            //        }
 
-                    for (int y = pos1.y; y <= pos2.y; y++)
-                    {
-                        // Remove default empty tile entity from prefab
-                        chunk.RemoveTileEntityAt<TileEntity>(world, World.toBlock(x, y, z));
+            //        for (int y = pos1.y; y <= pos2.y; y++)
+            //        {
+            //            // Remove default empty tile entity from prefab
+            //            chunk.RemoveTileEntityAt<TileEntity>(world, World.toBlock(x, y, z));
 
-                        // Add previously loaded tile entity if we have one
-                        var tileEntity = tileEntities.GetValue(new Vector3i(x, y, z));
-                        if (tileEntity != null)
-                            chunk.AddTileEntity(tileEntity);
-                    }
-                }
-            }
+            //            // Add previously loaded tile entity if we have one
+            //            var tileEntity = tileEntities.GetValue(new Vector3i(x, y, z));
+            //            if (tileEntity != null)
+            //                chunk.AddTileEntity(tileEntity);
+            //        }
+            //    }
+            //}
 
             Log.Out($"Imported {tileEntitiyCount} tile entities for prefab {prefabName} into area {pos1} to {pos2}.");
         }
@@ -453,7 +459,7 @@ namespace ScriptingMod.Commands
             if (fileMarker != Export.TileEntityFileMarker)                           // [string]  constant "7DTD-TE"
                 throw new FriendlyMessageException($"File {fileName} is not a valid tile entity file for 7DTD.");
 
-            var fileVersion = reader.ReadInt32();                                       // [Int32]   file version number
+            var fileVersion = reader.ReadInt32();                                    // [Int32]   file version number
             if (fileVersion != Export.TileEntityFileVersion)
                 throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {Export.TileEntityFileVersion} is supported.");
         }
