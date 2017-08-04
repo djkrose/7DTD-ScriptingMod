@@ -80,12 +80,13 @@
   <ItemGroup>
     <Compile Include="Api.cs" />
     <Compile Include="Commands\Dump.cs" />
-    <Compile Include="Commands\CheckTripWires.cs" />
+    <Compile Include="Commands\CheckPower.cs" />
     <Compile Include="Commands\LogPowerManager.cs" />
     <Compile Include="Commands\ResetJs.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Exceptions\ReflectionException.cs" />
     <Compile Include="Extensions\NonPublic.cs" />
+    <Compile Include="Extensions\Vector3iExtensions.cs" />
     <Compile Include="FakeDataStream.cs" />
     <Compile Include="Dumper.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
