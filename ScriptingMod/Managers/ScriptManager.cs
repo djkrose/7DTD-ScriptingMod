@@ -45,6 +45,8 @@ namespace ScriptingMod.Managers
                 }
             }
 
+            CommandManager.SaveChanges();
+
             Log.Debug("All script commands added.");
         }
 
