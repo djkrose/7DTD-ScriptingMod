@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.Managers;
-using Enumerable = UniLinq.Enumerable;
 
 namespace ScriptingMod.Commands
 {
@@ -25,29 +23,6 @@ namespace ScriptingMod.Commands
     [UsedImplicitly]
     public class Import : ConsoleCmdAbstract
     {
-        private static FieldInfo _wireChildrenField; // TileEntityPowered -> private List<Vector3i> ADD
-        private static FieldInfo _wireParentField; // TileEntityPowered -> private Vector3i IDD
-
-        static Import()
-        {
-            try
-            {
-                // Get references to private fields/methods/types by their signatures,
-                // because the internal names change on every 7DTD release due to obfuscation.
-                Log.Debug("Getting private field from TileEntityPowered: private List<Vector3i> ADD ...");
-                _wireChildrenField = typeof(TileEntityPowered).GetFieldsByType(typeof(List<Vector3i>)).Single();
-
-                Log.Debug("Getting private field from TileEntityPowered: private Vector3i IDD ...");
-                _wireParentField = typeof(TileEntityPowered).GetFieldsByType(typeof(Vector3i)).Single();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error while establishing references to 7DTD's \"private parts\". Your game version might not be compatible with this Scripting Mod version." + Environment.NewLine + ex);
-                throw;
-            }
-
-            Log.Debug(typeof(Import) + " established reflection references.");
-        }
 
         public override string[] GetCommands()
         {
@@ -237,7 +212,6 @@ namespace ScriptingMod.Commands
             var fakeReader = new FakeDataStream(new FileStream(filePath, FileMode.Open));
             using (var reader = new BinaryReader(fakeReader))
             {
-                // TODO: Check if TileEntity.entityId needs to be changed/recreated on read to avoid duplicate entityId's
                 VerifyTileEntityHeader(reader, prefabName + Export.TileEntityFileExtension);
 
                 var originalPos1 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos1
@@ -326,6 +300,8 @@ namespace ScriptingMod.Commands
             Log.Out($"Imported {tileEntitiyCount} tile entities for prefab {prefabName} into area {pos1} to {pos2}.");
         }
 
+        [SuppressMessage("ReSharper", "IsExpressionAlwaysTrue")]
+        [SuppressMessage("ReSharper", "CanBeReplacedWithTryCastAndCheckForNull")]
         private static void LoadPowerItem(BinaryReader reader, [NotNull] PowerItem powerItem, Vector3i posDelta)
         {
             // Doing everything here that the PowerItem classes do in read(..) methods, but only for itself, not parents or childs.
@@ -448,7 +424,7 @@ namespace ScriptingMod.Commands
                 return;
 
             // Adjust child wires
-            List<Vector3i> wireChildren = (List<Vector3i>)_wireChildrenField.GetValue(tileEntityPowered) ?? new List<Vector3i>();
+            List<Vector3i> wireChildren = tileEntityPowered.GetWireChildren() ?? new List<Vector3i>();
             for (int i = 0; i < wireChildren.Count; i++)
             {
                 Log.Debug($"Changing child wire on {tileEntityPowered} from {wireChildren[i]} to {wireChildren[i] + posDelta}");
@@ -456,11 +432,11 @@ namespace ScriptingMod.Commands
             }
 
             // Adjust parent wire
-            var parentWire = (Vector3i) _wireParentField.GetValue(tileEntityPowered);
+            var parentWire = tileEntityPowered.GetParent();
             if (parentWire != new Vector3i(-9999, -9999, -9999))
             {
                 Log.Debug($"Changing parent wire on {tileEntityPowered} from {parentWire} to {parentWire + posDelta}");
-                _wireParentField.SetValue(tileEntityPowered, parentWire + posDelta);
+                tileEntityPowered.SetWireParent(parentWire + posDelta);
             }
         }
 
@@ -503,7 +479,7 @@ namespace ScriptingMod.Commands
                 case 3: // 270°
                     return new Vector3i(pos2.x - pos.z, pos.y, pos.x);
                 default:
-                    throw new ArgumentException("Rotation must be either 0, 1, 2, or 3", nameof(rotate));
+                    throw new ArgumentException(@"Rotation must be either 0, 1, 2, or 3", nameof(rotate));
             }
         }
 

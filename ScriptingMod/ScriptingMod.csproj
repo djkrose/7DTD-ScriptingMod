@@ -63,6 +63,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -84,13 +85,12 @@
     <Compile Include="Commands\ResetJs.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Exceptions\ReflectionException.cs" />
-    <Compile Include="Extensions\ReflectionExtensions.cs" />
+    <Compile Include="Extensions\NonPublic.cs" />
     <Compile Include="FakeDataStream.cs" />
     <Compile Include="Dumper.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="FileHelper.cs" />
     <Compile Include="Exceptions\FriendlyMessageException.cs" />
     <Compile Include="Managers\ChunkManager.cs" />

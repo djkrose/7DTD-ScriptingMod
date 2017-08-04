@@ -23,7 +23,7 @@ namespace ScriptingMod.Commands
         public override string GetHelp()
         {
             // ----------------------------------(max length: 100 char)--------------------------------------------|
-            return $@"
+            return @"
                 Scans for corrupt tripwires that cause the server to spam NullReferenceExceptions and lag when
                 someone gets into visible range of it. Works only on currently LOADED chunks.
                 Usage:

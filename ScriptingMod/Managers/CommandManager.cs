@@ -4,117 +4,19 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using JetBrains.Annotations;
 using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
+using CommandObjectPair = ScriptingMod.Extensions.NonPublic.SdtdConsole.CommandObjectPair;
 
 namespace ScriptingMod.Managers
 {
 
     internal static class CommandManager
     {
-        private static FieldInfo _commandObjectsField;                 // List<IConsoleCommand> SdtdConsole.TD
-        private static FieldInfo _commandObjectPairsField;             // List<SdtdConsole.YU> SdtdConsole.OD
-                                                                       // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private static Type      _commandObjectPairType;               // private struct YU (last in source)
-        private static FieldInfo _commandObjectsReadOnlyField;         // ReadOnlyCollection<IConsoleCommand> SdtdConsole.ZD
-        private static FieldInfo _commandObjectPair_CommandField;      // string SdtdConsole.YU.LD
-        private static ConstructorInfo _commandObjectPair_Constructor; // SdtdConsole.YU(string _param1, IConsoleCommand _param2)
 
-        /// <summary>
-        /// List of command objects.
-        /// </summary>
-        [NotNull]
-        private static List<IConsoleCommand> _commandObjects => (List<IConsoleCommand>)_commandObjectsField.GetValue(SdtdConsole.Instance)
-            ?? throw new NullReferenceException("Received null value through reflection from _commandObjects.");
-
-        /// <summary>
-        /// List of pairs of (command name, command object), one for each command name.
-        /// Must use type-unspecific IList here instead of List&lt;something&gt;
-        /// </summary>
-        [NotNull]
-        private static IList _commandObjectPairs => (IList)_commandObjectPairsField.GetValue(SdtdConsole.Instance)
-            ?? throw new NullReferenceException("Received null value through reflection for _commandObjectPairs.");
-
-        static CommandManager()
-        {
-            try
-            {
-                // Get references to private fields/methods/types by their signatures,
-                // because the internal names change on every 7DTD release due to obfuscation.
-
-                // One way to do it:
-                //_commandObjectsField = typeof(SdtdConsole).GetMemberByPattern(@"^System\.Collections\.Generic\.List`1\[IConsoleCommand\] [a-zA-Z0-9_]+$").First() as FieldInfo;
-                //if (_commandObjectsField == null)
-                //    throw new TargetException(
-                //        "Could not find field through reflection: _commandObjectsField");
-                //Log.Dump(_commandObjectsField);
-
-                // Another way:
-                Log.Debug("Getting private field from SdtdConsole: private List<IConsoleCommand> TD ...");
-                _commandObjectsField = typeof(SdtdConsole)
-                    .GetFieldsByType(typeof(List<IConsoleCommand>))
-                    .Single();
-
-                // Old way:
-                //_commandObjectsField = typeof(SdtdConsole)
-                //    .GetField("TD", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                // Example for generic types
-                //Log.Debug("Getting private field from SdtdConsole: private List<SdtdConsole.YU> OD ...");
-                //Type generic = typeof(List<>);
-                //Log.Dump(generic);
-                //Type constructed = generic.MakeGenericType(new Type[] {typeof(string)});
-                //Log.Dump(constructed);
-
-                Log.Debug($"Getting private nested struct YU from {typeof(SdtdConsole)} that contains field: public IConsoleCommand DD ...");
-                _commandObjectPairType = typeof(SdtdConsole)
-                    .GetNestedTypesByContainingField(typeof(IConsoleCommand))
-                    .Single();
-
-                Log.Debug($"Getting private field from {typeof(SdtdConsole)}: private List<SdtdConsole.YU> OD ...");
-                _commandObjectPairsField = typeof(SdtdConsole)
-                    .GetFieldsByType(typeof(List<>).MakeGenericType(_commandObjectPairType))
-                    .Single();
-
-                //_commandObjectPairsField = typeof(SdtdConsole)
-                //    .GetField("OD", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                Log.Debug($"Getting private field from {typeof(SdtdConsole)}: private ReadOnlyCollection<IConsoleCommand> ZD ...");
-                _commandObjectsReadOnlyField = typeof(SdtdConsole)
-                    .GetFieldsByType(typeof(ReadOnlyCollection<IConsoleCommand>))
-                    .Single();
-
-                //_commandObjectPairType = typeof(SdtdConsole)
-                //    .GetNestedType("YU", BindingFlags.NonPublic);
-                //// ReSharper disable once JoinNullCheckWithUsage
-                //if (_commandObjectPairType == null)
-                //    throw new TargetException("Could not find type through reflection: commandObjectPairType");
-
-                Log.Debug($"Getting constructor of {_commandObjectPairType} ...");
-                _commandObjectPair_Constructor = _commandObjectPairType.GetConstructor(
-                    BindingFlags.Public | BindingFlags.Instance, null,
-                    new[] {typeof(string), typeof(IConsoleCommand)}, null);
-                if (_commandObjectPair_Constructor == null)
-                    throw new TargetException($"Could not find constructor of {_commandObjectPairType}.");
-
-                Log.Debug($"Getting private field from {_commandObjectPairType}: public string LD ...");
-                _commandObjectPair_CommandField = _commandObjectPairType
-                    .GetFieldsByType(typeof(string))
-                    .Single();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error while establishing references to 7DTD's \"private parts\". Your game version might not be compatible with this Scripting Mod version." + Environment.NewLine + ex);
-                throw;
-            }
-
-            Log.Debug(typeof(CommandManager) + " established reflection references.");
-        }
-
+        private static readonly CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
 
         /// <summary>
         /// Registers the given command object with it's command names into the Console.
@@ -133,7 +35,7 @@ namespace ScriptingMod.Managers
             if (commands == null || commands.Length == 0 || commands.All(string.IsNullOrEmpty))
                 throw new ArgumentException("No command name(s) defined.");
 
-            if (_commandObjects.Contains(commandObject))
+            if (SdtdConsole.Instance.GetCommandObjects().Contains(commandObject))
                 throw new ArgumentException($"The command object \"{commands.Join(" ")}\" already exists and cannot be registered twice.");
 
             foreach (string command in commands)
@@ -144,7 +46,7 @@ namespace ScriptingMod.Managers
                 if (CommandExists(command))
                     throw new ArgumentException($"The command \"{command}\" already exists and cannot be registered twice.");
 
-                object commandObjectPair = _commandObjectPair_Constructor.Invoke(new object[] {command, commandObject});
+                var commandObjectPair = new NonPublic.SdtdConsole.CommandObjectPair(command, commandObject);
                 AddSortedCommandObjectPair(commandObjectPair);
             }
 
@@ -169,21 +71,18 @@ namespace ScriptingMod.Managers
         /// <param name="item"></param>
         private static void AddCommandObjectSorted(IConsoleCommand item)
         {
-            var index = _commandObjects.BinarySearch(item, _commandObjectComparer);
+            var commandObjects = SdtdConsole.Instance.GetCommandObjects();
+            var index = commandObjects.BinarySearch(item, _commandObjectComparer);
             if (index < 0) index = ~index;
-            _commandObjects.Insert(index, item);
-            Log.Debug($"Inserted new command object at index {index} of {_commandObjects.Count-1}.");
+            commandObjects.Insert(index, item);
+            Log.Debug($"Inserted new command object at index {index} of {commandObjects.Count-1}.");
         }
 
-        private static CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
-
-        private class CommandObjectPairComparer : IComparer
+        private class CommandObjectPairComparer : IComparer<CommandObjectPair>
         {
-            public int Compare(object o1, object o2)
+            public int Compare(CommandObjectPair o1, CommandObjectPair o2)
             {
-                string s1 = (string)_commandObjectPair_CommandField.GetValue(o1);
-                string s2 = (string)_commandObjectPair_CommandField.GetValue(o2);
-                return string.Compare(s1, s2, StringComparison.OrdinalIgnoreCase);
+                return string.Compare(o1.Command, o2.Command, StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -192,30 +91,27 @@ namespace ScriptingMod.Managers
         /// See: https://stackoverflow.com/a/12172412/785111
         /// </summary>
         /// <param name="item">An object of struct type SdtdConsole.OL</param>
-        private static void AddSortedCommandObjectPair(object item)
+        private static void AddSortedCommandObjectPair(CommandObjectPair item)
         {
-            var index = Array.BinarySearch(_commandObjectPairs.Cast<object>().ToArray(), item, _commandObjectPairComparer);
+            var commandObjectPairs = SdtdConsole.Instance.GetCommandObjectPairs();
+            var index = Array.BinarySearch(commandObjectPairs.ToArray(), item, _commandObjectPairComparer);
             if (index < 0) index = ~index;
-            _commandObjectPairs.Insert(index, item);
-            Log.Debug($"Inserted new command object pair at index {index} of {_commandObjectPairs.Count-1}.");
+            commandObjectPairs.Insert(index, item);
+            Log.Debug($"Inserted new command object pair at index {index} of {commandObjectPairs.Count-1}.");
         }
 
+        // TODO: Why is this never called???
         public static void SaveChanges()
         {
-            // Update SdtdConsole.ET to be a readonly copy of SdtdConsole.WT
             Log.Debug("Updating readonly copy of command list ...");
-            _commandObjectsReadOnlyField.SetValue(SdtdConsole.Instance, new ReadOnlyCollection<IConsoleCommand>(_commandObjects));
-
-            Log.Dump(_commandObjectPairs);
-
+            SdtdConsole.Instance.SetCommandObjectsReadOnly(new ReadOnlyCollection<IConsoleCommand>(SdtdConsole.Instance.GetCommandObjects()));
             Log.Debug("Saving changes to commands and permissions to disk ...");
             GameManager.Instance.adminTools.Save();
         }
 
-        public static bool CommandExists(string command)
+        private static bool CommandExists(string command)
         {
-            return _commandObjectPairs.Cast<object>().Any(o =>
-                command.Equals((string)_commandObjectPair_CommandField.GetValue(o), StringComparison.OrdinalIgnoreCase));
+            return SdtdConsole.Instance.GetCommandObjectPairs().Any(pair => command.Equals(pair.Command, StringComparison.OrdinalIgnoreCase));
         }
 
         public static void HandleCommandException(Exception ex)
