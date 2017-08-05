@@ -1,4 +1,8 @@
-﻿Version 0.6 - tested with 7DTD A16.2 (b7)
+﻿Version 0.7 - compatible ONLY with A16.2 (b7)
+
+
+
+Version 0.6 - compatible ONLY with A16.2 (b7)
 
 - Updated compatibility to 7DTD A16.2 (b7)
 - Fixed a bug where permissions for script commands could not be set
