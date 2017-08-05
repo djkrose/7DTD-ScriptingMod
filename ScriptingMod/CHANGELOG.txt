@@ -1,6 +1,11 @@
 ﻿Version 0.6 - tested with 7DTD A16.2 (b7)
 
+- Updated compatibility to 7DTD A16.2 (b7)
 - Fixed a bug where permissions for script commands could not be set
+- Extended dj-check-tripwires to repair ALL power triggers: Switch, PressurePlate, TimerRelay, Motion, TripWire
+- Renamed dj-check-tripwires to dj-check-power to reflect the broader usecase
+- Added command dj-pos to show exended informaton about current player's position
+- Added error checks on all commands
 
 
 Version 0.5 - compatible ONLY with 7DTD A16.1 (b1)

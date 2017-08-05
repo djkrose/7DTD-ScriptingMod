@@ -30,7 +30,7 @@ namespace ScriptingMod.Extensions
         private static readonly FieldInfo       fi_PowerTrigger_powerTime;
         private static readonly FieldInfo       fi_PowerConsumerToggle_isToggled;
         private static readonly FieldInfo       fi_PowerRangedTrap_isLocked;
-        private static readonly FieldInfo       fi_PowerSource_hasChangesLocal;
+        private static readonly FieldInfo       fi_PowerItem_hasChangesLocal;
         private static readonly FieldInfo       fi_TileEntityPowered_wireChildren;       // TileEntityPowered -> private List<Vector3i> ADD
         private static readonly FieldInfo       fi_TileEntityPowered_wireParent;         // TileEntityPowered -> private Vector3i IDD
 
@@ -50,7 +50,7 @@ namespace ScriptingMod.Extensions
                 fi_PowerTrigger_powerTime             = GetField(typeof(PowerTrigger), "powerTime");
                 fi_PowerConsumerToggle_isToggled      = GetField(typeof(PowerConsumerToggle), "isToggled");
                 fi_PowerRangedTrap_isLocked           = GetField(typeof(PowerRangedTrap), "isLocked");
-                fi_PowerSource_hasChangesLocal        = GetField(typeof(PowerSource), "hasChangesLocal");
+                fi_PowerItem_hasChangesLocal          = GetField(typeof(PowerItem), "hasChangesLocal");
                 fi_TileEntityPowered_wireChildren     = GetField(typeof(TileEntityPowered), typeof(List<Vector3i>));
                 fi_TileEntityPowered_wireParent       = GetField(typeof(TileEntityPowered), typeof(Vector3i));
 
@@ -133,9 +133,9 @@ namespace ScriptingMod.Extensions
             fi_PowerRangedTrap_isLocked.SetValue(obj, value);
         }
 
-        public static void SetHasChangesLocal(this PowerSource obj, bool value)
+        public static void SetHasChangesLocal(this PowerItem obj, bool value)
         {
-            fi_PowerSource_hasChangesLocal.SetValue(obj, value);
+            fi_PowerItem_hasChangesLocal.SetValue(obj, value);
         }
 
         public static List<Vector3i> GetWireChildren(this TileEntityPowered obj)
@@ -244,7 +244,7 @@ namespace ScriptingMod.Extensions
         /// </summary>
         private static FieldInfo GetField(Type target, string name, BindingFlags flags = defaultFlags)
         {
-            return target.GetField("name", flags)
+            return target.GetField(name, flags)
                    ?? throw new ReflectionException($"Couldn't find field with name {name} in {target}.");
         }
 

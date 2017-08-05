@@ -13,6 +13,15 @@ namespace ScriptingMod.Commands
     [UsedImplicitly]
     public class CheckPower : ConsoleCmdAbstract
     {
+        private static readonly Dictionary<PowerTrigger.TriggerTypes, Type> ValidTriggerTypes = new Dictionary<PowerTrigger.TriggerTypes, Type>()
+        {
+            { PowerTrigger.TriggerTypes.Switch,        typeof(PowerTrigger) },
+            { PowerTrigger.TriggerTypes.PressurePlate, typeof(PowerPressurePlate) },
+            { PowerTrigger.TriggerTypes.TimerRelay,    typeof(PowerTimerRelay) },
+            { PowerTrigger.TriggerTypes.Motion,        typeof(PowerTrigger) },
+            { PowerTrigger.TriggerTypes.TripWire,      typeof(PowerTripWireRelay) }
+        };
+
         public override string[] GetCommands()
         {
             return new[] { "dj-check-power" };
@@ -54,8 +63,8 @@ namespace ScriptingMod.Commands
 
                 if (worldPos != null)
                 {
-                    countBroken = ScanChunkAt(worldPos.Value, isFixMode);
                     countChunks = 1;
+                    countBroken = ScanChunkAt(worldPos.Value, isFixMode);
                 }
                 else // scan all chunks
                 {
@@ -63,10 +72,10 @@ namespace ScriptingMod.Commands
                 }
 
                 var strChunks = $"chunk{(countChunks != 1 ? "s" : "")}";
-                var strTripwires = $"tripwire{(countBroken != 1 ? "s" : "")}";
+                var strPowerBlocks = $"power block{(countBroken != 1 ? "s" : "")}";
                 var msg = isFixMode
-                    ? ($"Found and fixed {countBroken} broken {strTripwires} in {countChunks} {strChunks}.")
-                    : ($"Found {countBroken} broken {strTripwires} in {countChunks} {strChunks}."
+                    ? ($"Found and fixed {countBroken} broken {strPowerBlocks} in {countChunks} {strChunks}.")
+                    : ($"Found {countBroken} broken {strPowerBlocks} in {countChunks} {strChunks}."
                       + (countBroken > 0 ? $" Use option /fix to fix {(countBroken != 1 ? "them" : "it")}." : ""));
 
                 SdtdConsole.Instance.Output(msg);
@@ -153,7 +162,7 @@ namespace ScriptingMod.Commands
         private static int ScanChunk([NotNull] Chunk chunk, bool isFixMode)
         {
             int counter = 0;
-            var tileEntities = chunk.GetTileEntities().Values.ToArray();
+            var tileEntities = chunk.GetTileEntities().Values.ToList();
 
             foreach (var tileEntity in tileEntities)
             {
@@ -162,17 +171,14 @@ namespace ScriptingMod.Commands
 
                 if (isFixMode)
                 {
-                    Log.Warning($"Tile entity {tileEntity} is broken. Recreating it ...");
-                    RecreateTileEntity(chunk, tileEntity);
+                    RecreateTileEntity(tileEntity);
                     counter++;
-                    Log.Out($"Fixed broken tile entity at position {tileEntity.ToWorldPos()}.");
-                    SdtdConsole.Instance.Output($"Fixed broken power block at position {tileEntity.ToWorldPos()}.");
+                    SdtdConsole.Instance.Output($"Fixed broken power block at position {tileEntity.ToWorldPos()} in chunk {chunk}.");
                 }
                 else
                 {
-                    Log.Warning($"Tile entity {tileEntity} is broken.");
                     counter++;
-                    SdtdConsole.Instance.Output($"Found broken power block at position {tileEntity.ToWorldPos()}.");
+                    SdtdConsole.Instance.Output($"Found broken power block at position {tileEntity.ToWorldPos()} in chunk {chunk}.");
                 }
             }
 
@@ -187,23 +193,15 @@ namespace ScriptingMod.Commands
             var trigger = tileEntity as TileEntityPoweredTrigger;
             if (trigger != null)
             {
-                var pi = trigger.GetPowerItem();
+                var actualType = trigger.GetPowerItem().GetType();
 
-                // Find trigger that don't match it's power item
-                if (trigger.TriggerType == PowerTrigger.TriggerTypes.Switch && !(pi is PowerTrigger))
+                // Check if TriggerType correlates to power item type
+                var validType = ValidTriggerTypes.GetValue(trigger.TriggerType);
+                if (validType != null && actualType != validType)
+                {
+                    Log.Warning($"{trigger.TriggerType} at {trigger.ToWorldPos()} in {trigger.GetChunk()} has wrong PowerItem: {actualType} instead of expected {validType}.");
                     return true;
-
-                if (trigger.TriggerType == PowerTrigger.TriggerTypes.PressurePlate && !(pi is PowerPressurePlate))
-                    return true;
-
-                if (trigger.TriggerType == PowerTrigger.TriggerTypes.TimerRelay && !(pi is PowerTimerRelay))
-                    return true;
-
-                if (trigger.TriggerType == PowerTrigger.TriggerTypes.Motion && !(pi is PowerTrigger))
-                    return true;
-
-                if (trigger.TriggerType == PowerTrigger.TriggerTypes.TripWire && !(pi is PowerTripWireRelay))
-                    return true;
+                }
             }
 
             return false;
@@ -212,11 +210,12 @@ namespace ScriptingMod.Commands
         /// <summary>
         /// Deletes the given tile entity from the given chunk and creates a new one based on the tile entity type
         /// </summary>
-        private static void RecreateTileEntity([NotNull] Chunk chunk, [NotNull] TileEntity tileEntity)
+        private static void RecreateTileEntity([NotNull] TileEntity tileEntity)
         {
             // Save some important values
             var tileEntityType = tileEntity.GetTileEntityType();
             var localChunkPos = tileEntity.localChunkPos;
+            var chunk = tileEntity.GetChunk();
 
             // Remove broken tile entity and hopefully the power item with it
             chunk.RemoveTileEntity(GameManager.Instance.World, tileEntity);
@@ -225,6 +224,16 @@ namespace ScriptingMod.Commands
             var newTileEntity = TileEntity.Instantiate(tileEntityType, chunk);
             newTileEntity.localChunkPos = localChunkPos;
             chunk.AddTileEntity(newTileEntity);
+
+            // Detailed logging
+            var msg = $"Replaced old TileEntity {tileEntity} with new {newTileEntity}.";
+            var newTrigger = newTileEntity as TileEntityPoweredTrigger;
+            if (newTrigger != null)
+            {
+                var pi = newTrigger.GetPowerItem();
+                msg += " It's a PowerTriger and has " + (pi != null ? $"a PowerItem of type {pi.GetType()}." : "no PowerItem.");
+            }
+            Log.Out(msg);
         }
 
     }

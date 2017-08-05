@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
+using ScriptingMod.Managers;
 
 namespace ScriptingMod.Commands
 {
@@ -23,7 +24,14 @@ namespace ScriptingMod.Commands
 
         public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
         {
-            PowerManager.Instance.LogPowerManager();
+            try
+            {
+                PowerManager.Instance.LogPowerManager();
+            }
+            catch (Exception ex)
+            {
+                CommandManager.HandleCommandException(ex);
+            }
         }
     }
 #endif

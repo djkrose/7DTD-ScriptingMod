@@ -186,7 +186,7 @@ namespace ScriptingMod.Commands
         private static void SavePowerItem(BinaryWriter writer, [NotNull] PowerItem powerItem)
         {
             // Doing everything here that the PowerItem classes do in write(..) methods, but only for itself, not parents or childs.
-            // Intentionally not using ELSE to because of PowerItem inheritence, see: https://abload.de/img/2017-07-3011_04_50-scwwpdu.png
+            // Intentionally not using ELSE because of PowerItem inheritence, see: https://abload.de/img/2017-07-3011_04_50-scwwpdu.png
 
             if (powerItem is PowerPressurePlate) // -> PowerTrigger
             {
@@ -225,43 +225,43 @@ namespace ScriptingMod.Commands
                     return;
                 writer.Write((int)pi.TargetType);
             }
-            if (powerItem is PowerConsumerToggle)
+            if (powerItem is PowerConsumerToggle) // -> PowerConsumer
             {
                 var pi = (PowerConsumerToggle)powerItem;
                 writer.Write(pi.GetIsToggled());
             }
-            if (powerItem is PowerRangedTrap)
+            if (powerItem is PowerRangedTrap) // -> PowerConsumer
             {
                 var pi = (PowerRangedTrap)powerItem;
                 writer.Write(pi.GetIsLocked());
                 GameUtils.WriteItemStack(writer, pi.Stacks);
                 writer.Write((int)pi.TargetType);
             }
-            if (powerItem is PowerBatteryBank)
+            if (powerItem is PowerBatteryBank) // -> PowerSource
             {
                 // nothing to write
             }
-            if (powerItem is PowerGenerator)
+            if (powerItem is PowerGenerator) // -> PowerSource
             {
                 var pi = (PowerGenerator)powerItem;
                 writer.Write(pi.CurrentFuel);
             }
-            if (powerItem is PowerSolarPanel)
+            if (powerItem is PowerSolarPanel) // -> PowerSource
             {
                 // nothing to write
             }
-            if (powerItem is PowerConsumer)
+            if (powerItem is PowerConsumer) // -> PowerItem
             {
                 // nothing to write
             }
-            if (powerItem is PowerSource)
+            if (powerItem is PowerSource) // -> PowerItem
             {
                 var pi = (PowerSource)powerItem;
                 writer.Write(pi.CurrentPower);
                 writer.Write(pi.IsOn);
                 GameUtils.WriteItemStack(writer, pi.Stacks);
             }
-            if (powerItem is PowerConsumerSingle)
+            if (powerItem is PowerConsumerSingle) // -> PowerItem
             {
                 // nothing to write
             }

@@ -115,11 +115,6 @@ namespace ScriptingMod.Commands
                 var filePath = Path.Combine(Constants.PrefabsFolder, fileName);
                 if (!File.Exists(filePath))
                     throw new FriendlyMessageException($"Could not find {fileName} in prefabs folder. This prefab does not have block metadata available, so you cannot use the /all option.");
-
-                using (var reader = new BinaryReader(new FileStream(filePath, FileMode.Open)))
-                {
-                    VerifyTileEntityHeader(reader, fileName);
-                }
             }
 
             // Parse coordinates
@@ -162,7 +157,7 @@ namespace ScriptingMod.Commands
                 {
                     var chunk = world.GetChunkFromWorldPos(x, 0, z) as Chunk;
                     if (chunk == null)
-                        throw new FriendlyMessageException("Area to export is too far away. Chunk not loaded on that area.");
+                        throw new FriendlyMessageException("Area to import is too far away. Chunk not loaded on that area.");
 
                     affectedChunks.Add(chunk);
                 }
@@ -204,7 +199,15 @@ namespace ScriptingMod.Commands
             var fakeReader = new FakeDataStream(new FileStream(filePath, FileMode.Open));
             using (var reader = new BinaryReader(fakeReader))
             {
-                VerifyTileEntityHeader(reader, prefabName + Export.TileEntityFileExtension);
+                // File header
+                var fileName = prefabName + Export.TileEntityFileExtension;
+                var fileMarker = reader.ReadString();
+                if (fileMarker != Export.TileEntityFileMarker)                              // [string]  constant "7DTD-TE"
+                    throw new FriendlyMessageException($"File {fileName} is not a valid tile entity file for 7DTD.");
+
+                var fileVersion = reader.ReadInt32();                                       // [Int32]   file version number
+                if (fileVersion != Export.TileEntityFileVersion)
+                    throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {Export.TileEntityFileVersion} is supported.");
 
                 var originalPos1 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos1
                 var originalPos2 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos2
@@ -226,7 +229,7 @@ namespace ScriptingMod.Commands
                     var posInChunk  = World.toBlock(posInWorld);
                     var chunk       = world.GetChunkFromWorldPos(posInWorld) as Chunk;
                     if (chunk == null)
-                        throw new FriendlyMessageException("Area to export is too far away. Chunk not loaded on that area.");
+                        throw new FriendlyMessageException("Area to import is too far away. Chunk not loaded on that area.");
 
 #if DEBUG
                     // ReSharper disable UnusedVariable
@@ -236,10 +239,21 @@ namespace ScriptingMod.Commands
                     var oldTileEntity = oldChunk?.GetTileEntity(oldPosInChunk);
                     // ReSharper restore UnusedVariable
 #endif
+                    var tileEntityType = (TileEntityType)reader.ReadInt32();                // [Int32]    TileEntityType enum
 
                     var tileEntity = chunk.GetTileEntity(posInChunk);
+
+                    // Create new tile entity if Prefab import didn't create it yet.
                     if (tileEntity == null)
-                        throw new ApplicationException($"Could't find TileEntity at position {posInWorld}. It sould've been created by Prefab.read(..).");
+                    {
+                        Log.Warning($"Could't find TileEntity at position {posInWorld}. It should've been created by Prefab.read(..). Now creating new one of type {tileEntityType} ...");
+                        tileEntity = TileEntity.Instantiate(tileEntityType, chunk);
+                        chunk.AddTileEntity(tileEntity);
+                    }
+
+                    // Ensure we are dealing with the correct type; you never know...
+                    if (tileEntity.GetTileEntityType() != tileEntityType)
+                        throw new ApplicationException($"Tile entity {tileEntity} has wrong type {tileEntity.GetTileEntityType()} whet it should have {tileEntityType}.");
 
                     // Instruct the stream to fake the localChunkPos during read to use the new posInChunk instead.
                     // This is necessary because the localChunkPos is used IMMEDIATEY during read to initialize all other sorts of data,
@@ -444,24 +458,6 @@ namespace ScriptingMod.Commands
                 Log.Debug($"Changing parent wire on {tileEntityPowered} from {parentWire} to {parentWire + posDelta}");
                 tileEntityPowered.SetWireParent(parentWire + posDelta);
             }
-        }
-
-        /// <summary>
-        /// Reads and verifies the tile entity file's header. On errors, an exception is thrown.
-        /// The readerposition is advanced in the file accordingly.
-        /// </summary>
-        /// <param name="reader">Already opened reader stream</param>
-        /// <param name="fileName">File name of tile entity file without path, e.g. "mybase.te"</param>
-        /// <exception cref="FriendlyMessageException">Thrown when the header is incompatible with the import function</exception>
-        private static void VerifyTileEntityHeader(BinaryReader reader, string fileName)
-        {
-            var fileMarker = reader.ReadString();
-            if (fileMarker != Export.TileEntityFileMarker)                           // [string]  constant "7DTD-TE"
-                throw new FriendlyMessageException($"File {fileName} is not a valid tile entity file for 7DTD.");
-
-            var fileVersion = reader.ReadInt32();                                    // [Int32]   file version number
-            if (fileVersion != Export.TileEntityFileVersion)
-                throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {Export.TileEntityFileVersion} is supported.");
         }
 
         /// <summary>
