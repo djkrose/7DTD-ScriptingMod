@@ -40,6 +40,7 @@ namespace ScriptingMod.ScriptEngines
             {
                 try
                 {
+                    // ReSharper disable once PossibleNullReferenceException
                     typeof(TimeZoneInfo).GetField("local", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, TimeZoneInfo.Utc);
                 }
                 catch (Exception ex)

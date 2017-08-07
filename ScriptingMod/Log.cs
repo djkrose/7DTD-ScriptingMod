@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Text;
-using System.Diagnostics;
 
 namespace ScriptingMod
 {
@@ -24,28 +22,28 @@ namespace ScriptingMod
         public static void Dump(object obj)
         {
 #if DEBUG
-            Log.Debug(Dumper.Dump(obj));
+            Debug(Dumper.Dump(obj));
 #endif
         }
 
         public static void Dump(object obj, int depth)
         {
 #if DEBUG
-            Log.Debug(Dumper.Dump(obj, depth));
+            Debug(Dumper.Dump(obj, depth));
 #endif
         }
 
         public static void Dump(object obj, DumperOptions options)
         {
 #if DEBUG
-            Log.Debug(Dumper.Dump(obj, options));
+            Debug(Dumper.Dump(obj, options));
 #endif
         }
 
         public static void Dump(object obj, string name, DumperOptions options)
         {
 #if DEBUG
-            Log.Debug(Dumper.Dump(obj, name, options));
+            Debug(Dumper.Dump(obj, name, options));
 #endif
         }
 

@@ -47,8 +47,8 @@ namespace ScriptingMod.ScriptEngines
 
         protected void InitValues()
         {
-            this.SetValue("dump", new Action<object, int>(Dump));
-            this.SetValue("GameManager", GameManager.Instance);
+            SetValue("dump", new Action<object, int>(Dump));
+            SetValue("GameManager", GameManager.Instance);
         }
 
         // Used in constructor, so derived class MUST NOT use the object; just assume it's static

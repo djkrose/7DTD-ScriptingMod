@@ -24,21 +24,26 @@ namespace ScriptingMod.Extensions
 
         private const BindingFlags defaultFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
-        private static readonly FieldInfo       fi_PowerTrigger_isTriggered;
-        private static readonly FieldInfo       fi_PowerTrigger_isActive;
-        private static readonly FieldInfo       fi_PowerTrigger_delayStartTime;
-        private static readonly FieldInfo       fi_PowerTrigger_powerTime;
-        private static readonly FieldInfo       fi_PowerConsumerToggle_isToggled;
-        private static readonly FieldInfo       fi_PowerRangedTrap_isLocked;
-        private static readonly FieldInfo       fi_PowerItem_hasChangesLocal;
-        private static readonly FieldInfo       fi_TileEntityPowered_wireChildren;       // TileEntityPowered -> private List<Vector3i> ADD
-        private static readonly FieldInfo       fi_TileEntityPowered_wireParent;         // TileEntityPowered -> private Vector3i IDD
+        private static readonly FieldInfo       fi_PowerTrigger_isTriggered;             // PowerTrigger        -> protected bool isTriggered;
+        private static readonly FieldInfo       fi_PowerTrigger_isActive;                // PowerTrigger        -> protected bool isActive;
+        private static readonly FieldInfo       fi_PowerTrigger_delayStartTime;          // PowerTrigger        -> protected float delayStartTime;
+        private static readonly FieldInfo       fi_PowerTrigger_powerTime;               // PowerTrigger        -> protected float powerTime;
+        private static readonly FieldInfo       fi_PowerConsumerToggle_isToggled;        // PowerConsumerToggle -> protected bool isToggled
+        private static readonly FieldInfo       fi_PowerRangedTrap_isLocked;             // PowerRangedTrap     -> protected bool isLocked;
+        private static readonly FieldInfo       fi_PowerItem_hasChangesLocal;            // PowerItem           -> protected bool hasChangesLocal;
+        private static readonly FieldInfo       fi_TileEntityPowered_wireChildren;       // TileEntityPowered   -> private List<Vector3i> list_1
+        private static readonly FieldInfo       fi_TileEntityPowered_wireParent;         // TileEntityPowered   -> private Vector3i vector3i_1
+        private static readonly FieldInfo       fi_PowerManager_rootPowerItems;          // PowerManager        -> private List<PowerItem> list_0;
+        private static readonly FieldInfo       fi_TileEntity_readVersion;               // TileEntity          -> protected int readVersion;
+        private static readonly FieldInfo       fi_TileEntity_nextHeatMapEvent;          // TileEntity          -> private ulong ulong_0;
+        private static readonly FieldInfo       fi_TileEntityPowered_bool_1;             // TileEntityPowered   -> private bool bool_1;  (unknown purpose)
+        private static readonly FieldInfo       fi_TileEntityPowered_bool_3;             // TileEntityPowered   -> private bool bool_3;  (unknown purpose)
 
-        private static readonly FieldInfo       fi_SdtdConsole_commandObjects;           // List<IConsoleCommand> SdtdConsole.TD
-        private static readonly FieldInfo       fi_SdtdConsole_commandObjectPairs;       // List<SdtdConsole.YU> SdtdConsole.OD
-        private static readonly FieldInfo       fi_SdtdConsole_commandObjectsReadOnly;   // ReadOnlyCollection<IConsoleCommand> SdtdConsole.ZD
-        private static readonly FieldInfo       fi_CommandObjectPair_CommandField;       // string SdtdConsole.YU.LD
-        private static readonly ConstructorInfo ci_CommandObjectPair_Constructor;        // SdtdConsole.YU(string _param1, IConsoleCommand _param2)
+        private static readonly FieldInfo       fi_SdtdConsole_commandObjects;           // SdtdConsole         -> private List<IConsoleCommand> list_0
+        private static readonly FieldInfo       fi_SdtdConsole_commandObjectPairs;       // SdtdConsole         -> private List<SdtdConsole.Struct13> list_1
+        private static readonly FieldInfo       fi_SdtdConsole_commandObjectsReadOnly;   // SdtdConsole         -> private ReadOnlyCollection<IConsoleCommand> readOnlyCollection_0;
+        private static readonly FieldInfo       fi_CommandObjectPair_CommandField;       // SdtdConsole         -> Struct13 -> public string string_0;
+        private static readonly ConstructorInfo ci_CommandObjectPair_Constructor;        // SdtdConsole         -> Struct13 -> public Struct13(string string_1, IConsoleCommand iconsoleCommand_1)
 
         static NonPublic()
         {
@@ -53,6 +58,11 @@ namespace ScriptingMod.Extensions
                 fi_PowerItem_hasChangesLocal          = GetField(typeof(PowerItem), "hasChangesLocal");
                 fi_TileEntityPowered_wireChildren     = GetField(typeof(TileEntityPowered), typeof(List<Vector3i>));
                 fi_TileEntityPowered_wireParent       = GetField(typeof(TileEntityPowered), typeof(Vector3i));
+                fi_PowerManager_rootPowerItems        = GetField(typeof(PowerManager), typeof(List<PowerItem>));
+                fi_TileEntity_readVersion             = GetField(typeof(TileEntity), "readVersion");
+                fi_TileEntity_nextHeatMapEvent        = GetField(typeof(TileEntity), typeof(ulong));
+                fi_TileEntityPowered_bool_1 = GetField(typeof(TileEntityPowered), typeof(bool), 2); // WARNING! Relying on field order here!
+                fi_TileEntityPowered_bool_3 = GetField(typeof(TileEntityPowered), typeof(bool), 4); // WARNING! Relying on field order here!
 
                 fi_SdtdConsole_commandObjects         = GetField(typeof(global::SdtdConsole), typeof(List<IConsoleCommand>));
                 var t_StdtConsole_CommandObjectPair   = GetNestedType(typeof(global::SdtdConsole), typeof(IConsoleCommand)); // struct Struct13, last in source, has IConsoleCommand field
@@ -143,14 +153,34 @@ namespace ScriptingMod.Extensions
             return (List<Vector3i>)fi_TileEntityPowered_wireChildren.GetValue(obj);
         }
 
-        public static Vector3i GetWireParent(this TileEntityPowered obj)
-        {
-            return (Vector3i)fi_TileEntityPowered_wireParent.GetValue(obj);
-        }
-
         public static void SetWireParent(this TileEntityPowered obj, Vector3i pos)
         {
             fi_TileEntityPowered_wireParent.SetValue(obj, pos);
+        }
+
+        public static List<PowerItem> GetRootPowerItems(this PowerManager obj)
+        {
+            return (List<PowerItem>)fi_PowerManager_rootPowerItems.GetValue(obj);
+        }
+
+        public static void SetReadVersion(this TileEntity obj, int readVersion)
+        {
+            fi_TileEntity_readVersion.SetValue(obj, readVersion);
+        }
+
+        public static void SetNextHeatMapEvent(this TileEntity obj, ulong nextHeatMapEvent)
+        {
+            fi_TileEntity_nextHeatMapEvent.SetValue(obj, nextHeatMapEvent);
+        }
+
+        public static void SetBool1(this TileEntityPowered obj, bool value)
+        {
+            fi_TileEntityPowered_bool_1.SetValue(obj, value);
+        }
+
+        public static void SetBool3(this TileEntityPowered obj, bool value)
+        {
+            fi_TileEntityPowered_bool_3.SetValue(obj, value);
         }
 
         #endregion

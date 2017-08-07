@@ -27,7 +27,7 @@
 //   dump(variable[, maxDepth])        Dumps .Net objects in readable form into the log file.
 //                                     maxDepth = How deep the structure is traversed; default: 4
 
-if (params.length == 2) {
+if (params.length === 2) {
     console.log("Hello " + params[0] + " " + params[1] + ", nice to meet you! I am a JavaScript.");
 } else {
     console.log("Hello World! JavaScript is talking here.");

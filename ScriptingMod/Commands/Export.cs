@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
@@ -18,6 +19,9 @@ namespace ScriptingMod.Commands
         internal const string TileEntityFileMarker    = "7DTD-TE";
         internal const string TileEntityFileExtension = ".te";
         internal const int    TileEntityFileVersion   = 5;
+
+        public static List<TileEntityPowered> TileEntityPoweredList = new List<TileEntityPowered>();
+        public static List<PowerItem> PowerItemList = new List<PowerItem>();
 
         private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
 
@@ -116,6 +120,11 @@ namespace ScriptingMod.Commands
         {
             Dictionary<Vector3i, TileEntity> tileEntities = CollectTileEntities(pos1, pos2);
 
+#if DEBUG
+            TileEntityPoweredList = new List<TileEntityPowered>();
+            PowerItemList = new List<PowerItem>();
+#endif
+
             var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + TileEntityFileExtension);
 
             // Save all tile entities
@@ -139,13 +148,17 @@ namespace ScriptingMod.Commands
                     tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic]  tile entity data depending on type
                     Log.Debug($"Wrote tile entity {tileEntity}.");
 
-                    //var tileEntityPowered = tileEntity as TileEntityPowered;
-                    //if (tileEntityPowered != null)
-                    //{
-                    //    var powerItem = tileEntityPowered.GetPowerItem()
-                    //        ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
-                    //    SavePowerItem(writer, powerItem);
-                    //}
+                    var tileEntityPowered = tileEntity as TileEntityPowered;
+                    if (tileEntityPowered != null)
+                    {
+                        var powerItem = tileEntityPowered.GetPowerItem()
+                            ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
+#if DEBUG
+                        TileEntityPoweredList.Add(tileEntityPowered);
+                        PowerItemList.Add(powerItem);
+#endif
+                        SavePowerItem(writer, powerItem);                             // [dynamic]  PowerItem data
+                    }
                 }
             }
 
@@ -183,33 +196,64 @@ namespace ScriptingMod.Commands
             return tileEntities;
         }
 
+        [SuppressMessage("ReSharper", "IsExpressionAlwaysTrue")]
+        [SuppressMessage("ReSharper", "CanBeReplacedWithTryCastAndCheckForNull")]
         private static void SavePowerItem(BinaryWriter writer, [NotNull] PowerItem powerItem)
         {
             // Doing everything here that the PowerItem classes do in write(..) methods, but only for itself, not parents or childs.
             // Intentionally not using ELSE because of PowerItem inheritence, see: https://abload.de/img/2017-07-3011_04_50-scwwpdu.png
 
-            if (powerItem is PowerPressurePlate) // -> PowerTrigger
+            if (powerItem is PowerItem)
+            {
+                // ReSharper disable once RedundantCast
+                var pi = (PowerItem)powerItem;
+
+                // None of this is needed for import
+
+                //writer.Write(pi.BlockID);
+                //NetworkUtils.Write(writer, pi.Position);
+
+                writer.Write(pi.Parent != null);
+                if (pi.Parent != null)
+                    NetworkUtils.Write(writer, pi.Parent.Position);
+
+                //writer.Write((byte)pi.Children.Count);
+                //for (int index = 0; index < pi.Children.Count; ++index)
+                //{
+                //    writer.Write((byte)pi.Children[index].PowerItemType);
+                //    pi.Children[index].write(writer);
+                //}
+            }
+
+            if (powerItem is PowerConsumer)
             {
                 // nothing to write
             }
-            if (powerItem is PowerTripWireRelay) // -> PowerTrigger
+
+            if (powerItem is PowerConsumerToggle)
+            {
+                var pi = (PowerConsumerToggle)powerItem;
+                writer.Write(pi.GetIsToggled());
+            }
+
+            if (powerItem is PowerElectricWireRelay)
             {
                 // nothing to write
             }
-            if (powerItem is PowerTimerRelay) // -> PowerTrigger
+
+            if (powerItem is PowerRangedTrap)
             {
-                var pi = (PowerTimerRelay) powerItem;
-                writer.Write(pi.StartTime);
-                writer.Write(pi.EndTime);
+                var pi = (PowerRangedTrap)powerItem;
+                writer.Write(pi.GetIsLocked());
+                GameUtils.WriteItemStack(writer, pi.Stacks);
+                writer.Write((int)pi.TargetType);
             }
-            if (powerItem is PowerElectricWireRelay) // -> PowerConsumer
-            {
-                // nothing to write
-            }
-            if (powerItem is PowerTrigger) // -> PowerConsumer
+
+            if (powerItem is PowerTrigger)
             {
                 var pi = (PowerTrigger)powerItem;
                 writer.Write((byte)pi.TriggerType);
+                // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
                 if (pi.TriggerType == PowerTrigger.TriggerTypes.Switch)
                     writer.Write(pi.GetIsTriggered());
                 else
@@ -225,66 +269,54 @@ namespace ScriptingMod.Commands
                     return;
                 writer.Write((int)pi.TargetType);
             }
-            if (powerItem is PowerConsumerToggle) // -> PowerConsumer
-            {
-                var pi = (PowerConsumerToggle)powerItem;
-                writer.Write(pi.GetIsToggled());
-            }
-            if (powerItem is PowerRangedTrap) // -> PowerConsumer
-            {
-                var pi = (PowerRangedTrap)powerItem;
-                writer.Write(pi.GetIsLocked());
-                GameUtils.WriteItemStack(writer, pi.Stacks);
-                writer.Write((int)pi.TargetType);
-            }
-            if (powerItem is PowerBatteryBank) // -> PowerSource
+
+            if (powerItem is PowerPressurePlate)
             {
                 // nothing to write
             }
-            if (powerItem is PowerGenerator) // -> PowerSource
+
+            if (powerItem is PowerTimerRelay)
             {
-                var pi = (PowerGenerator)powerItem;
-                writer.Write(pi.CurrentFuel);
+                var pi = (PowerTimerRelay) powerItem;
+                writer.Write(pi.StartTime);
+                writer.Write(pi.EndTime);
             }
-            if (powerItem is PowerSolarPanel) // -> PowerSource
+
+            if (powerItem is PowerTripWireRelay)
             {
                 // nothing to write
             }
-            if (powerItem is PowerConsumer) // -> PowerItem
+
+            if (powerItem is PowerConsumerSingle)
             {
                 // nothing to write
             }
-            if (powerItem is PowerSource) // -> PowerItem
+
+            if (powerItem is PowerSource)
             {
                 var pi = (PowerSource)powerItem;
                 writer.Write(pi.CurrentPower);
                 writer.Write(pi.IsOn);
                 GameUtils.WriteItemStack(writer, pi.Stacks);
             }
-            if (powerItem is PowerConsumerSingle) // -> PowerItem
+
+            if (powerItem is PowerBatteryBank)
             {
                 // nothing to write
             }
-            if (powerItem is PowerItem)
+
+            if (powerItem is PowerGenerator)
             {
-                var pi = (PowerItem)powerItem;
-
-                // None of this is needed for import
-
-                //writer.Write(pi.BlockID);
-                //NetworkUtils.Write(writer, pi.Position);
-                writer.Write(pi.Parent != null);
-                if (pi.Parent != null)
-                    NetworkUtils.Write(writer, pi.Parent.Position);
-                //writer.Write((byte)pi.Children.Count);
-                //for (int index = 0; index < pi.Children.Count; ++index)
-                //{
-                //    writer.Write((byte)pi.Children[index].PowerItemType);
-                //    pi.Children[index].write(writer);
-                //}
+                var pi = (PowerGenerator)powerItem;
+                writer.Write(pi.CurrentFuel);
             }
 
-            Log.Debug($"Wrote power item {powerItem.GetType()} at position {powerItem.Position}.");
+            if (powerItem is PowerSolarPanel)
+            {
+                // nothing to write
+            }
+
+            Log.Debug($"Exported power item {powerItem.ToStringBetter()}.");
         }
 
         /// <summary>

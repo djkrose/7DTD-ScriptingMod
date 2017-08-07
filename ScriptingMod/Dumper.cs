@@ -38,7 +38,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Runtime.Remoting;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -145,15 +144,15 @@ namespace ScriptingMod
                 throw new ArgumentNullException(nameof(options));
 
             var idGenerator = new ObjectIDGenerator();
-            InternalDump(0, name, value, null, null, writer, idGenerator, true, options);
+            InternalDump(0, name, value, null, writer, idGenerator, true, options);
         }
 
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-        private static void InternalDump(int indentationLevel, string name, object value, MemberInfo memberInfo, int? index,
+        private static void InternalDump(int indentationLevel, string name, object value, MemberInfo memberInfo,
             TextWriter writer, ObjectIDGenerator idGenerator, bool recursiveDump, DumperOptions options)
         {
             var indentation = new string(' ', indentationLevel * INDENTATION_SPACE);
-            var indentation2 = new string(' ', (indentationLevel + 1) * INDENTATION_SPACE);
+            //var indentation2 = new string(' ', (indentationLevel + 1) * INDENTATION_SPACE);
 
             string accessModifiers = GetAccessModifiers(memberInfo);
             string declaredTypeName = ImproveTypeName(GetDeclaredTypeName(memberInfo));
@@ -258,7 +257,7 @@ namespace ScriptingMod
                     int i = 0;
                     foreach (var element in enumerable)
                     {
-                        InternalDump(indentationLevel + 2, "[" + i + "]", element, null, i, writer, idGenerator, true, options);
+                        InternalDump(indentationLevel + 2, "[" + i + "]", element, null, writer, idGenerator, true, options);
                         i++;
                         if (i >= 100)
                         {
@@ -299,11 +298,11 @@ namespace ScriptingMod
                     try
                     {
                         object fieldValue = field.GetValue(value);
-                        InternalDump(indentationLevel + 2, field.Name, fieldValue, field, null, writer, idGenerator, true, options);
+                        InternalDump(indentationLevel + 2, field.Name, fieldValue, field, writer, idGenerator, true, options);
                     }
                     catch (TargetInvocationException ex)
                     {
-                        InternalDump(indentationLevel + 2, field.Name, ex, field, null, writer, idGenerator, false, options);
+                        InternalDump(indentationLevel + 2, field.Name, ex, field, writer, idGenerator, false, options);
                     }
                 }
                 //writer.WriteLine($"{indentation2}}}");
@@ -317,15 +316,15 @@ namespace ScriptingMod
                     try
                     {
                         object propertyValue = property.GetValue(value, null);
-                        InternalDump(indentationLevel + 2, property.Name, propertyValue, property, null, writer, idGenerator, true, options);
+                        InternalDump(indentationLevel + 2, property.Name, propertyValue, property, writer, idGenerator, true, options);
                     }
                     catch (TargetInvocationException ex)
                     {
-                        InternalDump(indentationLevel + 2, property.Name, ex.InnerException, property, null, writer, idGenerator, false, options);
+                        InternalDump(indentationLevel + 2, property.Name, ex.InnerException, property, writer, idGenerator, false, options);
                     }
                     catch (Exception ex)
                     {
-                        InternalDump(indentationLevel + 2, property.Name, ex, property, null, writer, idGenerator, false, options);
+                        InternalDump(indentationLevel + 2, property.Name, ex, property, writer, idGenerator, false, options);
                     }
                 }
                 //writer.WriteLine($"{indentation2}}}");

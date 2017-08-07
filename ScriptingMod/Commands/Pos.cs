@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using ScriptingMod.Exceptions;
-using ScriptingMod.Extensions;
 using ScriptingMod.Managers;
 using UnityEngine;
 
@@ -32,8 +30,8 @@ namespace ScriptingMod.Commands
                 int chunkZ = World.toChunkXZ(worldPos.z);
                 Vector3i areaMasterChunkPos = new Vector3i(World.toChunkXZ(worldPos.x) / 5 * 5, World.toChunkY(worldPos.y), World.toChunkXZ(worldPos.z) / 5 * 5);
                 string mapPos = Math.Abs(worldPos.z) + (worldPos.z >= 0 ? "N " : "S ") + Math.Abs(worldPos.x) + (worldPos.x >= 0 ? "E " : "W "); // todo: add elevation
-                int areaX = (int)Math.Floor((double)chunkX / 32.0);
-                int areaZ = (int)Math.Floor((double)chunkZ / 32.0);
+                int areaX = (int)Math.Floor(chunkX / 32.0d);
+                int areaZ = (int)Math.Floor(chunkZ / 32.0d);
                 // todo: distance below ground
 
                 SdtdConsole.Instance.Output($"Precise position in world (x y z): {precisePos.x} {precisePos.y} {precisePos.z}");

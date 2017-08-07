@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using ScriptingMod.Managers;
 
 namespace ScriptingMod.Commands
@@ -20,6 +21,7 @@ namespace ScriptingMod.Commands
         /// Prevent the server from creating a static command from this class.
         /// Will output: WRN Command class DynamicCommand does not contain a parameterless constructor, skipping
         /// </summary>
+        [UsedImplicitly]
         private DynamicCommand()
         {
             // never called

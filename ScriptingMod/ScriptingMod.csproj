@@ -79,7 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
-    <Compile Include="Commands\Dump.cs" />
+    <Compile Include="Commands\Test.cs" />
     <Compile Include="Commands\CheckPower.cs" />
     <Compile Include="Commands\LogPowerManager.cs" />
     <Compile Include="Commands\Pos.cs" />
@@ -87,6 +87,8 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Exceptions\ReflectionException.cs" />
     <Compile Include="Extensions\NonPublic.cs" />
+    <Compile Include="Extensions\PowerItemExtensions.cs" />
+    <Compile Include="Extensions\TileEntityExtensions.cs" />
     <Compile Include="Extensions\Vector3iExtensions.cs" />
     <Compile Include="FakeDataStream.cs" />
     <Compile Include="Dumper.cs" />
