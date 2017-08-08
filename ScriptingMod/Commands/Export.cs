@@ -18,7 +18,7 @@ namespace ScriptingMod.Commands
     {
         internal const string TileEntityFileMarker    = "7DTD-TE";
         internal const string TileEntityFileExtension = ".te";
-        internal const int    TileEntityFileVersion   = 5;
+        internal const int    TileEntityFileVersion   = 6;
 
         public static List<TileEntityPowered> TileEntityPoweredList = new List<TileEntityPowered>();
         public static List<PowerItem> PowerItemList = new List<PowerItem>();
