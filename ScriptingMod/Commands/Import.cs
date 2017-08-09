@@ -18,6 +18,7 @@ namespace ScriptingMod.Commands
      * TODO [P3]: Enable/fix importing of spawners
      * TODO [P2]: Replace loot placeholder blocks according to loot.xml
      * TODO [P2]: Allow changing the directon into which the prefab is loaded (other north/east/up)
+     * TODO [P2]: Allow importing vending machines and other things that have TraderData in the TileEntity. This requires that an entry is made into TraderInfo.traderInfoList[this.TraderID]
      */
 
     [UsedImplicitly]
