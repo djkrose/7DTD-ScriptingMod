@@ -22,6 +22,21 @@ namespace ScriptingMod.Commands
             { PowerTrigger.TriggerTypes.TripWire,      typeof(PowerTripWireRelay) }
         };
 
+        private static readonly Dictionary<PowerItem.PowerItemTypes, Type> ValidPowerItemTypes = new Dictionary<PowerItem.PowerItemTypes, Type>()
+        {
+            { PowerItem.PowerItemTypes.Consumer,          typeof(PowerConsumer) },
+            { PowerItem.PowerItemTypes.ConsumerToggle,    typeof(PowerConsumerToggle) },
+            { PowerItem.PowerItemTypes.Trigger,           typeof(PowerTrigger) },
+            { PowerItem.PowerItemTypes.Timer,             typeof(PowerTimerRelay) },
+            { PowerItem.PowerItemTypes.Generator,         typeof(PowerGenerator) },
+            { PowerItem.PowerItemTypes.SolarPanel,        typeof(PowerSolarPanel) },
+            { PowerItem.PowerItemTypes.BatteryBank,       typeof(PowerBatteryBank) },
+            { PowerItem.PowerItemTypes.RangedTrap,        typeof(PowerRangedTrap) },
+            { PowerItem.PowerItemTypes.ElectricWireRelay, typeof(PowerElectricWireRelay) },
+            { PowerItem.PowerItemTypes.TripWireRelay,     typeof(PowerTripWireRelay) },
+            { PowerItem.PowerItemTypes.PressurePlate,     typeof(PowerPressurePlate) }
+        };
+
         public override string[] GetCommands()
         {
             return new[] { "dj-check-power" };
@@ -188,19 +203,32 @@ namespace ScriptingMod.Commands
         /// <summary>
         /// Returns true if the given tile entity has an invalid PowerItem attached; false otherwise
         /// </summary>
-        private static bool IsBrokenTileEntity([NotNull] TileEntity tileEntity)
+        public static bool IsBrokenTileEntity([NotNull] TileEntity tileEntity)
         {
-            var trigger = tileEntity as TileEntityPoweredTrigger;
-            if (trigger != null)
+            var powered = tileEntity as TileEntityPowered;
+            if (powered != null)
             {
-                var actualType = trigger.GetPowerItem().GetType();
+                var powerItemType = powered.GetPowerItem().GetType();
+                Type validType;
 
-                // Check if TriggerType correlates to power item type
-                var validType = ValidTriggerTypes.GetValue(trigger.TriggerType);
-                if (validType != null && actualType != validType)
+                validType = ValidPowerItemTypes.GetValue(powered.PowerItemType);
+                if (validType != null && powerItemType != validType)
                 {
-                    Log.Warning($"{trigger.TriggerType} at {trigger.ToWorldPos()} in {trigger.GetChunk()} has wrong PowerItem: {actualType} instead of expected {validType}.");
+                    Log.Warning($"Tile entity with PowerItemType.{powered.PowerItemType} at {powered.ToWorldPos()} in {powered.GetChunk()} has wrong PowerItem: {powerItemType} instead of expected {validType}.");
                     return true;
+                }
+
+                // Check if TriggerType corresponds with PowerItem object
+                var trigger = tileEntity as TileEntityPoweredTrigger;
+                if (trigger != null)
+                {
+                    validType = ValidTriggerTypes.GetValue(trigger.TriggerType);
+                    
+                    if (validType != null && powerItemType != validType)
+                    {
+                        Log.Warning($"Tile entity with TriggerType.{trigger.TriggerType} at {trigger.ToWorldPos()} in {trigger.GetChunk()} has wrong PowerItem: {powerItemType} instead of expected {validType}.");
+                        return true;
+                    }
                 }
             }
 
@@ -227,11 +255,11 @@ namespace ScriptingMod.Commands
 
             // Detailed logging
             var msg = $"Replaced old TileEntity {tileEntity} with new {newTileEntity}.";
-            var newTrigger = newTileEntity as TileEntityPoweredTrigger;
-            if (newTrigger != null)
+            var newPowered = newTileEntity as TileEntityPowered;
+            if (newPowered != null)
             {
-                var pi = newTrigger.GetPowerItem();
-                msg += " It's a PowerTriger and has " + (pi != null ? $"a PowerItem of type {pi.GetType()}." : "no PowerItem.");
+                var pi = newPowered.GetPowerItem();
+                msg += " It's powered and has " + (pi != null ? $"a PowerItem of type {pi.GetType()}." : "no PowerItem.");
             }
             Log.Out(msg);
         }

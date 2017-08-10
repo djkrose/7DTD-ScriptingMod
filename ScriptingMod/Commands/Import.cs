@@ -218,8 +218,8 @@ namespace ScriptingMod.Commands
 
                 var originalPos1 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos1
                 var originalPos2 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos2
-                var expectedSize = pos2 - pos1;
-                var actualSize   = originalPos2 - originalPos1;
+                var expectedSize = pos2 - pos1 + Vector3i.one;
+                var actualSize   = originalPos2 - originalPos1 + Vector3i.one;
                 var posDelta     = pos1 - originalPos1;
 
                 if (actualSize != expectedSize)
@@ -232,13 +232,13 @@ namespace ScriptingMod.Commands
                     var posInPrefab = NetworkUtils.ReadVector3i(reader);                    // [3xInt32] position relative to prefab
                     posInPrefab     = RotatePosition(posInPrefab, pos2 - pos1, rotate);
 
-                    var posInWorld  = new Vector3i(pos1.x + posInPrefab.x, pos1.y + posInPrefab.y, pos1.z + posInPrefab.z);
+                    var posInWorld  = pos1 + posInPrefab;
                     var posInChunk  = World.toBlock(posInWorld);
                     var chunk       = world.GetChunkFromWorldPos(posInWorld) as Chunk;
                     if (chunk == null)
                         throw new FriendlyMessageException("Area to import is too far away. Chunk not loaded on that area.");
 
-                    var tileEntityType = (TileEntityType)reader.ReadInt32();                // [Int32]    TileEntityType enum
+                    var tileEntityType = (TileEntityType)reader.ReadByte();                 // [byte]    TileEntityType enum
                     var tileEntity = chunk.GetTileEntity(posInChunk);
 
                     // Create new tile entity if Prefab import didn't create it yet; it's only created for some blocks apparently

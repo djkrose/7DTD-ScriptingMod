@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
@@ -18,7 +19,7 @@ namespace ScriptingMod.Commands
     {
         internal const string TileEntityFileMarker    = "7DTD-TE";
         internal const string TileEntityFileExtension = ".te";
-        internal const int    TileEntityFileVersion   = 6;
+        internal const int    TileEntityFileVersion   = 7;
 
         public static List<TileEntityPowered> TileEntityPoweredList = new List<TileEntityPowered>();
         public static List<PowerItem> PowerItemList = new List<PowerItem>();
@@ -53,11 +54,15 @@ namespace ScriptingMod.Commands
 
         public override void Execute(List<string> paramz, CommandSenderInfo senderInfo)
         {
+            string prefabName = null;
+            bool exportStarted = false;
             try
             {
-                (string prefabName, Vector3i pos1, Vector3i pos2) = ParseParams(paramz, senderInfo);
+                Vector3i pos1, pos2;
+                (prefabName, pos1, pos2) = ParseParams(paramz, senderInfo);
                 FixOrder(ref pos1, ref pos2);
                 // Saving tile entities first, because that also checks if chunks are loaded
+                exportStarted = true;
                 SaveTileEntities(prefabName, pos1, pos2);
                 SavePrefab(prefabName, pos1, pos2);
 
@@ -65,6 +70,27 @@ namespace ScriptingMod.Commands
             }
             catch (Exception ex)
             {
+                // Clean up half-writen files. All or nothing.
+                if (exportStarted && !string.IsNullOrEmpty(prefabName))
+                {
+                    try
+                    {
+                        var teFilePath = Path.Combine(Constants.PrefabsFolder, prefabName + TileEntityFileExtension);
+                        if (File.Exists(teFilePath))
+                            File.Delete(teFilePath);
+                        var ttsFilePath = Path.Combine(Constants.PrefabsFolder, prefabName + global::Constants.cExtPrefabs);
+                        if (File.Exists(ttsFilePath))
+                            File.Delete(ttsFilePath);
+                        var xmlFilePath = Path.Combine(Constants.PrefabsFolder, prefabName + ".xml");
+                        if (File.Exists(xmlFilePath))
+                            File.Delete(xmlFilePath);
+                    }
+                    catch (Exception)
+                    {
+                        Log.Warning("Exception thrown while cleaning up files because of another exception.", ex);
+                    }
+                }
+
                 CommandManager.HandleCommandException(ex);
             }
         }
@@ -79,6 +105,11 @@ namespace ScriptingMod.Commands
             }
 
             var prefabName = paramz[0];
+
+            // Sanatize prefabName to only include allowed characters
+            if (!Regex.IsMatch(prefabName, @"^\w[\w.-]*$", RegexOptions.CultureInvariant))
+                throw new FriendlyMessageException("The prefix name contains illegal characters. Please use only letters, numbers, dash, and underscore.");
+
             Vector3i pos1, pos2;
 
             if (paramz.Count == 1)
@@ -139,12 +170,15 @@ namespace ScriptingMod.Commands
                 writer.Write(tileEntities.Count);                                     // [Int32]    number of tile entities
                 foreach (var keyValue in tileEntities)
                 {
-                    var posInWorld = keyValue.Key;
-                    var tileEntity = keyValue.Value;
-                    var posInPrefab = new Vector3i(posInWorld.x - pos1.x, posInWorld.y - pos1.y, posInWorld.z - pos1.z);
+                    var posInWorld  = keyValue.Key;
+                    var tileEntity  = keyValue.Value;
+                    var posInPrefab = posInWorld - pos1;
+
+                    if (CheckPower.IsBrokenTileEntity(tileEntity))
+                        throw new FriendlyMessageException("The area contains a corrupt power block. Please fix it first with the \"dj-check-power\" command.");
 
                     NetworkUtils.Write(writer, posInPrefab);                          // [3xInt32]  position relative to prefab
-                    writer.Write((int)tileEntity.GetTileEntityType());                // [Int32]    TileEntityType enum
+                    writer.Write((byte)tileEntity.GetTileEntityType());               // [byte]     TileEntityType enum
                     tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic]  tile entity data depending on type
                     Log.Debug($"Wrote tile entity {tileEntity}.");
 
@@ -201,7 +235,7 @@ namespace ScriptingMod.Commands
         private static void SavePowerItem(BinaryWriter writer, [NotNull] PowerItem powerItem)
         {
             // Doing everything here that the PowerItem classes do in write(..) methods, but only for itself, not parents or childs.
-            // Intentionally not using ELSE because of PowerItem inheritence, see: https://abload.de/img/2017-07-3011_04_50-scwwpdu.png
+            // Intentionally not using ELSE because of PowerItem inheritence, see: https://abload.de/img/poweritem-hierarchyzvumv.png
 
             if (powerItem is PowerItem)
             {
