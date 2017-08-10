@@ -174,9 +174,6 @@ namespace ScriptingMod.Commands
                     var tileEntity  = keyValue.Value;
                     var posInPrefab = posInWorld - pos1;
 
-                    if (CheckPower.IsBrokenTileEntity(tileEntity))
-                        throw new FriendlyMessageException("The area contains a corrupt power block. Please fix it first with the \"dj-check-power\" command.");
-
                     NetworkUtils.Write(writer, posInPrefab);                          // [3xInt32]  position relative to prefab
                     writer.Write((byte)tileEntity.GetTileEntityType());               // [byte]     TileEntityType enum
                     tileEntity.write(writer, TileEntity.StreamModeWrite.Persistency); // [dynamic]  tile entity data depending on type
@@ -185,6 +182,9 @@ namespace ScriptingMod.Commands
                     var tileEntityPowered = tileEntity as TileEntityPowered;
                     if (tileEntityPowered != null)
                     {
+                        if (CheckPower.IsBrokenTileEntityPowered(tileEntityPowered))
+                            throw new FriendlyMessageException("The area contains a corrupt power block. Please fix it first with the \"dj-check-power\" command.");
+
                         var powerItem = tileEntityPowered.GetPowerItem()
                             ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
 #if DEBUG

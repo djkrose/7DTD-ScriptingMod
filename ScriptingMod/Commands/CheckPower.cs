@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
-using Jint.Parser;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.Managers;
@@ -15,6 +14,7 @@ namespace ScriptingMod.Commands
     {
         private static readonly Dictionary<PowerTrigger.TriggerTypes, Type> ValidTriggerTypes = new Dictionary<PowerTrigger.TriggerTypes, Type>()
         {
+            // See TileEntityPoweredTrigger.CreatePowerItem()
             { PowerTrigger.TriggerTypes.Switch,        typeof(PowerTrigger) },
             { PowerTrigger.TriggerTypes.PressurePlate, typeof(PowerPressurePlate) },
             { PowerTrigger.TriggerTypes.TimerRelay,    typeof(PowerTimerRelay) },
@@ -24,6 +24,7 @@ namespace ScriptingMod.Commands
 
         private static readonly Dictionary<PowerItem.PowerItemTypes, Type> ValidPowerItemTypes = new Dictionary<PowerItem.PowerItemTypes, Type>()
         {
+            // See TileEntity.Instantiate(..)
             { PowerItem.PowerItemTypes.Consumer,          typeof(PowerConsumer) },
             { PowerItem.PowerItemTypes.ConsumerToggle,    typeof(PowerConsumerToggle) },
             { PowerItem.PowerItemTypes.Trigger,           typeof(PowerTrigger) },
@@ -35,6 +36,7 @@ namespace ScriptingMod.Commands
             { PowerItem.PowerItemTypes.ElectricWireRelay, typeof(PowerElectricWireRelay) },
             { PowerItem.PowerItemTypes.TripWireRelay,     typeof(PowerTripWireRelay) },
             { PowerItem.PowerItemTypes.PressurePlate,     typeof(PowerPressurePlate) }
+                                                              // PowerConsumerSingle is not yet used anywhere
         };
 
         public override string[] GetCommands()
@@ -145,7 +147,7 @@ namespace ScriptingMod.Commands
         private static (int countChunks, int countBroken) ScanAllChunks(bool isFixMode)
         {
             SdtdConsole.Instance.Output("Scanning all loaded chunks for broken power blocks ...");
-            var chunks = GameManager.Instance.World.ChunkClusters[0].GetChunkArray();
+            var chunks = GameManager.Instance.World.ChunkClusters[0].GetChunkArray().ToList();
             var countBroken = chunks.Sum(chunk => ScanChunk(chunk, isFixMode));
             var countChunks = chunks.Count;
             return (countChunks, countBroken);
@@ -181,19 +183,22 @@ namespace ScriptingMod.Commands
 
             foreach (var tileEntity in tileEntities)
             {
-                if (!IsBrokenTileEntity(tileEntity))
+                var te = tileEntity as TileEntityPowered;
+                if (te == null || !IsBrokenTileEntityPowered(te))
                     continue;
+
+                Log.Warning($"Found broken power block at position {tileEntity.ToWorldPos()} in {chunk}.");
 
                 if (isFixMode)
                 {
                     RecreateTileEntity(tileEntity);
                     counter++;
-                    SdtdConsole.Instance.Output($"Fixed broken power block at position {tileEntity.ToWorldPos()} in chunk {chunk}.");
+                    SdtdConsole.Instance.Output($"Fixed broken power block at position {tileEntity.ToWorldPos()} in {chunk}.");
                 }
                 else
                 {
                     counter++;
-                    SdtdConsole.Instance.Output($"Found broken power block at position {tileEntity.ToWorldPos()} in chunk {chunk}.");
+                    SdtdConsole.Instance.Output($"Found broken power block at position {tileEntity.ToWorldPos()} in {chunk}.");
                 }
             }
 
@@ -203,35 +208,64 @@ namespace ScriptingMod.Commands
         /// <summary>
         /// Returns true if the given tile entity has an invalid PowerItem attached; false otherwise
         /// </summary>
-        public static bool IsBrokenTileEntity([NotNull] TileEntity tileEntity)
+        public static bool IsBrokenTileEntityPowered([NotNull] TileEntityPowered te)
         {
-            var powered = tileEntity as TileEntityPowered;
-            if (powered != null)
-            {
-                var powerItemType = powered.GetPowerItem().GetType();
-                Type validType;
+            var teType = te.GetType();
 
-                validType = ValidPowerItemTypes.GetValue(powered.PowerItemType);
-                if (validType != null && powerItemType != validType)
+            var pi = te.GetPowerItem();
+            if (pi == null)
+                return false;
+
+            var teTrigger = te as TileEntityPoweredTrigger;
+            if (teTrigger != null)
+            {
+                var piTrigger = pi as PowerTrigger;
+                // Power item should be of type PowerTrigger if this is a PoweredTrigger TE
+                if (piTrigger == null)
                 {
-                    Log.Warning($"Tile entity with PowerItemType.{powered.PowerItemType} at {powered.ToWorldPos()} in {powered.GetChunk()} has wrong PowerItem: {powerItemType} instead of expected {validType}.");
+                    Log.Debug($"{teType} should have power item \"PowerTrigger\" or some descendant of it, but has power item \"{pi.GetType()}\".");
                     return true;
                 }
 
-                // Check if TriggerType corresponds with PowerItem object
-                var trigger = tileEntity as TileEntityPoweredTrigger;
-                if (trigger != null)
+                // Trigger TE's sometimes have the default PowerItemType value, because the TriggerType determines the power item object
+                if (te.PowerItemType != pi.PowerItemType && te.PowerItemType != PowerItem.PowerItemTypes.Consumer)
                 {
-                    validType = ValidTriggerTypes.GetValue(trigger.TriggerType);
-                    
-                    if (validType != null && powerItemType != validType)
-                    {
-                        Log.Warning($"Tile entity with TriggerType.{trigger.TriggerType} at {trigger.ToWorldPos()} in {trigger.GetChunk()} has wrong PowerItem: {powerItemType} instead of expected {validType}.");
-                        return true;
-                    }
+                    Log.Debug($"{teType}.PowerItemType=\"{te.PowerItemType}\" doesn't match with {pi.GetType()}.PowerItemType=\"{pi.PowerItemType}\" and is also not the default \"{PowerItem.PowerItemTypes.Consumer}\".");
+                    return true;
+                }
+
+                // TriggerType and actual power item type should be compatible
+                var expectedType = ValidTriggerTypes.GetValue(teTrigger.TriggerType);
+                if (pi.GetType() != expectedType)
+                {
+                    Log.Debug($"{teType}.TriggerType=\"{teTrigger.TriggerType}\" doesn't fit together with power item \"{pi.GetType()}\". A {expectedType} was expected.");
+                    return true;
+                }
+
+                // TE's TriggerType and PI's TriggerType should match
+                if (teTrigger.TriggerType != piTrigger.TriggerType)
+                {
+                    Log.Debug($"{teType}.TriggerType=\"{teTrigger.TriggerType}\" doesn't match with {pi.GetType()}.PowerItemType=\"{piTrigger.TriggerType}\".");
+                    return true;
                 }
             }
+            else
+            {
+                if (te.PowerItemType != pi.PowerItemType)
+                {
+                    Log.Debug($"{teType}.PowerItemType=\"{te.PowerItemType}\" doesn't match with {pi.GetType()}.PowerItemType=\"{pi.PowerItemType}\".");
+                    return true;
+                }
 
+                // PowerItemType and actual power item object type should be compatible
+                var expectedType = ValidPowerItemTypes.GetValue(te.PowerItemType);
+                if (pi.GetType() != expectedType)
+                {
+                    Log.Debug($"{teType}.PowerItemType=\"{te.PowerItemType}\" doesn't fit together with power item \"{pi.GetType()}\". A {expectedType} was expected.");
+                    return true;
+                }
+            }
+            
             return false;
         }
 
@@ -240,22 +274,32 @@ namespace ScriptingMod.Commands
         /// </summary>
         private static void RecreateTileEntity([NotNull] TileEntity tileEntity)
         {
-            // Save some important values
-            var tileEntityType = tileEntity.GetTileEntityType();
-            var localChunkPos = tileEntity.localChunkPos;
             var chunk = tileEntity.GetChunk();
 
             // Remove broken tile entity and hopefully the power item with it
             chunk.RemoveTileEntity(GameManager.Instance.World, tileEntity);
 
             // Create new tile entity
-            var newTileEntity = TileEntity.Instantiate(tileEntityType, chunk);
-            newTileEntity.localChunkPos = localChunkPos;
+            var newTileEntity = TileEntity.Instantiate(tileEntity.GetTileEntityType(), chunk);
+            newTileEntity.localChunkPos = tileEntity.localChunkPos;
             chunk.AddTileEntity(newTileEntity);
+
+            // Recreate power item if necessary
+            var newPowered = newTileEntity as TileEntityPowered;
+            if (newPowered != null)
+            {
+                // Restore old PowerItemType and TriggerType values
+                // TODO: This is not ideal, because it would recreate inconsistent data where the type variables were wrong
+                if (tileEntity is TileEntityPowered tePowered)
+                    newPowered.PowerItemType = tePowered.PowerItemType;
+                if (tileEntity is TileEntityPoweredTrigger teTrigger && newPowered is TileEntityPoweredTrigger newTrigger)
+                    newTrigger.TriggerType = teTrigger.TriggerType;
+
+                newPowered.InitializePowerData();
+            }
 
             // Detailed logging
             var msg = $"Replaced old TileEntity {tileEntity} with new {newTileEntity}.";
-            var newPowered = newTileEntity as TileEntityPowered;
             if (newPowered != null)
             {
                 var pi = newPowered.GetPowerItem();
