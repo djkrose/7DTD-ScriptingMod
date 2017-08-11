@@ -49,6 +49,7 @@ namespace ScriptingMod.Commands
                 SdtdConsole.Instance.Output("");
 
                 SdtdConsole.Instance.Output("Operating System: " + Environment.OSVersion);
+                SdtdConsole.Instance.Output("Application version: " + Application.version); // TODO: test / come up with better name
                 SdtdConsole.Instance.Output("Unity version: " + Application.unityVersion);
 
                 var displayName = Type.GetType("Mono.Runtime")?.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static);
