@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -13,52 +14,46 @@ namespace ScriptingMod
         private const string PREFIX = "[SCRIPTING MOD] ";
         private const string DEBUG_PREFIX = "[DEBUG] ";
 
-//#if DEBUG
-//        public const bool DEBUG = true;
-//#else
-//        public const bool DEBUG = false;
-//#endif
+#if DEBUG
+        public const bool DEBUG = true;
+#else
+        public const bool DEBUG = false;
+#endif
 
+        [Conditional("DEBUG")]
         public static void Dump(object obj)
         {
-#if DEBUG
             Debug(Dumper.Dump(obj));
-#endif
         }
 
+        [Conditional("DEBUG")]
         public static void Dump(object obj, int depth)
         {
-#if DEBUG
             Debug(Dumper.Dump(obj, depth));
-#endif
         }
 
+        [Conditional("DEBUG")]
         public static void Dump(object obj, DumperOptions options)
         {
-#if DEBUG
             Debug(Dumper.Dump(obj, options));
-#endif
         }
 
+        [Conditional("DEBUG")]
         public static void Dump(object obj, string name, DumperOptions options)
         {
-#if DEBUG
             Debug(Dumper.Dump(obj, name, options));
-#endif
         }
 
+        [Conditional("DEBUG")]
         public static void Debug(string _format, params object[] _values)
         {
-#if DEBUG
             global::Log.Out(PREFIX + DEBUG_PREFIX + _format, _values);
-#endif
         }
 
+        [Conditional("DEBUG")]
         public static void Debug(string _s)
         {
-#if DEBUG
             global::Log.Out(PREFIX + DEBUG_PREFIX + _s);
-#endif
         }
 
         public new static void Out(string _format, params object[] _values)
