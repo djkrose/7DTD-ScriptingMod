@@ -1,0 +1,541 @@
+//------------------------------------------------
+//--- 010 Editor v8.0 Binary Template
+//
+//      File: 7DTD ScriptingMod .te file format
+//   Authors: djkrose
+//   Version: 7
+//------------------------------------------------
+
+// ------------- enums -------------
+
+typedef enum <byte> {
+    TE_None              = 0,
+    TE_Loot              = 5,
+    TE_Trader            = 6,
+    TE_VendingMachine    = 7,
+    TE_Forge             = 8,
+    TE_Campfire          = 9,
+    TE_SecureLoot        = 10,
+    TE_SecureDoor        = 11,
+    TE_Workstation       = 12,
+    TE_Sign              = 13,
+    TE_GoreBlock         = 14,
+    TE_Powered           = 15,
+    TE_PowerSource       = 16,
+    TE_PowerRangeTrap    = 17,
+    TE_Trigger           = 19
+} TileEntityType;
+
+typedef enum <byte> {
+    PI_None,
+    PI_Consumer,
+    PI_ConsumerToggle,
+    PI_Trigger,
+    PI_Timer,
+    PI_Generator,
+    PI_SolarPanel,
+    PI_BatteryBank,
+    PI_RangedTrap,
+    PI_ElectricWireRelay,
+    PI_TripWireRelay,
+    PI_PressurePlate
+} PowerItemTypes;
+
+typedef enum <byte> {
+    TT_Switch,
+    TT_PressurePlate,
+    TT_TimerRelay,
+    TT_Motion,
+    TT_TripWire
+} TriggerTypes;
+
+typedef enum <int> {
+    None = 0,
+    Self = 1,
+    Allies = 2,
+    Strangers = 4,
+    Zombies = 8,
+} TargetTypes;
+
+// ------------- Standard datatypes -------------
+
+// Redefine some base types to match C# definition
+typedef uint64 ulong;
+typedef byte   sbyte;
+typedef ubyte  byte;
+
+string itos(int i){
+    local string s;
+    SPrintf(s, "%d", i);
+    return s;
+}
+
+typedef byte bool <read=boolRead>;
+
+string boolRead(bool &b) {
+    if (b == 1)
+        return "true";
+    else
+        return "false";
+}
+
+typedef struct {    
+    ubyte len;
+    if (len > 0)
+        char  str[len];
+} String <read=StringRead, optimize=false>;
+
+string StringRead(String &s) {
+    return s.len > 0 ? "\"" + s.str + "\"" : "\"\"";
+}
+
+// ----------------- Common structures -------------
+
+typedef struct {
+    int x;
+    int y;
+    int z;
+    Assert(x >= -9999 && x <= 9999, "Vector3i.x is out of bounds: " + itos(x));
+    Assert(y >= -9999 && y <= 9999, "Vector3i.y is out of bounds: " + itos(y));
+    Assert(z >= -9999 && z <= 9999, "Vector3i.z is out of bounds: " + itos(z));
+} Vector3i <read=Vector3iRead>;
+
+string Vector3iRead(Vector3i &v) {
+    string s;
+	SPrintf(s, "[%d, %d, %d]", v.x, v.y, v.z);
+	return s;
+};
+
+typedef struct {
+    int x;
+    int z;
+} Vector2i <read=Vector2iRead, size=8>;
+
+string Vector2iRead(Vector2i &v) {
+    string s;
+	SPrintf(s, "[%d, %d]", v.x, v.z);
+	return s;
+};
+
+typedef struct {
+    byte            version;
+    Assert(version == 3, "Wrong ItemValue version: " + itos(version));
+    ushort          type;
+    ushort          useTimes;
+    ushort          quality;
+    ushort          meta;
+    byte            partsCount;
+    if (partsCount > 0) {
+        struct {
+            bool    notNull;
+            if (notNull) {
+                struct ItemValue itemValue;
+            }        
+        } itemValueParts[partsCount] <name="itemValueParts", optimize=false>;
+    }
+    bool            hasAttachment;
+    if (hasAttachment) {
+        byte             attachmentsCount;
+        Assert(attachmentsCount > 0, "hasAttachment is true but attachmentsCount is zero"); 
+        if (attachmentsCount > 0)
+            struct ItemValue attachments[attachmentsCount] <name="attachments">;
+    }
+    bool            activated;
+    byte            selectedAmmoTypeIndex;
+} ItemValue <optimize=false>;
+
+typedef struct {
+    ItemValue itemValue <name="itemValue">;
+    short count;
+} ItemStack <optimize=false>;
+
+typedef struct {
+    byte count;
+    if (count > 0)
+        ItemStack itemStacks[count] <name="itemStacks">;
+} ItemStacksByte <optimize=false>;
+
+typedef struct {
+    ushort count;
+    if (count > 0)
+        ItemStack itemStacks[count] <name="itemStacks">;
+} ItemStacksUShort <optimize=false>;
+
+typedef struct {
+    byte     version;
+    Assert(version == 2, "Wrong Recipe version: " + itos(version));
+    String  name;
+    int     count;
+    bool    scrapable;
+    bool    wildcardForgeCategory;
+    bool    wildcardCampfireCategory;
+    String  craftingToolType;
+    float   craftingTime;
+    String  craftingArea;
+    String  tooltip;
+    int     ingredientsCount;
+    if (ingredientsCount > 0) {
+        struct {
+            String      itemName;
+            int         ingredientCount;
+            Vector2i    vector2i;
+        } ingredient[ingredientsCount] <optimize=false>;
+    }
+    bool    materialBasedRecipe;
+    int     craftExpGain;
+} Recipe <optimize=false>;
+
+typedef struct {
+    bool    hasRecipe;
+    if (hasRecipe) {
+        Recipe recipe;
+    }
+    float   craftingTimeLeft;
+    int     multiplier;
+    bool    isCrafting;
+    bool    hasRepairItem;
+    if (hasRepairItem) {
+        ItemValue   repairItem;
+        int         amountToRepair;
+    }
+    int     quality;
+    int     startingEntityId;
+} RecipeQueueItem <optimize=false>;
+
+// See Traderdata.WriteInventoryData
+typedef struct {
+    ItemStacksUShort        primaryInventory;
+    byte                    tierItemGroupsCount;
+    if (tierItemGroupsCount > 0)
+        ItemStacksUShort    tierItemGroups[tierItemGroupsCount];
+    int                     availableMoney;
+    int                     markupCount;
+    if (markupCount > 0)
+        sbyte               markups[markupCount];
+} InventoryData;
+
+typedef struct {
+    int             traderId;
+    ulong           lastInventoryUpdate;
+    byte            version;
+    Assert(version == 1, "Wrong TraderData version: " + itos(version));
+    InventoryData   inventoryData;
+} TraderData;
+
+
+// ------------- TileEntity classes -------------
+
+typedef struct {
+    ushort      version;
+    Assert(version == 3, "Wrong TileEntity version: " + itos(version));
+    Vector3i    localChunkPos;
+    int         entityId;
+    ulong       nextHeatMapEvent;
+} TileEntity <name="TileEntity">;
+
+typedef struct {
+    // TODO
+} TileEntityCampfire <name="TileEntityCampfire">;
+
+typedef struct {
+    // TODO
+} TileEntityForge <name="TileEntityForge">;
+
+typedef struct {
+    TileEntity      tileEntity;
+    ushort          lootListIndex;
+    ushort          containerSizeX;
+    ushort          containerSizeY;
+    bool            bTouched;
+    uint            worldTimeTouched;
+    bool            bPlayerBackpack;
+    short           itemsCount;
+    if (itemsCount > 0)
+        ItemStack   itemStacks[itemsCount];
+    bool            bPlayerStorage;
+} TileEntityLootContainer <name="TileEntityLootContainer">;
+
+typedef struct {
+    TileEntityLootContainer tileEntityLootContainer;
+    ulong   createdTick;
+} TileEntityGoreBlock <name="TileEntityGoreBlock">;
+
+typedef struct {
+    TileEntityLootContainer tileEntityLootContainer;
+    int     version;
+    Assert(version == 1, "Wrong TileEntitySecure version: " + itos(version));
+    bool    bool2; // unknown
+    bool    isLocked;
+    String  owner <comment="steam id">;
+    int     allowedUsersCount;
+    if (allowedUsersCount > 0)
+        String  allowedUsers[allowedUsersCount];
+    String  password;
+} TileEntitySecure <name="TileEntitySecure">;
+
+typedef struct {
+    TileEntitySecure tileEntitySecure;
+} TileEntitySecureDoor <name="TileEntitySecureDoor">;
+
+typedef struct {
+    TileEntityLootContainer tileEntityLootContainer;
+    int                     version;
+    Assert(version == 1, "Wrong TileEntitySecureLootContainer version: " + itos(version));
+    bool                    bool2; // unknown
+    bool                    isLocked;
+    String                  owner <comment="steam id">;
+    String                  password;
+    int                     allowedUsersCount;
+    if (allowedUsersCount > 0)
+        String              allowedUsers[allowedUsersCount];
+} TileEntitySecureLootContainer <name="TileEntitySecureLootContainer">;
+
+local PowerItemTypes g_powerItemType;
+typedef struct {
+    TileEntity      tileEntity;
+    int             version;
+    Assert(version == 1, "Wrong TileEntityPowered version: " + itos(version));
+    bool            isPlayerPlaced;
+    PowerItemTypes  powerItemType;
+
+    // Saving for switch statement later
+    g_powerItemType = powerItemType;
+
+    Assert(Strlen(EnumToString(powerItemType)) > 0, "Unknown powerItemType: " + itos(powerItemType));
+    byte            childCount;
+    if (childCount > 0)
+        Vector3i    children[childCount] <optimize=true>;
+    Vector3i        parent;
+    float           centeredPitch;
+    float           centeredYaw;
+} TileEntityPowered <name="TileEntityPowered">;
+
+typedef struct {
+    TileEntityPowered tileEntityPowered;
+} TileEntityPoweredBlock <name="TileEntityPoweredBlock">;
+
+typedef struct {
+    // TODO
+} TileEntityPoweredRangedTrap <name="TileEntityPoweredRangedTrap">;
+
+local PowerItemTypes g_triggerType;
+typedef struct {
+    TileEntityPowered   tileEntityPowered;
+    TriggerTypes        triggerType;
+
+    // Saving for switch statement later
+    g_triggerType = triggerType;
+
+    Assert(Strlen(EnumToString(triggerType)) > 0, "Unknown triggerType: " + itos(triggerType));
+    if (triggerType == TT_Motion)
+        String          owner <comment="steam id">;
+} TileEntityPoweredTrigger <name="TileEntityPoweredTrigger">;
+
+typedef struct {
+    TileEntityPowered tileEntityPowered;
+} TileEntityPowerSource <name="TileEntityPowerSource">;
+
+typedef struct {
+    TileEntity  tileEntity;
+    int         version;
+    Assert(version == 1, "Wrong TileEntitySign version: " + itos(version));
+    bool        isLocked;
+    String      owner <comment="steam id">;
+    String      password;
+    int         allowedUsersCount;
+    if (allowedUsersCount > 0)
+        String  allowedUsers[allowedUsersCount] <name="allowedUsers", comment="steam id">;
+    String      text;
+} TileEntitySign <name="TileEntitySign">;
+
+typedef struct {
+    TileEntity tileEntity;
+    int version;
+    Assert(version == 1, "Wrong TileEntityTrader version: " + itos(version));
+    TraderData traderData;
+} TileEntityTrader <name="TileEntityTrader">;
+
+typedef struct {
+    TileEntityTrader    tileEntityTrader;
+    int                 version;
+    Assert(version == 1, "Wrong TileEntityVendingMachine version: " + itos(version));
+    bool                isLocked;
+    String              owner <comment="steam id">;
+    String              password;
+    int                 allowedUsersCount;
+    if (allowedUsersCount > 0)
+        String          allowedUsers[allowedUsersCount];
+    ulong               rentalEndTime;
+    TraderData          traderData;
+    // TODO: Find a way to derive TraderData.TraderInfo.IsRentable, because it is not part of the data structure
+    if (false)
+        ulong           ulong2; // unknown
+} TileEntityVendingMachine <name="TileEntityVendingMachine">;
+
+typedef struct {
+    TileEntity      tileEntity;
+    byte            version;
+    Assert(version == 30, "Wrong ItemValue version: " + itos(version));
+    ulong           lastTick;
+    ItemStacksByte  fuel;
+    ItemStacksByte  input;
+    ItemStacksByte  tools;
+    ItemStacksByte  output;
+    byte            recipeQueueCount;
+    if (recipeQueueCount > 0)
+        RecipeQueueItem recipeQueueItems[recipeQueueCount] <name="recipeQueueItems">;
+    bool            canOperate;
+    float           burnTimeLeft;
+    byte            float2Count;
+    if (float2Count > 0)
+        float       float2[float2Count]; // unknown
+    bool            isPlayerPlaced;
+} TileEntityWorkstation <name="TileEntityWorkstation">;
+
+// ------------- PowerItem classes -------------
+
+typedef struct {
+    bool hasParent;
+    if (hasParent)
+        Vector3i parent;
+} PowerItem <name="PowerItem">;
+
+typedef struct {
+    PowerItem powerItem;
+} PowerConsumer <name="PowerConsumer">;
+
+typedef struct {
+    PowerConsumer powerConsumer;
+    bool isToggled;
+} PowerConsumerToggle <name="PowerConsumerToggle">;
+
+typedef struct {
+    // TODO
+} PowerElectricWireRelay <name="PowerElectricWireRelay">;
+
+typedef struct {
+    // TODO
+} PowerRangedTrap <name="PowerRangedTrap">;
+
+typedef struct {
+    PowerConsumer   powerConsumer;
+    TriggerTypes    triggerType;
+    if (triggerType == TT_Switch) {
+        bool        isTriggered;
+    } else {
+        bool        isActive;
+        byte        triggerPowerDelay;
+        byte        triggerPowerDuration;
+        float       delayStartTime;
+        float       powerTime;
+    }
+    if (triggerType == TT_Motion)
+        TargetTypes targetType; // int!
+} PowerTrigger <name="PowerTrigger">;
+
+typedef struct {
+    // TODO
+} PowerPressurePlate <name="PowerPressurePlate">;
+
+typedef struct {
+    // TODO
+} PowerTimerRelay <name="PowerTimerRelay">;
+
+typedef struct {
+    // TODO
+} PowerTripWireRelay <name="PowerTripWireRelay">;
+
+typedef struct {
+    // TODO
+} PowerConsumerSingle <name="PowerConsumerSingle">;
+
+typedef struct {
+    PowerItem           powerItem;
+    ushort              currentPower;
+    bool                IsOn;
+    ItemStacksUShort    stacks;
+} PowerSource <name="PowerSource">;
+
+typedef struct {
+    PowerSource powerSource;
+} PowerBatteryBank <name="PowerBatteryBank">;
+
+typedef struct {
+    PowerSource powerSource;
+    ushort      currentFuel;
+} PowerGenerator <name="PowerGenerator">;
+
+typedef struct {
+    // TODO
+} PowerSolarPanel <name="PowerSolarPanel">;
+
+// ------------- main structure -------------
+
+
+struct {
+    String      fileMarker;
+    int         version;
+    Assert(version == 7, "Wrong FILE version: " + itos(version));
+    Vector3i    pos1;
+    Vector3i    pos2;
+    int         tileEntitiesCount;
+
+    struct TileEntityLoop {
+        // Initialize; gets overwritten for TileEntityPowered te's
+        g_powerItemType = -1;
+        g_triggerType = -1;
+
+        Vector3i        posInPrefab;
+        TileEntityType  tileEntityType;
+        Assert(Strlen(EnumToString(tileEntityType)) > 0, "Unknown tileEntityType: " + itos(tileEntityType));
+
+        switch (tileEntityType) {
+            case TE_Loot:           TileEntityLootContainer       tileEntityLootContainer;       break;
+            case TE_Trader:         TileEntityTrader              tileEntityTrader;              break;
+            case TE_VendingMachine: TileEntityVendingMachine      tileEntityVendingMachine;      break;
+            case TE_Forge:          TileEntityForge               tileEntityForge;               break;
+            case TE_Campfire:       TileEntityCampfire            tileEntityCampfire;            break;
+            case TE_SecureLoot:     TileEntitySecureLootContainer tileEntitySecureLootContainer; break;
+            case TE_SecureDoor:     TileEntitySecureDoor          tileEntitySecureDoor;          break;
+            case TE_Workstation:    TileEntityWorkstation         tileEntityWorkstation;         break;
+            case TE_Sign:           TileEntitySign                tileEntitySign;                break;
+            case TE_GoreBlock:      TileEntityGoreBlock           tileEntityGoreBlock;           break;
+            case TE_Powered:        TileEntityPoweredBlock        tileEntityPoweredBlock;        break;
+            case TE_PowerSource:    TileEntityPowerSource         tileEntityPowerSource;         break;
+            case TE_PowerRangeTrap: TileEntityPoweredRangedTrap   tileEntityPoweredRangedTrap;   break;
+            case TE_Trigger:        TileEntityPoweredTrigger      tileEntityPoweredTrigger;      break;
+        }
+        
+        if (tileEntityType == TE_Trigger) {
+            // For TileEntityPoweredTrigger's the power item type is determined by TriggerType
+            // while the PowerItemType itself is often left at PowerConsumer incorrectly.
+            switch (g_triggerType) {
+                case TT_Switch:         PowerTrigger        powerTrigger;        break;
+                case TT_PressurePlate:  PowerPressurePlate  powerPressurePlate;  break;
+                case TT_TimerRelay:     PowerTimerRelay     powerTimerRelay;     break;
+                case TT_Motion:         PowerTrigger        powerTrigger;        break;
+                case TT_TripWire:       PowerTripWireRelay  powerTripWireRelay;  break;
+            }
+        } else {
+            // For all else the power item type is defined by... guess what .. 
+            switch (g_powerItemType) {
+                case PI_Consumer:           PowerConsumer           powerConsumer;          break;
+                case PI_ConsumerToggle:     PowerConsumerToggle     powerConsumerToggle;    break;
+                case PI_Trigger:            PowerTrigger            powerTrigger;           break;
+                case PI_Timer:              PowerTimerRelay         powerTimerRelay;        break;
+                case PI_Generator:          PowerGenerator          powerGenerator;         break;
+                case PI_SolarPanel:         PowerSolarPanel         powerSolarPanel;        break;
+                case PI_BatteryBank:        PowerBatteryBank        powerBatteryBank;       break;
+                case PI_RangedTrap:         PowerRangedTrap         powerRangedTrap;        break;
+                case PI_ElectricWireRelay:  PowerElectricWireRelay  powerElectricWireRelay; break;
+                case PI_TripWireRelay:      PowerTripWireRelay      powerTripWireRelay;     break;
+                case PI_PressurePlate:      PowerPressurePlate      powerPressurePlate;     break;
+            }
+        }
+
+    } tileEntities[tileEntitiesCount] <name="tileEntities", read=TileEntityLoopRead, optimize=false>;
+} te_file <open=true>;
+
+string TileEntityLoopRead(TileEntityLoop &t) {
+    return EnumToString(t.tileEntityType);
+}
