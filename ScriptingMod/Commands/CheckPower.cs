@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms.VisualStyles;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
@@ -27,43 +26,6 @@ namespace ScriptingMod.Commands
             { PowerTrigger.TriggerTypes.TimerRelay,    typeof(PowerTimerRelay) },
             { PowerTrigger.TriggerTypes.Motion,        typeof(PowerTrigger) },
             { PowerTrigger.TriggerTypes.TripWire,      typeof(PowerTripWireRelay) }
-        };
-
-        /// <summary>
-        /// Lists all power-related tile entity classes and their PowerItemTypes that they are allowed to have set.
-        /// Last updated: A16.2 b7
-        /// Source:
-        /// - For triggers see TileEntityPoweredTrigger.CreatePowerItem
-        /// - For all others search for "new TileEntityBlaBla" in library and check nearby PowerItemType assignments
-        /// </summary>
-        private static readonly Dictionary<Type, HashSet<PowerItem.PowerItemTypes>> ValidPowerTypes = 
-            new Dictionary<Type, HashSet<PowerItem.PowerItemTypes>>
-        {
-            //{ typeof(TileEntityPowered), new HashSet<PowerItem.PowerItemTypes>() { } },   // only derived types appear
-            { typeof(TileEntityPoweredBlock), new HashSet<PowerItem.PowerItemTypes>()
-            {
-                PowerItem.PowerItemTypes.Consumer,
-                PowerItem.PowerItemTypes.ConsumerToggle,
-                PowerItem.PowerItemTypes.ElectricWireRelay,
-            } },
-            { typeof(TileEntityPoweredRangedTrap), new HashSet<PowerItem.PowerItemTypes>()
-            {
-                PowerItem.PowerItemTypes.RangedTrap
-            } },
-            { typeof(TileEntityPoweredTrigger), new HashSet<PowerItem.PowerItemTypes>()
-            {
-                PowerItem.PowerItemTypes.Consumer, // because TileEntityPoweredTrigger.CreatePowerItem leaves it on default and just cares about TriggerType. Maybe the error cause?
-                PowerItem.PowerItemTypes.Trigger,
-                PowerItem.PowerItemTypes.Timer,
-                PowerItem.PowerItemTypes.TripWireRelay,
-                PowerItem.PowerItemTypes.PressurePlate,
-            } },
-            { typeof(TileEntityPowerSource), new HashSet<PowerItem.PowerItemTypes>()
-            {
-                PowerItem.PowerItemTypes.BatteryBank,
-                PowerItem.PowerItemTypes.SolarPanel,
-                PowerItem.PowerItemTypes.Generator
-            } },
         };
 
         public override string[] GetCommands()
@@ -238,19 +200,6 @@ namespace ScriptingMod.Commands
         public static bool IsBrokenTileEntityPowered([NotNull] TileEntityPowered te)
         {
             var teType = te.GetType();
-
-            //// Check if tile entity class has a valid TileEntityType value
-            //var expectedTypes = ValidPowerTypes.GetValue(teType);
-            //if (expectedTypes == null)
-            //    Log.Warning($"Unknown tile entity object type \"{teType}\" found.");
-            //else if (!expectedTypes.Contains(te.PowerItemType))
-            //{
-            //    Log.Debug($"[{te.ToWorldPos()}] {teType}.PowerItemType has illegal value \"{te.PowerItemType}\". " +
-            //              "Expected values for this tile entity are: " + expectedTypes.Select(t => t.ToString()).Join(", "));
-            //    return true;
-            //}
-
-            // Check the attached power item object itself
             var pi = te.GetPowerItem();
 
             // Can't check what's not there. That's ok, some powered blocks (e.g. lamps) don't have a power item until connected.
@@ -332,7 +281,6 @@ namespace ScriptingMod.Commands
             if (newPowered != null)
             {
                 // Restore old PowerItemType and TriggerType values
-                // TODO: This is not ideal, because it would recreate inconsistent data where the type variables don't match with the object type
                 if (tileEntity is TileEntityPowered tePowered)
                     newPowered.PowerItemType = tePowered.PowerItemType;
                 if (tileEntity is TileEntityPoweredTrigger teTrigger && newPowered is TileEntityPoweredTrigger newTrigger)
