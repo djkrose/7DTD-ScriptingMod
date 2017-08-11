@@ -176,7 +176,7 @@ namespace ScriptingMod.Commands
                 if (te == null || !IsBrokenTileEntityPowered(te))
                     continue;
 
-                Log.Warning($"Found broken power block at position {tileEntity.ToWorldPos()} in {chunk}.");
+                Log.Warning($"Found broken power block at {tileEntity.ToWorldPos()} in {chunk}.");
 
                 if (isFixMode)
                 {
@@ -268,8 +268,17 @@ namespace ScriptingMod.Commands
         {
             var chunk = tileEntity.GetChunk();
 
-            // Remove broken tile entity and hopefully the power item with it
+            // Prevent further errors on client updates; crucial when removing power item!
+            tileEntity.SetDisableModifiedCheck(true);
+
+            // Remove broken tile entity
             chunk.RemoveTileEntity(GameManager.Instance.World, tileEntity);
+
+            // Remove power item
+            var tePowered = tileEntity as TileEntityPowered;
+            var powerItem = tePowered?.GetPowerItem();
+            if (powerItem != null)
+                PowerManager.Instance.RemovePowerNode(powerItem);
 
             // Create new tile entity
             var newTileEntity = TileEntity.Instantiate(tileEntity.GetTileEntityType(), chunk);
@@ -281,22 +290,22 @@ namespace ScriptingMod.Commands
             if (newPowered != null)
             {
                 // Restore old PowerItemType and TriggerType values
-                if (tileEntity is TileEntityPowered tePowered)
+                if (tePowered != null)
                     newPowered.PowerItemType = tePowered.PowerItemType;
+                
+                // fancy new C#7 syntax, isn't it? :)
                 if (tileEntity is TileEntityPoweredTrigger teTrigger && newPowered is TileEntityPoweredTrigger newTrigger)
                     newTrigger.TriggerType = teTrigger.TriggerType;
 
+                // Create power item according to PowerItemType and TriggerType
                 newPowered.InitializePowerData();
+
+                // TODO [P3]: Restore parent/childs and wires from old power item. Must also correctly set backlinks from parents/childs and update TE wiredata.
             }
 
-            // Detailed logging
-            var msg = $"Replaced old TileEntity {tileEntity} with new {newTileEntity}.";
-            if (newPowered != null)
-            {
-                var pi = newPowered.GetPowerItem();
-                msg += " It's powered and has " + (pi != null ? $"a PowerItem of type {pi.GetType()}." : "no PowerItem.");
-            }
-            Log.Out(msg);
+            var newPowerItem = newPowered?.GetPowerItem();
+            Log.Debug($"[{tileEntity.ToWorldPos()}] Replaced old {tileEntity.GetType()} with new {newTileEntity.GetType()}" +
+                      $"{(newPowerItem != null ? " and new power item " + newPowerItem.GetType() : "")}.");
         }
 
     }
