@@ -1,7 +1,7 @@
 # djkrose's Scripting Mod
 Adds scripting support and other useful functionality to 7 Days To Die dedicated server.
 
-[**Download**](https://github.com/djkrose/7DTD-ScriptingMod/releases/latest)
+[![Download](https://abload.de/img/github-downloadm0ur7.png)](https://github.com/djkrose/7DTD-ScriptingMod/releases/latest)
 
 ## Scripting Examples
 
@@ -62,16 +62,18 @@ console.log("Hello JavaScript World!");
 
 ## Built-in Commands
 
-* Import/export prefabs <b>with container content, ownership, lock status, sign texts</b>, and all other metadata.<br>
+* Import/export prefabs <b>with container content, ownership, lock status, sign texts, electricity settings, and wires</b>, and all other metadata.<br>
   &ndash;&nbsp; Fully restore griefed bases with one command!<br>
   &ndash;&nbsp; Copy buildings from server to server or between server versions after world reset.
-* Fix for broken tripwires causing NullReferenceException [...] at TileEntityPoweredTrigger.write
+  &ndash;&nbsp; Create prefabs with complex electricity setups
+* Fix for broken power blocks causing NullReferenceException [...] at TileEntityPoweredTrigger.write and other errors
+* Command to show position including chunk number, region file, and other position data
 * [more to come shortly]
 
 ## Compatibility
 
  * **Dedicated Server** of [7 Days to Die](http://store.steampowered.com/app/251570/7_Days_to_Die/). The mod is not meant to be used with the desktop client.
- * Tested with 7DTD **Alpha 16.1 (b1)** but future versions might also work
+ * Tested with 7DTD **Alpha 16.2 (b7)** but future versions might also work
  * Developed and tested on **Windows**. Linux may or may not work; reports are welcome!
  * **No dependencies**: No other mods or other software is required.
  * Successfully tested together with these great mods:
@@ -80,7 +82,7 @@ console.log("Hello JavaScript World!");
    * [StompiNZ's Bad Company Manager](https://7daystodie.com/forums/showthread.php?57569)
 
 ## Documentation
-[coming in a few days]
+[coming later]
 
 ## Source Code
 During this early phase of development the source code is not yet publicly available. The GitHub repository is just used for issue tracking and documentation. When the mod has reached stable status (version 1.0) the source code will be published and others are invited to contribute to it or use parts in their own mods.
@@ -92,7 +94,7 @@ The mod is still in early development and I want to add a lot more to it. Here a
 * Many more example scripts in Lua and JavaScript to get you started more quickly
 * Event system to execute scripts based on game events like player logged in, player killed, bloodmoon starting,  etc.
 * Option to execute commands through chat messages rather than console commands, for instance /home or !home
-* Command to regenerate a custom area, for example to fix griefed areas and  refresh POI's
+* Command to regenerate a custom area, for example to fix griefed areas and refresh POI's
 * Integration with  https://7daystodie-servers.com/ voting system to execute custom scripts on player's vote
 
 This is just a rough outline; everything is subject to change depending on your feedback, on feasibility, on my real life commitments, and simply on my  pleasure to continue in any direction or at all.
