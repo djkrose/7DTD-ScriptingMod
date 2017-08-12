@@ -89,8 +89,6 @@
     <Compile Include="Extensions\NonPublic.cs" />
     <Compile Include="Extensions\PowerItemExtensions.cs" />
     <Compile Include="Extensions\TileEntityExtensions.cs" />
-    <Compile Include="Extensions\Vector3iExtensions.cs" />
-    <Compile Include="FakeDataStream.cs" />
     <Compile Include="Dumper.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />

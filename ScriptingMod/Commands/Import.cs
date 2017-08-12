@@ -26,11 +26,6 @@ namespace ScriptingMod.Commands
     public class Import : ConsoleCmdAbstract
     {
 
-#if DEBUG
-        public static List<TileEntityPowered> TileEntityPoweredList = new List<TileEntityPowered>();
-        public static List<PowerItem> PowerItemList = new List<PowerItem>();
-#endif
-
         public override string[] GetCommands()
         {
             return new[] {"dj-import"};
@@ -197,10 +192,6 @@ namespace ScriptingMod.Commands
 
         private static void LoadTileEntities(string prefabName, Vector3i pos1, Vector3i pos2, int rotate)
         {
-#if DEBUG
-            TileEntityPoweredList = new List<TileEntityPowered>();
-            PowerItemList = new List<PowerItem>();
-#endif
             var filePath     = Path.Combine(Constants.PrefabsFolder, prefabName + Export.TileEntityFileExtension);
             var world        = GameManager.Instance.World;
             int tileEntitiyCount;
@@ -269,10 +260,6 @@ namespace ScriptingMod.Commands
                             throw new ApplicationException("For imported TileEntityPowered no PowerItem was created during TileEntityPowered.read.");
 
                         LoadPowerItem(reader, powerItem, posDelta);
-#if DEBUG
-                        TileEntityPoweredList.Add(tileEntityPowered);
-                        PowerItemList.Add(powerItem);
-#endif
                     }
                 }
             }

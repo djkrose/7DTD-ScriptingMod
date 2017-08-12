@@ -195,16 +195,6 @@ namespace ScriptingMod.Extensions
             return (List<IConsoleCommand>)fi_SdtdConsole_commandObjects.GetValue(obj);
         }
 
-        /// <summary>
-        /// List of pairs of (command name, command object), one for each command name.
-        /// Must use type-unspecific IList here instead of List&lt;something&gt;
-        /// </summary>
-        //[Obsolete]
-        //public static IList GetCommandObjectPairs(this SdtdConsole obj)
-        //{
-        //    return (IList)fi_SdtdConsole_commandObjectPairs.GetValue(obj);
-        //}
-
         public static NonPublic.SdtdConsole.CommandObjectPairList GetCommandObjectPairs(this global::SdtdConsole obj)
         {
             return new NonPublic.SdtdConsole.CommandObjectPairList((IList)fi_SdtdConsole_commandObjectPairs.GetValue(obj));
