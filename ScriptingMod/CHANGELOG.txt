@@ -1,5 +1,8 @@
 ﻿Version 0.7 - compatible ONLY with A16.2 (b7)
 
+- Improved dj-import/dj-export command to fully support electricity blocks and wires
+- Improved fixing algorithm in dj-check-power command to be more sustainable
+- Added checks in dj-check-power to find other power-related corruption problems
 
 
 Version 0.6 - compatible ONLY with A16.2 (b7)
