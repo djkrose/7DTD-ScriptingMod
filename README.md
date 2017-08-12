@@ -64,7 +64,7 @@ console.log("Hello JavaScript World!");
 
 * Import/export prefabs <b>with container content, ownership, lock status, sign texts, electricity settings, and wires</b>, and all other metadata.<br>
   &ndash;&nbsp; Fully restore griefed bases with one command!<br>
-  &ndash;&nbsp; Copy buildings from server to server or between server versions after world reset.
+  &ndash;&nbsp; Copy buildings from server to server or between server versions after world reset.<br>
   &ndash;&nbsp; Create prefabs with complex electricity setups
 * Fix for broken power blocks causing NullReferenceException [...] at TileEntityPoweredTrigger.write and other errors
 * Command to show position including chunk number, region file, and other position data
