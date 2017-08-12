@@ -1,4 +1,9 @@
-﻿Version 0.7 - compatible ONLY with A16.2 (b7)
+﻿Version 0.8 - compatible ONLY with A16.3 (b1)
+
+- Updated compatibility to 7DTD A16.3 (b1)
+
+
+Version 0.7 - compatible ONLY with A16.2 (b7)
 
 - Improved dj-import/dj-export command to fully support electricity blocks and wires
 - Improved fixing algorithm in dj-check-power command to be more sustainable
