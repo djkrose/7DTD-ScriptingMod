@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading;
 using ScriptingMod.Extensions;
 
-namespace ScriptingMod.Managers
+namespace ScriptingMod.Tools
 {
-    internal static class ChunkManager
+    internal static class ChunkTools
     {
+        public const int ChunkSize   = 16;
+        public const int ChunkHeight = byte.MaxValue;
 
         /// <summary>
         /// Resets and recalculates stability for the given chunks.

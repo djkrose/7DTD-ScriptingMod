@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
-using ScriptingMod.Managers;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod
 {
@@ -26,7 +26,7 @@ namespace ScriptingMod
             try
             {
                 Log.Out($"Initializing {Constants.ModNameFull} ...");
-                ScriptManager.LoadCommands();
+                ScriptTools.LoadCommands();
                 TryRestoreModInfo();
 
                 // Called for Unity log messages from MAIN thread

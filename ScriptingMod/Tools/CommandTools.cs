@@ -10,10 +10,10 @@ using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using CommandObjectPair = ScriptingMod.Extensions.NonPublic.SdtdConsole.CommandObjectPair;
 
-namespace ScriptingMod.Managers
+namespace ScriptingMod.Tools
 {
 
-    internal static class CommandManager
+    internal static class CommandTools
     {
 
         private static readonly CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
@@ -125,6 +125,40 @@ namespace ScriptingMod.Managers
             {
                 SdtdConsole.Instance.Output("Error occured during command execution: " + ex.Message + " [details in server log]");
                 Log.Exception(ex);
+            }
+        }
+
+        /// <summary>
+        /// Parses two integer coordinates from the given position in the parameter list.
+        /// </summary>
+        /// <returns>The vector with the two values in x an z, y is always 0.</returns>
+        /// <exception cref="FriendlyMessageException">If the coordinates are no integer values or the list is too short</exception>
+        public static Vector3i ParseXZ(List<string> parameters, int fromIndex)
+        {
+            try
+            {
+                return new Vector3i(int.Parse(parameters[fromIndex]), 0, int.Parse(parameters[fromIndex + 1]));
+            }
+            catch (Exception)
+            {
+                throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
+            }
+        }
+
+        /// <summary>
+        /// Parses three integer coordinates from the given position in the parameter list.
+        /// </summary>
+        /// <returns>The vector with the three values.</returns>
+        /// <exception cref="FriendlyMessageException">If the coordinates are no integer values or the list is too short</exception>
+        public static Vector3i ParseXYZ(List<string> parameters, int fromIndex)
+        {
+            try
+            {
+                return new Vector3i(int.Parse(parameters[fromIndex]), int.Parse(parameters[fromIndex + 1]), int.Parse(parameters[fromIndex + 2]));
+            }
+            catch (Exception)
+            {
+                throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
             }
         }
 

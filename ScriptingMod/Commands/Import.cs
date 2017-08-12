@@ -7,7 +7,7 @@ using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
-using ScriptingMod.Managers;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
@@ -77,7 +77,7 @@ namespace ScriptingMod.Commands
             }
             catch (Exception ex)
             {
-                CommandManager.HandleCommandException(ex);
+                CommandTools.HandleCommandException(ex);
             }
 
             // Error could have happened after prefab load, so we must reset/reload regardless
@@ -85,13 +85,13 @@ namespace ScriptingMod.Commands
             {
                 if (affectedChunks != null)
                 {
-                    Managers.ChunkManager.ResetStability(affectedChunks);
-                    Managers.ChunkManager.ReloadForClients(affectedChunks);
+                    Tools.ChunkTools.ResetStability(affectedChunks);
+                    Tools.ChunkTools.ReloadForClients(affectedChunks);
                 }
             }
             catch (Exception ex)
             {
-                CommandManager.HandleCommandException(ex);
+                CommandTools.HandleCommandException(ex);
             }
         }
 
@@ -123,18 +123,11 @@ namespace ScriptingMod.Commands
             Vector3i pos1;
             if (paramz.Count == 1 || paramz.Count == 2)
             {
-                pos1 = PlayerManager.GetPosition(senderInfo);
+                pos1 = PlayerTools.GetPosition(senderInfo);
             }
             else
             {
-                try
-                {
-                    pos1 = new Vector3i(int.Parse(paramz[1]), int.Parse(paramz[2]), int.Parse(paramz[3]));
-                }
-                catch (Exception)
-                {
-                    throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
-                }
+                pos1 = CommandTools.ParseXYZ(paramz, 1);
             }
 
             // Parse rotation

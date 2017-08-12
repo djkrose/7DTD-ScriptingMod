@@ -95,10 +95,10 @@
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="FileHelper.cs" />
     <Compile Include="Exceptions\FriendlyMessageException.cs" />
-    <Compile Include="Managers\ChunkManager.cs" />
-    <Compile Include="Managers\CommandManager.cs" />
-    <Compile Include="Managers\PlayerManager.cs" />
-    <Compile Include="Managers\ScriptManager.cs" />
+    <Compile Include="Tools\ChunkTools.cs" />
+    <Compile Include="Tools\CommandTools.cs" />
+    <Compile Include="Tools\PlayerTools.cs" />
+    <Compile Include="Tools\ScriptTools.cs" />
     <Compile Include="Commands\Export.cs" />
     <Compile Include="Commands\Import.cs" />
     <Compile Include="Commands\DynamicCommand.cs" />

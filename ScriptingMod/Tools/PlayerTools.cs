@@ -7,9 +7,9 @@ using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using UnityEngine;
 
-namespace ScriptingMod.Managers
+namespace ScriptingMod.Tools
 {
-    internal static class PlayerManager
+    internal static class PlayerTools
     {
         /// <summary>
         /// Returns the RemoteClientInfo of the given senderInfo object, or throws an exception if it is null

@@ -5,7 +5,7 @@ using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
-using ScriptingMod.Managers;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
@@ -89,7 +89,7 @@ namespace ScriptingMod.Commands
             }
             catch (Exception ex)
             {
-                CommandManager.HandleCommandException(ex);
+                CommandTools.HandleCommandException(ex);
             }
         }
 
@@ -106,7 +106,7 @@ namespace ScriptingMod.Commands
                 case 1:
                     if (parameters[0] != "here")
                         throw new FriendlyMessageException("Wrong second parameter. See help.");
-                    pos = PlayerManager.GetPosition(senderInfo);
+                    pos = PlayerTools.GetPosition(senderInfo);
                     break;
                 case 2:
                     try

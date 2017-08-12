@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
-using ScriptingMod.Managers;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
@@ -20,9 +20,6 @@ namespace ScriptingMod.Commands
         internal const string TileEntityFileMarker    = "7DTD-TE";
         internal const string TileEntityFileExtension = ".te";
         internal const int    TileEntityFileVersion   = 7;
-
-        public static List<TileEntityPowered> TileEntityPoweredList = new List<TileEntityPowered>();
-        public static List<PowerItem> PowerItemList = new List<PowerItem>();
 
         private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
 
@@ -91,7 +88,7 @@ namespace ScriptingMod.Commands
                     }
                 }
 
-                CommandManager.HandleCommandException(ex);
+                CommandTools.HandleCommandException(ex);
             }
         }
 
@@ -99,8 +96,8 @@ namespace ScriptingMod.Commands
         {
             if (paramz.Count == 0)
             {
-                var ci = PlayerManager.GetClientInfo(senderInfo);
-                savedPos[ci.entityId] = PlayerManager.GetPosition(ci);
+                var ci = PlayerTools.GetClientInfo(senderInfo);
+                savedPos[ci.entityId] = PlayerTools.GetPosition(ci);
                 throw new FriendlyMessageException("Your current position was saved: " + savedPos[ci.entityId]);
             }
 
@@ -114,20 +111,16 @@ namespace ScriptingMod.Commands
 
             if (paramz.Count == 1)
             {
-                var ci = PlayerManager.GetClientInfo(senderInfo);
+                var ci = PlayerTools.GetClientInfo(senderInfo);
                 if (!savedPos.ContainsKey(ci.entityId))
                     throw new FriendlyMessageException("Please save start point of the area first. See help for details.");
                 pos1 = savedPos[ci.entityId];
-                pos2 = PlayerManager.GetPosition(ci);
+                pos2 = PlayerTools.GetPosition(ci);
             }
             else
             {
-                try {
-                    pos1 = new Vector3i(Int32.Parse(paramz[1]), Int32.Parse(paramz[2]), Int32.Parse(paramz[3]));
-                    pos2 = new Vector3i(Int32.Parse(paramz[4]), Int32.Parse(paramz[5]), Int32.Parse(paramz[6]));
-                } catch (Exception) {
-                    throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
-                }
+                pos1 = CommandTools.ParseXYZ(paramz, 1);
+                pos2 = CommandTools.ParseXYZ(paramz, 4);
             }
 
             return (prefabName, pos1, pos2);
@@ -150,11 +143,6 @@ namespace ScriptingMod.Commands
         private static void SaveTileEntities(string prefabName, Vector3i pos1, Vector3i pos2)
         {
             Dictionary<Vector3i, TileEntity> tileEntities = CollectTileEntities(pos1, pos2);
-
-#if DEBUG
-            TileEntityPoweredList = new List<TileEntityPowered>();
-            PowerItemList = new List<PowerItem>();
-#endif
 
             var filePath = Path.Combine(Constants.PrefabsFolder, prefabName + TileEntityFileExtension);
 
@@ -187,10 +175,6 @@ namespace ScriptingMod.Commands
 
                         var powerItem = tileEntityPowered.GetPowerItem()
                             ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
-#if DEBUG
-                        TileEntityPoweredList.Add(tileEntityPowered);
-                        PowerItemList.Add(powerItem);
-#endif
                         SavePowerItem(writer, powerItem);                             // [dynamic]  PowerItem data
                     }
                 }

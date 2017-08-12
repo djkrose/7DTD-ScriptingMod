@@ -8,9 +8,9 @@ using ScriptingMod.Commands;
 using ScriptingMod.Extensions;
 using ScriptingMod.ScriptEngines;
 
-namespace ScriptingMod.Managers
+namespace ScriptingMod.Tools
 {
-    internal static class ScriptManager
+    internal static class ScriptTools
     {
         public static void LoadCommands()
         {
@@ -34,7 +34,7 @@ namespace ScriptingMod.Managers
                         continue;
                     }
 
-                    CommandManager.AddCommand(commandObject);
+                    CommandTools.AddCommand(commandObject);
                     Log.Out($"Registered command(s) \"{commandObject.GetCommands().Join(" ")}\" in script \"{fileName}\".");
                 }
                 catch (Exception ex)
@@ -45,7 +45,7 @@ namespace ScriptingMod.Managers
                 }
             }
 
-            CommandManager.SaveChanges();
+            CommandTools.SaveChanges();
 
             Log.Debug("All script commands added.");
         }

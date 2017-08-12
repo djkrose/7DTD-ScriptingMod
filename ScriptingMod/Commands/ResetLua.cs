@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using ScriptingMod.Managers;
+using ScriptingMod.Tools;
 using ScriptingMod.ScriptEngines;
 
 namespace ScriptingMod.Commands
@@ -29,7 +29,7 @@ namespace ScriptingMod.Commands
             }
             catch (Exception ex)
             {
-                CommandManager.HandleCommandException(ex);
+                CommandTools.HandleCommandException(ex);
             }
         }
     }

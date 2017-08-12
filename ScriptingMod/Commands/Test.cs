@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Extensions;
-using ScriptingMod.Managers;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
@@ -33,7 +33,7 @@ namespace ScriptingMod.Commands
             }
             catch (Exception ex)
             {
-                CommandManager.HandleCommandException(ex);
+                CommandTools.HandleCommandException(ex);
             }
         }
 

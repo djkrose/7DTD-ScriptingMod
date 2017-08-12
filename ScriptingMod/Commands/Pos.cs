@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using ScriptingMod.Managers;
+using JetBrains.Annotations;
+using ScriptingMod.Tools;
 using UnityEngine;
 
 namespace ScriptingMod.Commands
 {
-    internal class Pos : ConsoleCmdAbstract
+    [UsedImplicitly]
+    public class Pos : ConsoleCmdAbstract
     {
         public override string[] GetCommands()
         {
@@ -23,8 +25,8 @@ namespace ScriptingMod.Commands
         {
             try
             {
-                Vector3 precisePos = PlayerManager.GetPrecisePosition(senderInfo);
-                Vector3i worldPos = PlayerManager.GetPosition(senderInfo);
+                Vector3 precisePos = PlayerTools.GetPrecisePosition(senderInfo);
+                Vector3i worldPos = PlayerTools.GetPosition(senderInfo);
                 Vector3i chunkPos = World.toBlock(worldPos);
                 int chunkX = World.toChunkXZ(worldPos.x);
                 int chunkZ = World.toChunkXZ(worldPos.z);
@@ -44,7 +46,7 @@ namespace ScriptingMod.Commands
             }
             catch (Exception ex)
             {
-                CommandManager.HandleCommandException(ex);
+                CommandTools.HandleCommandException(ex);
             }
         }
     }
