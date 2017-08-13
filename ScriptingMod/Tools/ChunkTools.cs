@@ -101,7 +101,7 @@ namespace ScriptingMod.Tools
                 if (chunksLoaded == null)
                     continue; // player has no chunks loaded
 
-                var chunkCache = GameManager.Instance.World.ChunkClusters[0];
+                var chunkCache = GameManager.Instance.World.ChunkCache;
                 if (chunkCache == null)
                     continue;
 

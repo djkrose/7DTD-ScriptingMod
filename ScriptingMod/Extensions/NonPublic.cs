@@ -45,6 +45,8 @@ namespace ScriptingMod.Extensions
         private static readonly FieldInfo       fi_CommandObjectPair_CommandField;       // SdtdConsole         -> Struct13 -> public string string_0;
         private static readonly ConstructorInfo ci_CommandObjectPair_Constructor;        // SdtdConsole         -> Struct13 -> public Struct13(string string_1, IConsoleCommand iconsoleCommand_1)
 
+        private static readonly MethodInfo      mi_ChunkProviderGenerateWorld_generateTerrain;
+
         static NonPublic()
         {
             try
@@ -70,6 +72,9 @@ namespace ScriptingMod.Extensions
                 fi_SdtdConsole_commandObjectsReadOnly = GetField(typeof(global::SdtdConsole), typeof(ReadOnlyCollection<IConsoleCommand>));
                 ci_CommandObjectPair_Constructor      = GetConstructor(t_StdtConsole_CommandObjectPair, new[] { typeof(string), typeof(IConsoleCommand) });
                 fi_CommandObjectPair_CommandField     = GetField(t_StdtConsole_CommandObjectPair, typeof(string));
+
+                mi_ChunkProviderGenerateWorld_generateTerrain = GetMethod(typeof(ChunkProviderGenerateWorld), "generateTerrain");
+
                 Log.Debug("Successfilly established reflection references.");
             }
             catch (Exception ex)
@@ -207,6 +212,15 @@ namespace ScriptingMod.Extensions
 
         #endregion
 
+        #region Reflected extensions to chunk-related types
+
+        public static void generateTerrain(this ChunkProviderGenerateWorld target, World world, Chunk chunk, System.Random random)
+        {
+            mi_ChunkProviderGenerateWorld_generateTerrain.Invoke(target, new object[] {world, chunk, random});
+        }
+
+        #endregion
+
         #region Accessors for static members and types
 
         public static class SdtdConsole
@@ -298,16 +312,31 @@ namespace ScriptingMod.Extensions
                 t => t.GetFields(defaultFlags).Any(
                     f => f.FieldType == containingFieldType)).ToList();
             if (index == null && candidates.Count > 1)
-                throw new ReflectionException($"Found than one possible nested type containing field of {containingFieldType} in {target}.");
+                throw new ReflectionException($"Found more than one possible nested type containing field of {containingFieldType} in {target}.");
             return candidates.ElementAtOrDefault(index ?? 0)
                    ?? throw new ReflectionException($"Couldn't find nested type with field of type {containingFieldType} in {target}.");
         }
 
         /// <summary>
+        /// Use reflection to get method by its name.
+        /// </summary>
+        private static MethodInfo GetMethod(Type target, string name, BindingFlags flags = defaultFlags)
+        {
+            try
+            {
+                return target.GetMethod(name, flags)
+                    ?? throw new ReflectionException($"Couldn't find method with name {name} in {target}.");
+            }
+            catch (AmbiguousMatchException ex)
+            {
+                throw new ReflectionException($"Found more than one possible methods with name {name} in {target}.", ex);
+            }
+        }
+
+        /// <summary>
         /// Use reflection to get method by its return type and parameter types
         /// </summary>
-        [SuppressMessage("ReSharper", "UnusedMember.Local")] // Not yet used but may be later...
-        private static MethodInfo GetMethod(this Type target, Type returnType, Type[] paramTypes, int? index = 0, BindingFlags bindingAttr = defaultFlags)
+        private static MethodInfo GetMethod(Type target, Type returnType, Type[] paramTypes, int? index = 0, BindingFlags bindingAttr = defaultFlags)
         {
             var candidates = target.GetMethods(bindingAttr).Where((m) =>
             {

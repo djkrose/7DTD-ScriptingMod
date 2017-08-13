@@ -136,7 +136,7 @@ namespace ScriptingMod.Commands
         private static (int countChunks, int countBroken) ScanAllChunks(bool isFixMode)
         {
             SdtdConsole.Instance.Output("Scanning all loaded chunks for broken power blocks ...");
-            var chunks = GameManager.Instance.World.ChunkClusters[0].GetChunkArray().ToList();
+            var chunks = GameManager.Instance.World.ChunkCache.GetChunkArray().ToList();
             var countBroken = chunks.Sum(chunk => ScanChunk(chunk, isFixMode));
             var countChunks = chunks.Count;
             return (countChunks, countBroken);

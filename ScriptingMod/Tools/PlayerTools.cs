@@ -41,9 +41,7 @@ namespace ScriptingMod.Tools
         public static Vector3i GetPosition(ClientInfo ci)
         {
             var pos = GetPrecisePosition(ci);
-
-            // Do NOT use "new Vector3i(Vector3 v)", because it calculates incorrectly by just casting to int, which rounds UP on negative numbers.
-            return new Vector3i((int)Math.Floor(pos.x), (int)Math.Floor(pos.y), (int)Math.Floor(pos.z));
+            return pos.ToVector3i();
         }
 
         public static Vector3 GetPrecisePosition(CommandSenderInfo senderInfo)

@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
+    <Compile Include="Commands\Regen.cs" />
     <Compile Include="Commands\Test.cs" />
     <Compile Include="Commands\CheckPower.cs" />
     <Compile Include="Commands\LogPowerManager.cs" />
@@ -93,6 +94,7 @@
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Extensions\Vector3Extensions.cs" />
     <Compile Include="FileHelper.cs" />
     <Compile Include="Exceptions\FriendlyMessageException.cs" />
     <Compile Include="Tools\ChunkTools.cs" />

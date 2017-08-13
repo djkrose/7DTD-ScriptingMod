@@ -15,9 +15,9 @@ namespace ScriptingMod
         private const string DEBUG_PREFIX = "[DEBUG] ";
 
 #if DEBUG
-        public const bool DEBUG = true;
+        public const bool IsDebug = true;
 #else
-        public const bool DEBUG = false;
+        public const bool IsDebug = false;
 #endif
 
         [Conditional("DEBUG")]

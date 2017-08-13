@@ -41,7 +41,7 @@ namespace ScriptingMod.Commands
                 else
                 {
                     // ReSharper disable once UnreachableCode
-                    SdtdConsole.Instance.Output(Constants.ModNameFull + " - Version " + modInfo.Version.Value + (Log.DEBUG ? " DEBUG" : ""));
+                    SdtdConsole.Instance.Output(Constants.ModNameFull + " - Version " + modInfo.Version.Value + (Log.IsDebug ? " DEBUG" : ""));
                     SdtdConsole.Instance.Output(modInfo.Description.Value);
                     if (!string.IsNullOrEmpty(modInfo.Website.Value))
                         SdtdConsole.Instance.Output("Website: " + modInfo.Website.Value);
