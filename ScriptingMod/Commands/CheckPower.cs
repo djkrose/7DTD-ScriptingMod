@@ -40,7 +40,7 @@ namespace ScriptingMod.Commands
 
         public override string GetHelp()
         {
-            // ----------------------------------(max length: 100 char)--------------------------------------------|
+            // ----------------------------------(max length: 120 char)----------------------------------------------------------------|
             return @"
                 Scans for corrupt power blocks that cause the server to spam this error message in the log files:
                     NullReferenceException: Object reference not set to an instance of an object
@@ -84,8 +84,7 @@ namespace ScriptingMod.Commands
                     : ($"Found {countBroken} broken {strPowerBlocks} in {countChunks} {strChunks}."
                       + (countBroken > 0 ? $" Use option /fix to fix {(countBroken != 1 ? "them" : "it")}." : ""));
 
-                SdtdConsole.Instance.Output(msg);
-                Log.Out(msg);
+                SdtdConsole.Instance.OutputAndLog(msg);
             }
             catch (Exception ex)
             {

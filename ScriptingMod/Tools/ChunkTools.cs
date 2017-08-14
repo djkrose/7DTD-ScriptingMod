@@ -8,9 +8,6 @@ namespace ScriptingMod.Tools
 {
     internal static class ChunkTools
     {
-        public const int ChunkSize   = 16;
-        public const int ChunkHeight = byte.MaxValue;
-
         /// <summary>
         /// Resets and recalculates stability for the given chunks.
         /// Based on StompiNZ's BadCompanySM:
@@ -36,11 +33,10 @@ namespace ScriptingMod.Tools
         /// Based on StompiNZ's BadCompanySM:
         /// https://github.com/7days2mod/BadCompanySM/blob/master/BCManager/src/Functions/BCChunks.cs
         /// </summary>
-        /// <param name="chunks"></param>
-        public static void ReloadForClients(ICollection<Chunk> chunks)
+        public static void ReloadForClients(ICollection<long> chunkKeys)
         {
             // Refresh clients chunks
-            Log.Debug($"Forcing clients to reload {chunks.Count} chunks ...");
+            Log.Debug($"Forcing clients to reload {chunkKeys.Count} chunks ...");
 
             var clients          = ConnectionManager.Instance.GetClients();
             var entities         = GameManager.Instance.World.Entities.dict;
@@ -56,32 +52,32 @@ namespace ScriptingMod.Tools
                 if (player == null)
                     continue; // entity is not a player
 
-                var chunksLoaded = player.ChunkObserver.chunksLoaded;
-                if (chunksLoaded == null)
+                var playersChunks = player.ChunkObserver.chunksLoaded;
+                if (playersChunks == null)
                     continue; // player has no chunks loaded
 
                 // TODO: need a lock here?
-                foreach (var _chunkKey in chunksLoaded)
+                foreach (var chunkKey in playersChunks)
                 {
-                    if (chunks.All(c => c.Key != _chunkKey))
-                        continue; // no affected chunks loaded
+                    if (!chunkKeys.Contains(chunkKey))
+                        continue; // this chunk doesn't need reloading
 
                     try
                     {
-                        client.SendPackage(new NetPackageChunkRemove(_chunkKey));
+                        client.SendPackage(new NetPackageChunkRemove(chunkKey));
                         if (reloadforclients.ContainsKey(client))
-                            reloadforclients[client].Add(_chunkKey);
+                            reloadforclients[client].Add(chunkKey);
                         else
-                            reloadforclients.Add(client, new List<long> { _chunkKey });
+                            reloadforclients.Add(client, new List<long> { chunkKey });
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"Error forcing {client.playerName} to remove chunk {_chunkKey}:\r\n" + ex);
+                        Log.Error($"Error forcing {client.playerName} to remove chunk {chunkKey}:\r\n" + ex);
                     }
                 }
                 var countForcedReloads = reloadforclients.GetValue(client)?.Count ?? 0;
                 if (countForcedReloads > 0)
-                    Log.Out($"Forced {client.playerName} to remove {countForcedReloads} of {chunksLoaded.Count} chunks.");
+                    Log.Out($"Forced {client.playerName} to remove {countForcedReloads} of {playersChunks.Count} chunks.");
             }
 
             // Delay to allow remove chunk packets to reach clients
@@ -97,20 +93,20 @@ namespace ScriptingMod.Tools
                 if (player == null)
                     continue; // entity is not a player
 
-                var chunksLoaded = player.ChunkObserver.chunksLoaded;
-                if (chunksLoaded == null)
+                var playersChunks = player.ChunkObserver.chunksLoaded;
+                if (playersChunks == null)
                     continue; // player has no chunks loaded
 
                 var chunkCache = GameManager.Instance.World.ChunkCache;
                 if (chunkCache == null)
                     continue;
 
-                var chunkKeys = chunkCache.GetChunkKeysCopySync();
+                var allCachedChunks = chunkCache.GetChunkKeysCopySync();
 
                 foreach (var chunkKey in reloadforclients[client])
                 {
                     // TODO: verify if the above remove chunk takes them out of the EP.ChunkObserver.chunksLoaded dict
-                    if (!chunkKeys.Contains(chunkKey) || !chunksLoaded.Contains(chunkKey))
+                    if (!allCachedChunks.Contains(chunkKey) || !playersChunks.Contains(chunkKey))
                         continue;
 
                     var chunk = chunkCache.GetChunkSync(chunkKey);
@@ -126,9 +122,8 @@ namespace ScriptingMod.Tools
                         Log.Error($"Error forcing {client.playerName} to reload chunk {chunkKey}:\r\n" + ex);
                     }
                 }
-                Log.Out($"Forced {client.playerName} to reload {reloadforclients[client].Count} of {chunksLoaded.Count} chunks.");
+                Log.Out($"Forced {client.playerName} to reload {reloadforclients[client].Count} of {playersChunks.Count} chunks.");
             }
         }
-
     }
 }

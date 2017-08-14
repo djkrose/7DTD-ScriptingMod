@@ -25,6 +25,7 @@ namespace ScriptingMod.Commands
 
         public override string GetHelp()
         {
+            // ----------------------------------(max length: 120 char)----------------------------------------------------------------|
             return @"Tests if djkrose's Scripting Mod is correctly installed and prints out version information.";
         }
 

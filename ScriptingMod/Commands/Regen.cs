@@ -14,7 +14,10 @@ namespace ScriptingMod.Commands
     [UsedImplicitly]
     public class Regen : ConsoleCmdAbstract
     {
-        private enum Mode { Region, Chunk, Custom, All }
+        /// <summary>
+        /// Saves last position for each entity executing the command individually: entityId => position
+        /// </summary>
+        private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>();
 
         public override string[] GetCommands()
         {
@@ -28,39 +31,46 @@ namespace ScriptingMod.Commands
 
         public override string GetHelp()
         {
-            // ----------------------------------(max length: 100 char)--------------------------------------------|
+            // ----------------------------------(max length: 120 char)----------------------------------------------------------------|
             return $@"
-                Regenerates a chunk, a region, or an area of custom dimensions. All player-built structures are
-                removed and the area is recreated from the world seed as if it was visited for the first time.
+                Regenerates chunks (16x16 blocks) from bedrock to sky. All player-built structures are removed and the area is recreated
+                from the world seed as if it was visited for the first time. All content like prefabs, cars, vegetation, even traders
+                are respawned. A given area is extended to chunk borders.
                 Usage:
-                    1. dj-regen region
-                    2. dj-regen region <regionX> <regionZ>
-                    3. dj-regen chunk
-                    4. dj-regen chunk <chunkX> <chunkY>
-                    5. dj-regen <x1> <z1> <x2> <z2>
-                    6. dj-regen <x1> <y1> <z1> <x1> <y1> <z1>
-                    7. dj-regen all
-                1. Regenerates the current player's region (512x512 blocks) from bedrock to sky.
-                2. Regenerates the given region, which is the same as deleting the region file. <regionX> and
-                   <regionY> are the same numbers as in the region file name. Use ""dj-pos"" to get current region.
-                   Example: ""dj-regen region 4 -8"" deletes and regenerates the region file r.4.-8.7rg.
-                3. Regenerates the current player's chunk (16x16 blocks) from bedrock to sky.
-                4. Regenerates the given chunk, identified by chunk coordinates as can be seen in F3 debug screen
-                   or with ""dj-pos"" command.
-                5. Regenerates the given custom area from bedrock to sky.
-                6. Regenerates the given custom area defined by the two 3-dimensional coordinates.
-                7. Regenerates the entire world, but keeps all player data.
+                    1. dj-regen
+                    2. dj-regen <x1> <z1> <x2> <z2>
+                    3. dj-regen from
+                    4. dj-regen to
+                1. Regenerates the chunk of the current player's position.
+                2. Regenerates all chunks of the given area, extended to chunk borders.
+                3. Saves the current player's position for usage 4.
+                4. Regenerates all chunks of the area from the saved position to current players position, extended to chunk borders.
                 ".Unindent();
         }
+
         public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
             try
             {
-                (Mode mode, Vector3i pos1, Vector3i pos2) = ParseParams(parameters, senderInfo);
-                if (mode == Mode.Chunk)
-                {
-                    RegenerateChunk(pos1.x, pos1.z);
-                }
+                (Vector3i pos1, Vector3i pos2) = ParseParams(parameters, senderInfo);
+                WorldTools.OrderAreaBounds(ref pos1, ref pos2);
+
+                var chunks = GetChunksForArea(pos1, pos2);
+                var count  = chunks.Count;
+                SdtdConsole.Instance.OutputAndLog($"Starting regeneration of {count} chunk{(count != 1 ? "s" : "")} ...");
+                foreach (var key in chunks)
+                    RegenerateChunk(key);
+
+                // Expand by one to cover neighbouring chunks for smooth terrain transition
+                chunks = GetChunksForArea(pos1, pos2, +1);
+                ChunkTools.ReloadForClients(chunks);
+
+                // Reset pos1/2 to actual regenerated area dimensions
+                pos1 = new Vector3i(World.toChunkXZ(pos1.x) * Constants.ChunkSize, 0, World.toChunkXZ(pos1.z) * Constants.ChunkSize);
+                pos2 = new Vector3i(World.toChunkXZ(pos2.x) * Constants.ChunkSize + Constants.ChunkSize - 1, Constants.ChunkHeight,
+                    World.toChunkXZ(pos2.z) * Constants.ChunkSize + Constants.ChunkSize - 1);
+
+                SdtdConsole.Instance.OutputAndLog($"Regenerated {count} chunk{(count != 1 ? "s" : "")} for area from {pos1} to {pos2}.");
             }
             catch (Exception ex)
             {
@@ -69,93 +79,87 @@ namespace ScriptingMod.Commands
         }
 
         /// <summary>
-        /// 
+        /// Returns all chunks that are located (also partly) in the given area.
+        /// </summary>
+        /// <param name="worldPos1">South-West corner of area; y is ignored</param>
+        /// <param name="worldPos2">North-East corner of area; y is ignored</param>
+        /// <param name="expand">Allows expanding (or with negative value contracting) the area by the given number of chunks.
+        /// For example with +1 it returns also neighbouring chunks.</param>
+        /// <returns>Collection of chunk keys; chunks may or may not be loaded</returns>
+        private static ICollection<long> GetChunksForArea(Vector3i worldPos1, Vector3i worldPos2, int expand = 0)
+        {
+            expand *= Constants.ChunkSize; // expand is now in blocks
+            var chunkKeys = new List<long>();
+            for (var x = worldPos1.x - expand; x <= worldPos2.x + expand; x += Constants.ChunkSize)
+            {
+                for (var z = worldPos1.z - expand; z <= worldPos2.z + expand; z += Constants.ChunkSize)
+                {
+                    chunkKeys.Add(WorldChunkCache.MakeChunkKey(World.toChunkXZ(x), World.toChunkXZ(z)));
+                }
+            }
+            return chunkKeys;
+        }
+
+        /// <summary>
+        /// Parses the given command parameters for the sender and returns the area to regenerate chunks for.
         /// </summary>
         /// <param name="parameters"></param>
         /// <param name="senderInfo"></param>
-        /// <returns>A tuple with these values:
-        /// - mode: The size mode for regeneration, affects how pos1 and po2 is interpreted:
-        ///         Region: pos1      contains regionX/regionZ, y values and pos2 are ignored
-        ///         Chunk:  pos1      contains chunkX/chunkZ, y values and pos2 are ignored
-        ///         Area:   pos1/pos2 are worldPos coordinates
-        ///         All:    pos1/pos2 are ignored
-        /// </returns>
-        private (Mode mode, Vector3i pos1, Vector3i pos2) ParseParams(List<string> parameters, CommandSenderInfo senderInfo)
+        /// <returns>The area from pos1 to pos2 for which chunks should be regenerated; y value should be ignored</returns>
+        private static (Vector3i pos1, Vector3i pos2) ParseParams(List<string> parameters, CommandSenderInfo senderInfo)
         {
+            Vector3i pos1, pos2;
             if (parameters.Count == 0)
-                throw new FriendlyMessageException("This command needs parameter(s). See \"help dj-regen\" for details.");
-
-            Mode mode;
-            Vector3i pos1 = default(Vector3i);
-            Vector3i pos2 = default(Vector3i);
-            switch (parameters[0].ToLowerInvariant())
             {
-                case "region":
-                    mode = Mode.Region;
-                    throw new NotImplementedException();
-                    break;
-                case "chunk":
-                    mode = Mode.Chunk;
-                    if (parameters.Count == 1)
-                    {
-                        // Use player's position to get current chunk
-                        var worldPos = PlayerTools.GetPosition(senderInfo);
-                        pos1.x = World.toChunkXZ(worldPos.x);
-                        pos1.z = World.toChunkXZ(worldPos.z);
-                    }
-                    else if (parameters.Count == 3)
-                    {
-                        // Parse given chunkX/Z
-                        pos1 = CommandTools.ParseXZ(parameters, 1);
-
-                        // Check that chunk coordinates are within bounds of the world
-                        GameManager.Instance.World.ChunkCache.ChunkProvider.GetWorldExtent(out Vector3 minSize, out Vector3 maxSize);
-                        var maxViewDistance = 200;
-                        if (pos1.x < World.toChunkXZ((int) Math.Floor(minSize.x) - maxViewDistance) ||
-                            pos1.x > World.toChunkXZ((int) Math.Floor(maxSize.x) + maxViewDistance) ||
-                            pos1.z < World.toChunkXZ((int) Math.Floor(minSize.z) - maxViewDistance) ||
-                            pos1.z > World.toChunkXZ((int) Math.Floor(maxSize.z) + maxViewDistance))
-                        {
-                            throw new FriendlyMessageException("Chunk coordinates are out of bounds. These are not world coordinates!");
-                        }
-                    }
-                    else
-                    {
-                        throw new FriendlyMessageException("Wrong number of parameters for \"chunk\" mode.");
-                    }
-                    break;
-                case "all":
-                    mode = Mode.All;
-                    throw new NotImplementedException();
-                    break;
-                default:
-                    mode = Mode.Custom;
-                    throw new NotImplementedException();
-                    break;
+                // one point is enough; area will extend to the chunk
+                pos1 = pos2 = PlayerTools.GetPosition(senderInfo);
+            }
+            else if (parameters.Count == 1)
+            {
+                var ci = PlayerTools.GetClientInfo(senderInfo);
+                if (parameters[0] == "from")
+                {
+                    savedPos[ci.entityId] = PlayerTools.GetPosition(ci);
+                    throw new FriendlyMessageException("Your current position was saved: " + savedPos[ci.entityId]);
+                }
+                else if (parameters[0] == "to")
+                {
+                    if (!savedPos.ContainsKey(ci.entityId))
+                        throw new FriendlyMessageException("Please save start point of the area first. See help for details.");
+                    pos1 = savedPos[ci.entityId];
+                    pos2 = PlayerTools.GetPosition(ci);
+                }
+                else
+                {
+                    throw new FriendlyMessageException("Parameter unknown. See help for details.");
+                }
+            }
+            else if (parameters.Count == 4)
+            {
+                pos1 = CommandTools.ParseXZ(parameters, 0);
+                pos2 = CommandTools.ParseXZ(parameters, 2);
+            }
+            else
+            {
+                throw new FriendlyMessageException("Parameter count not valid. See help for details.");
             }
 
-            return (mode, pos1, pos2);
+            return (pos1, pos2);
         }
 
-
-        private void RegenerateChunk(int chunkX, int chunkZ)
+        private static void RegenerateChunk(long chunkKey)
         {
-            var world = GameManager.Instance.World;
+            var chunkX     = WorldChunkCache.extractX(chunkKey);
+            var chunkZ     = WorldChunkCache.extractZ(chunkKey);
+            var world      = GameManager.Instance.World;
             var chunkCache = world.ChunkCache;
 
-            Chunk oldChunk = world.GetChunkSync(chunkX, chunkZ) as Chunk;
-            if (oldChunk == null)
-                throw new FriendlyMessageException($"Chunk [{chunkX}, {chunkZ}] is not loaded. Move closer!");
-
-            var pos1 = oldChunk.ToWorldPos(Vector3i.zero);
-            var pos2 = oldChunk.ToWorldPos(new Vector3i(ChunkTools.ChunkSize - 1, ChunkTools.ChunkHeight - 1, ChunkTools.ChunkSize - 1));
-
-            Log.Debug($"Starting regeneration of chunk [{chunkX}, {chunkZ}], which covers area [{pos1}] to [{pos2}] ...");
+            Log.Debug($"Starting regeneration of chunk {chunkX}, {chunkZ} ...");
 
             var chunkProvider = chunkCache.ChunkProvider as ChunkProviderGenerateWorld;
             if (chunkProvider == null)
                 throw new ApplicationException("Found unexpected chunk provider: " + (chunkCache.ChunkProvider?.GetType().ToString() ?? "null"));
-
+            
             // See: ChunkProviderGenerateWorld.DoGenerateChunks()
 
             System.Random random = Utils.RandomFromSeedOnPos(chunkX, chunkZ, world.Seed);
@@ -174,15 +178,21 @@ namespace ScriptingMod.Commands
                     newChunk.NeedsDecoration = true;
                     newChunk.NeedsLightCalculation = true;
 
-                    Log.Debug("Adding prefab decorations ...");
                     if (chunkProvider.GetDynamicPrefabDecorator() != null)
+                    {
+                        Log.Debug("Adding prefab decorations ...");
                         chunkProvider.GetDynamicPrefabDecorator().DecorateChunk(world, newChunk, random);
-                    Log.Debug("Adding entity decorations ...");
+                    }
                     if (chunkProvider.GetDynamicEntityDecorator() != null)
+                    {
+                        Log.Debug("Adding entity decorations ...");
                         chunkProvider.GetDynamicEntityDecorator().DecorateChunk(world, newChunk, random);
-                    Log.Debug("Adding spawners ...");
+                    }
                     if (chunkProvider.GetDynamicEntitySpawnerDecorator() != null)
+                    {
+                        Log.Debug("Adding spawners ...");
                         chunkProvider.GetDynamicEntitySpawnerDecorator().DecorateChunk(world, newChunk, random);
+                    }
                 }
                 else
                 {
@@ -193,52 +203,23 @@ namespace ScriptingMod.Commands
                 }
 
                 Log.Debug("Replacing old chunk with new chunk ...");
-                chunkCache.RemoveChunk(oldChunk);
+                chunkCache.RemoveChunkSync(chunkKey);
                 if (!chunkCache.AddChunkSync(newChunk))
                     throw new ApplicationException("Could not add newly generated chunk to cache.");
-
-                Log.Debug("Doing something with the adjacent chunks ...");
-                // TODO: make reflection future-proof
-                typeof(ChunkProviderGenerateWorld).GetMethod("DE", BindingFlags.Instance | BindingFlags.NonPublic)
-                    .Invoke(chunkProvider, new object[] {newChunk});
-
-                Log.Debug("Reloading affected chunks for clients ...");
-                //var affectedChunks = new List<Chunk>();
-
-                var affectedChunks = new Chunk[3*3];
-                chunkCache.GetNeighborChunks(newChunk, affectedChunks); // fills slot 0-7
-                affectedChunks[8] = newChunk;
-
-                newChunk.isModified = true;
-
-
-                //affectedChunks.Add(newChunk);
-                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ - 1));
-                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ));
-                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ + 1));
-                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX, chunkZ - 1));
-                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX, chunkZ + 1));
-                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ -1));
-                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ));
-                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ + 1));
-                ChunkTools.ReloadForClients(affectedChunks);
-
-                Log.Out($"{newChunk} was regenerated.");
-                SdtdConsole.Instance.Output("All done.");
             }
             catch (Exception)
             {
+                // If anything crashes until the new chunk is added, free it's memory
                 MemoryPools.PoolChunks.FreeSync(newChunk);
                 throw;
             }
 
-            //if (chunk != null && chunkCache != null)
-            //{
-            //    if (chunkCache.AddChunkSync(chunk, false))
-            //        this.DE(chunk); // Regenerates overlapping decorations with neighbor chunks
-            //    else
-            //        MemoryPools.PoolChunks.FreeSync(chunk);
-            //}
+            Log.Debug("Placing overlapping decorations and smoothing transitions to other chunks ...");
+            chunkProvider.DecorateChunkOverlapping(newChunk);
+
+            // Ensure it's being saved automatically before unload or shutdown
+            newChunk.isModified = true;
+            Log.Out($"Regenerated chunk {chunkX}, {chunkZ}.");
         }
     }
 }

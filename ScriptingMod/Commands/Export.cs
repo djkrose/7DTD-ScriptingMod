@@ -21,7 +21,10 @@ namespace ScriptingMod.Commands
         internal const string TileEntityFileExtension = ".te";
         internal const int    TileEntityFileVersion   = 7;
 
-        private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>(); // entityId => position
+        /// <summary>
+        /// Saves last position for each entity executing the command individually: entityId => position
+        /// </summary>
+        private static Dictionary<int, Vector3i> savedPos = new Dictionary<int, Vector3i>();
 
         public override string[] GetCommands()
         {
@@ -57,7 +60,7 @@ namespace ScriptingMod.Commands
             {
                 Vector3i pos1, pos2;
                 (prefabName, pos1, pos2) = ParseParams(paramz, senderInfo);
-                FixOrder(ref pos1, ref pos2);
+                WorldTools.OrderAreaBounds(ref pos1, ref pos2);
                 // Saving tile entities first, because that also checks if chunks are loaded
                 exportStarted = true;
                 SaveTileEntities(prefabName, pos1, pos2);
@@ -337,31 +340,5 @@ namespace ScriptingMod.Commands
             Log.Debug($"Exported power item {powerItem.ToStringBetter()}.");
         }
 
-        /// <summary>
-        /// Fix the order of xyz1 xyz2, so that the first is always smaller or equal to the second.
-        /// </summary>
-        private static void FixOrder(ref Vector3i pos1, ref Vector3i pos2)
-        {
-            if (pos2.x < pos1.x)
-            {
-                int val = pos1.x;
-                pos1.x = pos2.x;
-                pos2.x = val;
-            }
-
-            if (pos2.y < pos1.y)
-            {
-                int val = pos1.y;
-                pos1.y = pos2.y;
-                pos2.y = val;
-            }
-
-            if (pos2.z < pos1.z)
-            {
-                int val = pos1.z;
-                pos1.z = pos2.z;
-                pos2.z = val;
-            }
-        }
     }
 }

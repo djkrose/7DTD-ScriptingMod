@@ -45,7 +45,8 @@ namespace ScriptingMod.Extensions
         private static readonly FieldInfo       fi_CommandObjectPair_CommandField;       // SdtdConsole         -> Struct13 -> public string string_0;
         private static readonly ConstructorInfo ci_CommandObjectPair_Constructor;        // SdtdConsole         -> Struct13 -> public Struct13(string string_1, IConsoleCommand iconsoleCommand_1)
 
-        private static readonly MethodInfo      mi_ChunkProviderGenerateWorld_generateTerrain;
+        private static readonly MethodInfo      mi_ChunkProviderGenerateWorld_generateTerrain;          // ChunkProviderGenerateWorld -> protected virtual void generateTerrain(World _world, Chunk _chunk, System.Random _random)
+        private static readonly MethodInfo      mi_ChunkProviderGenerateWorld_DecorateChunkOverlapping; // ChunkProviderGenerateWorld -> private void DE(Chunk _param1) { World world = this.world; ...
 
         static NonPublic()
         {
@@ -63,8 +64,8 @@ namespace ScriptingMod.Extensions
                 fi_PowerManager_rootPowerItems        = GetField(typeof(PowerManager), typeof(List<PowerItem>));
                 fi_TileEntity_readVersion             = GetField(typeof(TileEntity), "readVersion");
                 fi_TileEntity_nextHeatMapEvent        = GetField(typeof(TileEntity), typeof(ulong));
-                fi_TileEntityPowered_bool_1 = GetField(typeof(TileEntityPowered), typeof(bool), 2); // WARNING! Relying on field order here!
-                fi_TileEntityPowered_bool_3 = GetField(typeof(TileEntityPowered), typeof(bool), 4); // WARNING! Relying on field order here!
+                fi_TileEntityPowered_bool_1 = GetField(typeof(TileEntityPowered), typeof(bool), 2); // WARNING! Relying on member order here!
+                fi_TileEntityPowered_bool_3 = GetField(typeof(TileEntityPowered), typeof(bool), 4); // WARNING! Relying on member order here!
 
                 fi_SdtdConsole_commandObjects         = GetField(typeof(global::SdtdConsole), typeof(List<IConsoleCommand>));
                 var t_StdtConsole_CommandObjectPair   = GetNestedType(typeof(global::SdtdConsole), typeof(IConsoleCommand)); // struct Struct13, last in source, has IConsoleCommand field
@@ -74,7 +75,8 @@ namespace ScriptingMod.Extensions
                 fi_CommandObjectPair_CommandField     = GetField(t_StdtConsole_CommandObjectPair, typeof(string));
 
                 mi_ChunkProviderGenerateWorld_generateTerrain = GetMethod(typeof(ChunkProviderGenerateWorld), "generateTerrain");
-
+                mi_ChunkProviderGenerateWorld_DecorateChunkOverlapping = GetMethod(typeof(ChunkProviderGenerateWorld), typeof(void), new [] {typeof(Chunk)}, 1); // WARNING! Relying on member order here!
+                
                 Log.Debug("Successfilly established reflection references.");
             }
             catch (Exception ex)
@@ -219,6 +221,11 @@ namespace ScriptingMod.Extensions
             mi_ChunkProviderGenerateWorld_generateTerrain.Invoke(target, new object[] {world, chunk, random});
         }
 
+        public static void DecorateChunkOverlapping(this ChunkProviderGenerateWorld target, Chunk chunk)
+        {
+            mi_ChunkProviderGenerateWorld_DecorateChunkOverlapping.Invoke(target, new object[] {chunk});
+        }
+
         #endregion
 
         #region Accessors for static members and types
@@ -291,7 +298,7 @@ namespace ScriptingMod.Extensions
             if (index == null && candidates.Count > 1)
                 throw new ReflectionException($"Found more than one possible field with type {fieldType} in {target}.");
             return candidates.ElementAtOrDefault(index ?? 0)
-                   ?? throw new ReflectionException($"Couldn't find field with type {fieldType} in {target}.");
+                   ?? throw new ReflectionException($"Couldn't find field{(index != null ? " #" + index : "")} with type {fieldType} in {target}.");
         }
 
         /// <summary>
@@ -306,7 +313,7 @@ namespace ScriptingMod.Extensions
         /// <summary>
         /// Use reflection to get nested type that contains a field with the type
         /// </summary>
-        private static Type GetNestedType(Type target, Type containingFieldType, int? index = 0, BindingFlags flags = defaultFlags)
+        private static Type GetNestedType(Type target, Type containingFieldType, int? index = null, BindingFlags flags = defaultFlags)
         {
             var candidates = target.GetNestedTypes(flags).Where(
                 t => t.GetFields(defaultFlags).Any(
@@ -314,7 +321,7 @@ namespace ScriptingMod.Extensions
             if (index == null && candidates.Count > 1)
                 throw new ReflectionException($"Found more than one possible nested type containing field of {containingFieldType} in {target}.");
             return candidates.ElementAtOrDefault(index ?? 0)
-                   ?? throw new ReflectionException($"Couldn't find nested type with field of type {containingFieldType} in {target}.");
+                   ?? throw new ReflectionException($"Couldn't find nested type{(index != null ? " #" + index : "")} with field of type {containingFieldType} in {target}.");
         }
 
         /// <summary>
@@ -336,7 +343,7 @@ namespace ScriptingMod.Extensions
         /// <summary>
         /// Use reflection to get method by its return type and parameter types
         /// </summary>
-        private static MethodInfo GetMethod(Type target, Type returnType, Type[] paramTypes, int? index = 0, BindingFlags bindingAttr = defaultFlags)
+        private static MethodInfo GetMethod(Type target, Type returnType, Type[] paramTypes, int? index = null, BindingFlags bindingAttr = defaultFlags)
         {
             var candidates = target.GetMethods(bindingAttr).Where((m) =>
             {
@@ -353,10 +360,10 @@ namespace ScriptingMod.Extensions
                 }
                 return true;
             }).ToList();
-            if (candidates.Count > 1)
+            if (index == null && candidates.Count > 1)
                 throw new ReflectionException($"Found more than one method with return type {returnType} and parameter types ({paramTypes.ToString().Join(", ")}) in {target}.");
             return candidates.ElementAtOrDefault(index ?? 0)
-                ?? throw new ReflectionException($"Couldn't find method with return type {returnType} and parameter types ({paramTypes.ToString().Join(", ")}) in {target}.");
+                ?? throw new ReflectionException($"Couldn't find method{(index != null ? " #" + index : "")} with return type {returnType} and parameter types ({paramTypes.ToString().Join(", ")}) in {target}.");
         }
 
         #endregion

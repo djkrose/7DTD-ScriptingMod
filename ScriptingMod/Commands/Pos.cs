@@ -30,7 +30,6 @@ namespace ScriptingMod.Commands
                 Vector3i chunkPos = World.toBlock(worldPos);
                 int chunkX = World.toChunkXZ(worldPos.x);
                 int chunkZ = World.toChunkXZ(worldPos.z);
-                Vector3i areaMasterChunkPos = new Vector3i(World.toChunkXZ(worldPos.x) / 5 * 5, World.toChunkY(worldPos.y), World.toChunkXZ(worldPos.z) / 5 * 5);
                 string mapPos = Math.Abs(worldPos.z) + (worldPos.z >= 0 ? "N " : "S ") + Math.Abs(worldPos.x) + (worldPos.x >= 0 ? "E " : "W "); // todo: add elevation
                 int areaX = (int)Math.Floor(chunkX / 32.0d);
                 int areaZ = (int)Math.Floor(chunkZ / 32.0d);
@@ -41,7 +40,6 @@ namespace ScriptingMod.Commands
                 //SdtdConsole.Instance.Output($"Map position in world: {mapPos}"); // todo: incorrect
                 SdtdConsole.Instance.Output($"Position in chunk (x y z): {chunkPos.x} {chunkPos.y} {chunkPos.z}");
                 SdtdConsole.Instance.Output($"Chunk (x z): {chunkX} {chunkZ}");
-                SdtdConsole.Instance.Output($"Area master chunk (x z): {areaMasterChunkPos.x} {areaMasterChunkPos.z}");
                 SdtdConsole.Instance.Output($"Region file: r.{areaX}.{areaZ}.7rg");
             }
             catch (Exception ex)

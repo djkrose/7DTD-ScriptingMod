@@ -6,6 +6,7 @@ using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Extensions;
 using ScriptingMod.Tools;
+using UnityEngine;
 
 namespace ScriptingMod.Commands
 {
@@ -29,7 +30,16 @@ namespace ScriptingMod.Commands
         {
             try
             {
-                Log.Debug("All dumped.");
+                float middleX = (float)(Screen.width / 2);
+                float middleY = (float)(Screen.height / 2);
+                for (int index = 0; index < GameManager.Instance.World.ChunkClusters.Count; ++index)
+                {
+                    ChunkCluster chunkCluster = GameManager.Instance.World.ChunkClusters[index];
+                    if (chunkCluster != null)
+                        chunkCluster.DebugOnGUI(middleX + (float)(100 * index), middleY, 6);
+                }
+                GameManager.Instance.World.m_ChunkManager.DebugOnGUI(middleX, middleY, 6);
+                Log.Debug("Gui activated.");
             }
             catch (Exception ex)
             {

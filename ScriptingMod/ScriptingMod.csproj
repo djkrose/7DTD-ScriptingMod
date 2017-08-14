@@ -89,6 +89,7 @@
     <Compile Include="Exceptions\ReflectionException.cs" />
     <Compile Include="Extensions\NonPublic.cs" />
     <Compile Include="Extensions\PowerItemExtensions.cs" />
+    <Compile Include="Extensions\SdtdConsoleExtensions.cs" />
     <Compile Include="Extensions\TileEntityExtensions.cs" />
     <Compile Include="Dumper.cs" />
     <Compile Include="Extensions\IDictionaryExtensions.cs" />
@@ -117,6 +118,7 @@
     <Compile Include="ScriptEngines\LuaEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScriptEngines\ScriptEngine.cs" />
+    <Compile Include="Tools\WorldTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="CHANGELOG.txt">

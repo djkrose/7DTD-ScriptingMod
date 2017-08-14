@@ -86,7 +86,7 @@ namespace ScriptingMod.Commands
                 if (affectedChunks != null)
                 {
                     Tools.ChunkTools.ResetStability(affectedChunks);
-                    Tools.ChunkTools.ReloadForClients(affectedChunks);
+                    Tools.ChunkTools.ReloadForClients(affectedChunks.Select(c => c.Key).ToList());
                 }
             }
             catch (Exception ex)
