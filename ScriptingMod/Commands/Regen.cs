@@ -141,6 +141,7 @@ namespace ScriptingMod.Commands
         private void RegenerateChunk(int chunkX, int chunkZ)
         {
             var world = GameManager.Instance.World;
+            var chunkCache = world.ChunkCache;
 
             Chunk oldChunk = world.GetChunkSync(chunkX, chunkZ) as Chunk;
             if (oldChunk == null)
@@ -151,9 +152,9 @@ namespace ScriptingMod.Commands
 
             Log.Debug($"Starting regeneration of chunk [{chunkX}, {chunkZ}], which covers area [{pos1}] to [{pos2}] ...");
 
-            var chunkProvider = world.ChunkCache.ChunkProvider as ChunkProviderGenerateWorld;
+            var chunkProvider = chunkCache.ChunkProvider as ChunkProviderGenerateWorld;
             if (chunkProvider == null)
-                throw new ApplicationException("Found unexpected chunk provider: " + (world.ChunkCache.ChunkProvider?.GetType().ToString() ?? "null"));
+                throw new ApplicationException("Found unexpected chunk provider: " + (chunkCache.ChunkProvider?.GetType().ToString() ?? "null"));
 
             // See: ChunkProviderGenerateWorld.DoGenerateChunks()
 
@@ -192,8 +193,9 @@ namespace ScriptingMod.Commands
                 }
 
                 Log.Debug("Replacing old chunk with new chunk ...");
-                world.ChunkCache.RemoveChunk(oldChunk);
-                world.ChunkCache.AddChunkSync(newChunk);
+                chunkCache.RemoveChunk(oldChunk);
+                if (!chunkCache.AddChunkSync(newChunk))
+                    throw new ApplicationException("Could not add newly generated chunk to cache.");
 
                 Log.Debug("Doing something with the adjacent chunks ...");
                 // TODO: make reflection future-proof
@@ -201,16 +203,24 @@ namespace ScriptingMod.Commands
                     .Invoke(chunkProvider, new object[] {newChunk});
 
                 Log.Debug("Reloading affected chunks for clients ...");
-                var affectedChunks = new List<Chunk>();
-                affectedChunks.Add(newChunk);
-                affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ - 1));
-                affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ));
-                affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ + 1));
-                affectedChunks.Add((Chunk)world.GetChunkSync(chunkX, chunkZ - 1));
-                affectedChunks.Add((Chunk)world.GetChunkSync(chunkX, chunkZ + 1));
-                affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ -1));
-                affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ));
-                affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ + 1));
+                //var affectedChunks = new List<Chunk>();
+
+                var affectedChunks = new Chunk[3*3];
+                chunkCache.GetNeighborChunks(newChunk, affectedChunks); // fills slot 0-7
+                affectedChunks[8] = newChunk;
+
+                newChunk.isModified = true;
+
+
+                //affectedChunks.Add(newChunk);
+                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ - 1));
+                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ));
+                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX - 1, chunkZ + 1));
+                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX, chunkZ - 1));
+                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX, chunkZ + 1));
+                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ -1));
+                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ));
+                //affectedChunks.Add((Chunk)world.GetChunkSync(chunkX + 1, chunkZ + 1));
                 ChunkTools.ReloadForClients(affectedChunks);
 
                 Log.Out($"{newChunk} was regenerated.");
