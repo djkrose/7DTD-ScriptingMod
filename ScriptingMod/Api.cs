@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Tools;
+using UnityEngine;
 
 namespace ScriptingMod
 {
@@ -28,13 +29,6 @@ namespace ScriptingMod
                 Log.Out($"Initializing {Constants.ModNameFull} ...");
                 ScriptTools.LoadCommands();
                 TryRestoreModInfo();
-
-                // Called for Unity log messages from MAIN thread
-                //Application.logMessageReceived += Application_OnLogMessageReceived;
-
-                // Called for Unity log messages from ANY thread
-                //Application.logMessageReceivedThreaded += Application_OnLogMessageReceivedThreaded;
-
                 Log.Out($"Done initializing {Constants.ModNameFull}.");
             }
             catch (Exception e)
