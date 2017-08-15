@@ -28,8 +28,23 @@
     <Exec Command="$(MonoMdbGenerator) $(TargetPath)" WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" />
   </Target>
 
+  <Target Name="ShutdownServer">
+    <PropertyGroup>
+      <ServerExe>7DaysToDieServer.exe</ServerExe>
+    </PropertyGroup>
+    <Exec Command="tasklist /FI &quot;IMAGENAME eq $(ServerExe)&quot; 2&gt;NUL | find /I /N &quot;$(ServerExe)&quot;&gt;NUL" IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="ErrorCode"/>
+    </Exec>
+    <Message Text="Server is not running. No shutdown necessary." Condition="'$(ErrorCode)' != '0'" />
+    <Message Text="Server is running. Shutting down ..." Condition="'$(ErrorCode)' == '0'" />
+    <!-- Server often neds a couple of kill signals before it complies ... -->
+    <Exec Command="taskkill /IM $(ServerExe) 2&gt; nul" IgnoreExitCode="true" Condition="'$(ErrorCode)' == '0'"/>
+    <Exec Command="taskkill /IM $(ServerExe) 2&gt; nul" IgnoreExitCode="true" Condition="'$(ErrorCode)' == '0'"/>
+    <Exec Command="taskkill /IM $(ServerExe) 2&gt; nul" IgnoreExitCode="true" Condition="'$(ErrorCode)' == '0'"/>
+  </Target>
+  
   <!-- Copy all mod files into 7DTD Mods folder after the build -->
-  <Target Name="InstallMod" AfterTargets="AfterBuild" Condition="Exists('$(ModsFolder).')">
+  <Target Name="InstallMod" AfterTargets="AfterBuild" DependsOnTargets="ShutdownServer" Condition="Exists('$(ModsFolder).')">
     <ItemGroup>
       <InstallFiles Include="$(OutputPath)**\*.*" />
     </ItemGroup>
