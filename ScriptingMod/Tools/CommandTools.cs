@@ -118,13 +118,13 @@ namespace ScriptingMod.Tools
         {
             if (ex is FriendlyMessageException)
             {
+                Log.Debug(ex.Message);
                 SdtdConsole.Instance.Output(ex.Message);
-                Log.Out(ex.Message);
             }
             else
             {
-                SdtdConsole.Instance.Output("Error occured during command execution: " + ex.Message + " [details in server log]");
                 Log.Exception(ex);
+                SdtdConsole.Instance.Output(string.Format(Resources.ErrorDuringCommand, ex.Message));
             }
         }
 

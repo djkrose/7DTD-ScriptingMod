@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
+    <Compile Include="Vector2xz.cs" />
     <Compile Include="Commands\Regen.cs" />
     <Compile Include="Commands\Test.cs" />
     <Compile Include="Commands\CheckPower.cs" />

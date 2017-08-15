@@ -70,6 +70,24 @@ namespace ScriptingMod {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error occured during command execution: {0} [details in server log].
+        /// </summary>
+        internal static string ErrorDuringCommand {
+            get {
+                return ResourceManager.GetString("ErrorDuringCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to get your remote client info. You must be logged in as a regular player..
+        /// </summary>
+        internal static string ErrorNotRemotePlayer {
+            get {
+                return ResourceManager.GetString("ErrorNotRemotePlayer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;
         ///&lt;xml&gt;
         ///  &lt;ModInfo&gt;
@@ -85,6 +103,24 @@ namespace ScriptingMod {
         internal static string ModInfo {
             get {
                 return ResourceManager.GetString("ModInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chunk regeneration in walk mode turned off..
+        /// </summary>
+        internal static string MsgRegenerationWalkOff {
+            get {
+                return ResourceManager.GetString("MsgRegenerationWalkOff", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chunk regeneration in walk mode turned on..
+        /// </summary>
+        internal static string MsgRegenerationWalkOn {
+            get {
+                return ResourceManager.GetString("MsgRegenerationWalkOn", resourceCulture);
             }
         }
     }

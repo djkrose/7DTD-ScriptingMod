@@ -20,7 +20,7 @@ namespace ScriptingMod.Tools
         public static ClientInfo GetClientInfo(CommandSenderInfo senderInfo)
         {
             return senderInfo.RemoteClientInfo
-                   ?? throw new FriendlyMessageException("Unable to get your remote client info. You must be logged in as a regular player.");
+                   ?? throw new FriendlyMessageException(Resources.ErrorNotRemotePlayer);
         }
 
         /// <summary>

@@ -124,4 +124,17 @@
   <data name="ErrorAreaTooFarAway" xml:space="preserve">
     <value>Area is too far away, chunk(s) not loaded. Move closer!</value>
   </data>
+  <data name="ErrorNotRemotePlayer" xml:space="preserve">
+    <value>Unable to get your remote client info. You must be logged in as a regular player.</value>
+  </data>
+  <data name="ErrorDuringCommand" xml:space="preserve">
+    <value>Error occured during command execution: {0} [details in server log]</value>
+    <comment>{0} = ex.Message</comment>
+  </data>
+  <data name="MsgRegenerationWalkOff" xml:space="preserve">
+    <value>Chunk regeneration in walk mode turned off.</value>
+  </data>
+  <data name="MsgRegenerationWalkOn" xml:space="preserve">
+    <value>Chunk regeneration in walk mode turned on.</value>
+  </data>
 </root>

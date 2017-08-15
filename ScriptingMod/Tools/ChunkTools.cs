@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using RWG2;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Tools
@@ -52,11 +53,10 @@ namespace ScriptingMod.Tools
                 if (player == null)
                     continue; // entity is not a player
 
-                var playersChunks = player.ChunkObserver.chunksLoaded;
+                var playersChunks = player.ChunkObserver.chunksLoaded?.ToList();
                 if (playersChunks == null)
                     continue; // player has no chunks loaded
 
-                // TODO: need a lock here?
                 foreach (var chunkKey in playersChunks)
                 {
                     if (!chunkKeys.Contains(chunkKey))
@@ -124,6 +124,21 @@ namespace ScriptingMod.Tools
                 }
                 Log.Out($"Forced {client.playerName} to reload {reloadforclients[client].Count} of {playersChunks.Count} chunks.");
             }
+        }
+
+        public static Vector2xz WorldPosToChunkXZ(Vector3i worldPos)
+        {
+            return new Vector2xz(worldPos.x >> 4, worldPos.z >> 4);
+        }
+
+        public static Vector2xz ChunkKeyToChunkXZ(long chunkKey)
+        {
+            return new Vector2xz(WorldChunkCache.extractX(chunkKey), WorldChunkCache.extractZ(chunkKey));
+        }
+
+        public static Vector2xz ChunkXZToAreaXZ(Vector2xz chunkXZ)
+        {
+            return new Vector2xz((int)Math.Floor(chunkXZ.x / 32.0d), (int)Math.Floor(chunkXZ.z / 32.0d));
         }
     }
 }
