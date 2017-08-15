@@ -152,7 +152,7 @@ namespace ScriptingMod.Commands
                 {
                     var chunk = world.GetChunkFromWorldPos(x, 0, z) as Chunk;
                     if (chunk == null)
-                        throw new FriendlyMessageException("Area to import is too far away. Chunk not loaded on that area.");
+                        throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
 
                     affectedChunks.Add(chunk);
                 }
@@ -221,7 +221,7 @@ namespace ScriptingMod.Commands
                     var posInChunk  = World.toBlock(posInWorld);
                     var chunk       = world.GetChunkFromWorldPos(posInWorld) as Chunk;
                     if (chunk == null)
-                        throw new FriendlyMessageException("Area to import is too far away. Chunk not loaded on that area.");
+                        throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
 
                     var tileEntityType = (TileEntityType)reader.ReadByte();                 // [byte]    TileEntityType enum
                     var tileEntity = chunk.GetTileEntity(posInChunk);

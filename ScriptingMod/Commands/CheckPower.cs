@@ -20,7 +20,6 @@ namespace ScriptingMod.Commands
         private static readonly Dictionary<PowerTrigger.TriggerTypes, Type> ValidTriggerTypes = 
             new Dictionary<PowerTrigger.TriggerTypes, Type>
         {
-            // 
             { PowerTrigger.TriggerTypes.Switch,        typeof(PowerTrigger) },
             { PowerTrigger.TriggerTypes.PressurePlate, typeof(PowerPressurePlate) },
             { PowerTrigger.TriggerTypes.TimerRelay,    typeof(PowerTimerRelay) },
@@ -84,7 +83,8 @@ namespace ScriptingMod.Commands
                     : ($"Found {countBroken} broken {strPowerBlocks} in {countChunks} {strChunks}."
                       + (countBroken > 0 ? $" Use option /fix to fix {(countBroken != 1 ? "them" : "it")}." : ""));
 
-                SdtdConsole.Instance.OutputAndLog(msg);
+                SdtdConsole.Instance.Output(msg);
+                Log.Out(msg);
             }
             catch (Exception ex)
             {
@@ -151,7 +151,7 @@ namespace ScriptingMod.Commands
         {
             var chunk = GameManager.Instance.World.GetChunkFromWorldPos(worldPos) as Chunk;
             if (chunk == null)
-                throw new FriendlyMessageException($"Location {worldPos} is too far away. Chunk is not loaded.");
+                throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
 
             SdtdConsole.Instance.Output($"Scanning chunk {chunk} for broken power blocks ...");
             var countBroken = ScanChunk(chunk, isFixMode);

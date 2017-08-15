@@ -198,7 +198,7 @@ namespace ScriptingMod.Commands
                 {
                     var chunk = world.GetChunkFromWorldPos(x, 0, z) as Chunk;
                     if (chunk == null)
-                        throw new FriendlyMessageException("Area to export is too far away. Chunk not loaded on that area.");
+                        throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
 
                     for (int y = pos1.y; y <= pos2.y; y++)
                     {

@@ -121,4 +121,7 @@
   <data name="ModInfo" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>ModInfo.xml;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
   </data>
+  <data name="ErrorAreaTooFarAway" xml:space="preserve">
+    <value>Area is too far away, chunk(s) not loaded. Move closer!</value>
+  </data>
 </root>

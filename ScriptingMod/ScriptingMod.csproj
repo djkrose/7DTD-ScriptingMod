@@ -178,4 +178,8 @@
     <Error Condition="!Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets'))" />
     <Error Condition="!Exists('..\packages\MSBuild.ConfuserEx.1.0.0.0\build\MSBuild.ConfuserEx.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSBuild.ConfuserEx.1.0.0.0\build\MSBuild.ConfuserEx.targets'))" />
   </Target>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
 </Project>

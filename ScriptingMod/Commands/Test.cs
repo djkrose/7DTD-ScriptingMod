@@ -30,16 +30,16 @@ namespace ScriptingMod.Commands
         {
             try
             {
-                float middleX = (float)(Screen.width / 2);
-                float middleY = (float)(Screen.height / 2);
-                for (int index = 0; index < GameManager.Instance.World.ChunkClusters.Count; ++index)
-                {
-                    ChunkCluster chunkCluster = GameManager.Instance.World.ChunkClusters[index];
-                    if (chunkCluster != null)
-                        chunkCluster.DebugOnGUI(middleX + (float)(100 * index), middleY, 6);
-                }
-                GameManager.Instance.World.m_ChunkManager.DebugOnGUI(middleX, middleY, 6);
-                Log.Debug("Gui activated.");
+                //float middleX = (float)(Screen.width / 2);
+                //float middleY = (float)(Screen.height / 2);
+                //for (int index = 0; index < GameManager.Instance.World.ChunkClusters.Count; ++index)
+                //{
+                //    ChunkCluster chunkCluster = GameManager.Instance.World.ChunkClusters[index];
+                //    if (chunkCluster != null)
+                //        chunkCluster.DebugOnGUI(middleX + (float)(100 * index), middleY, 6);
+                //}
+                //GameManager.Instance.World.m_ChunkManager.DebugOnGUI(middleX, middleY, 6);
+                Log.Debug("Test done.");
             }
             catch (Exception ex)
             {
