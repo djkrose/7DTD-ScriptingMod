@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Tools;
-using UnityEngine;
 
 namespace ScriptingMod
 {

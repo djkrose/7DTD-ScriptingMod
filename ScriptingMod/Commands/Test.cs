@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using JetBrains.Annotations;
-using ScriptingMod.Extensions;
 using ScriptingMod.Tools;
 using UnityEngine;
 
