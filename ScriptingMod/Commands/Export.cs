@@ -52,14 +52,14 @@ namespace ScriptingMod.Commands
                 ".Unindent();
         }
 
-        public override void Execute(List<string> paramz, CommandSenderInfo senderInfo)
+        public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
             string prefabName = null;
             bool exportStarted = false;
             try
             {
                 Vector3i pos1, pos2;
-                (prefabName, pos1, pos2) = ParseParams(paramz, senderInfo);
+                (prefabName, pos1, pos2) = ParseParams(parameters, senderInfo);
                 WorldTools.OrderAreaBounds(ref pos1, ref pos2);
                 // Saving tile entities first, because that also checks if chunks are loaded
                 exportStarted = true;
@@ -95,16 +95,16 @@ namespace ScriptingMod.Commands
             }
         }
 
-        private static (string prefabName, Vector3i pos1, Vector3i pos2) ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
+        private static (string prefabName, Vector3i pos1, Vector3i pos2) ParseParams(List<string> parameters, CommandSenderInfo senderInfo)
         {
-            if (paramz.Count == 0)
+            if (parameters.Count == 0)
             {
                 var ci = PlayerTools.GetClientInfo(senderInfo);
                 savedPos[ci.entityId] = PlayerTools.GetPosition(ci);
                 throw new FriendlyMessageException("Your current position was saved: " + savedPos[ci.entityId]);
             }
 
-            var prefabName = paramz[0];
+            var prefabName = parameters[0];
 
             // Sanatize prefabName to only include allowed characters
             if (!Regex.IsMatch(prefabName, @"^\w[\w.-]*$", RegexOptions.CultureInvariant))
@@ -112,7 +112,7 @@ namespace ScriptingMod.Commands
 
             Vector3i pos1, pos2;
 
-            if (paramz.Count == 1)
+            if (parameters.Count == 1)
             {
                 var ci = PlayerTools.GetClientInfo(senderInfo);
                 if (!savedPos.ContainsKey(ci.entityId))
@@ -120,10 +120,14 @@ namespace ScriptingMod.Commands
                 pos1 = savedPos[ci.entityId];
                 pos2 = PlayerTools.GetPosition(ci);
             }
+            else if (parameters.Count == 7)
+            {
+                pos1 = CommandTools.ParseXYZ(parameters, 1);
+                pos2 = CommandTools.ParseXYZ(parameters, 4);
+            }
             else
             {
-                pos1 = CommandTools.ParseXYZ(paramz, 1);
-                pos2 = CommandTools.ParseXYZ(paramz, 4);
+                throw new FriendlyMessageException(Resources.ErrorParameerCountNotValid);
             }
 
             return (prefabName, pos1, pos2);

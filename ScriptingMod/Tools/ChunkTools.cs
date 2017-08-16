@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using RWG2;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Tools

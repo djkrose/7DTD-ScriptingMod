@@ -29,7 +29,7 @@ namespace ScriptingMod.Commands
             return @"Tests if djkrose's Scripting Mod is correctly installed and prints out version information.";
         }
 
-        public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
+        public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
             try
             {

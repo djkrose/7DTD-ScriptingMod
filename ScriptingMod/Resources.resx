@@ -137,4 +137,7 @@
   <data name="MsgRegenerationWalkOn" xml:space="preserve">
     <value>Chunk regeneration in walk mode turned on.</value>
   </data>
+  <data name="ErrorParameerCountNotValid" xml:space="preserve">
+    <value>Parameter count not valid. See help for details.</value>
+  </data>
 </root>

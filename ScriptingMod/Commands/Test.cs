@@ -26,7 +26,7 @@ namespace ScriptingMod.Commands
             return "Internal tests for Scripting Mod";
         }
 
-        public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
+        public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
             try
             {

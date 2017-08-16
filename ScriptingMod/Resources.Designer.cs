@@ -88,6 +88,15 @@ namespace ScriptingMod {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Parameter count not valid. See help for details..
+        /// </summary>
+        internal static string ErrorParameerCountNotValid {
+            get {
+                return ResourceManager.GetString("ErrorParameerCountNotValid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;
         ///&lt;xml&gt;
         ///  &lt;ModInfo&gt;

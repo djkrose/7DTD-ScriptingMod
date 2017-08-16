@@ -57,12 +57,12 @@ namespace ScriptingMod.Commands
                 ".Unindent();
         }
 
-        public override void Execute(List<string> paramz, CommandSenderInfo senderInfo)
+        public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
             HashSet<Chunk> affectedChunks = null;
             try
             {
-                (string prefabName, Vector3i pos1, int rotate, bool all) = ParseParams(paramz, senderInfo);
+                (string prefabName, Vector3i pos1, int rotate, bool all) = ParseParams(parameters, senderInfo);
 
                 // Will not do anything if chunks are not loaded; so no need to pre-check
                 LoadPrefab(prefabName, pos1, rotate, out Vector3i pos2);
@@ -96,13 +96,13 @@ namespace ScriptingMod.Commands
         }
 
         private static (string prefabName, Vector3i pos1, int rotate, bool all)
-            ParseParams(List<string> paramz, CommandSenderInfo senderInfo)
+            ParseParams(List<string> parameters, CommandSenderInfo senderInfo)
         {
             // Parse /all parameter
-            var all = paramz.Remove("/all");
+            var all = parameters.Remove("/all");
 
             // Parse prefab name
-            var prefabName = paramz[0];
+            var prefabName = parameters[0];
 
             // Verify existence of prefab files
             const string tts = global::Constants.cExtPrefabs; // Cannot interpolate in string: https://youtrack.jetbrains.com/issue/RSRP-465524
@@ -121,20 +121,24 @@ namespace ScriptingMod.Commands
 
             // Parse coordinates
             Vector3i pos1;
-            if (paramz.Count == 1 || paramz.Count == 2)
+            if (parameters.Count == 1 || parameters.Count == 2)
             {
                 pos1 = PlayerTools.GetPosition(senderInfo);
             }
+            else if (parameters.Count == 4 || parameters.Count == 5)
+            {
+                pos1 = CommandTools.ParseXYZ(parameters, 1);
+            }
             else
             {
-                pos1 = CommandTools.ParseXYZ(paramz, 1);
+                throw new FriendlyMessageException(Resources.ErrorParameerCountNotValid);
             }
 
             // Parse rotation
             var rotate   = 0;
-            if (paramz.Count == 2 || paramz.Count == 5)
+            if (parameters.Count == 2 || parameters.Count == 5)
             {
-                rotate = paramz[paramz.Count - 1].ToInt()
+                rotate = parameters[parameters.Count - 1].ToInt()
                     ?? throw new FriendlyMessageException("Rotation value is not valid. Allowed values: 0, 1, 2, or 3");
             }
 

@@ -20,7 +20,7 @@ namespace ScriptingMod.Commands
             return "Clears the JavaScript engine from all variables and loaded modules.";
         }
 
-        public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
+        public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
             try
             {

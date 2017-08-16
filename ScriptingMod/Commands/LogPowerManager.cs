@@ -22,7 +22,7 @@ namespace ScriptingMod.Commands
             return "Logs the power manager data.";
         }
 
-        public override void Execute(List<string> _params, CommandSenderInfo _senderInfo)
+        public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
             try
             {
