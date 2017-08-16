@@ -224,7 +224,7 @@ namespace ScriptingMod.Commands
         private static int ScanChunk([NotNull] Chunk chunk, bool isFixMode)
         {
             int counter = 0;
-            var tileEntities = chunk.GetTileEntities().dict.Values.ToList();
+            var tileEntities = chunk.GetTileEntities().Values.ToList();
 
             foreach (var tileEntity in tileEntities)
             {
