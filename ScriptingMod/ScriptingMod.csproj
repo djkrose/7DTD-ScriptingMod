@@ -83,7 +83,6 @@
     <Compile Include="Commands\Regen.cs" />
     <Compile Include="Commands\Test.cs" />
     <Compile Include="Commands\CheckPower.cs" />
-    <Compile Include="Commands\LogPowerManager.cs" />
     <Compile Include="Commands\Pos.cs" />
     <Compile Include="Commands\ResetJs.cs" />
     <Compile Include="Constants.cs" />
