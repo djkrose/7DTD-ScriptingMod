@@ -28,7 +28,7 @@ namespace ScriptingMod
                 Log.Out($"Initializing {Constants.ModNameFull} ...");
                 PersistentData.Load();
                 ScriptTools.LoadCommands();
-                TryRestoreModInfo();
+                Commands.CheckPower.InitAutomaticCheck();
                 Log.Out($"Done initializing {Constants.ModNameFull}.");
             }
             catch (Exception e)
@@ -89,28 +89,5 @@ namespace ScriptingMod
             // Log.Debug("Api.CalcChunkColorsDone called.");
         }
 
-        /// <summary>
-        /// Analyzes the ModInfo.xml file and tries to restore it if it's out of date or modified.
-        /// Exceptions are logged but not thrown.
-        /// This should make sure that the modinfo always matches with the mod and prevents people
-        /// from meddling with the name, author information, or website.
-        /// </summary>
-        private void TryRestoreModInfo()
-        {
-            try
-            {
-                var filePath = Path.Combine(Constants.ScriptingModFolder, Constants.ModInfoFile);
-                var content = File.ReadAllText(filePath);
-                if (content != Resources.ModInfo)
-                {
-                    File.WriteAllText(filePath, Resources.ModInfo, new UTF8Encoding(false));
-                    Log.Out("Restored ModInfo.xml to it's original content.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ModInfo.xml contains incorrect content, but it could not be restored: " + ex);
-            }
-        }
     }
 }

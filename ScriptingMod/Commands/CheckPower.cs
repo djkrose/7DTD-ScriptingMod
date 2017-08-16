@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
@@ -127,7 +129,7 @@ namespace ScriptingMod.Commands
                             PersistentData.Instance.CheckPowerCounter = 0;
                             PersistentData.Instance.Save();
 
-                            var msg = "Automatic fixing of broken power blockes turned ON.";
+                            var msg = "Automatic fixing of broken power blocks turned ON.";
                             Log.Out(msg);
                             throw new FriendlyMessageException(msg);
                         }
@@ -142,7 +144,7 @@ namespace ScriptingMod.Commands
                             PersistentData.Instance.CheckPowerCounter = 0;
                             PersistentData.Instance.Save();
 
-                            var msg = "Automatic fixing of broken power blockes turned OFF." +
+                            var msg = "Automatic fixing of broken power blocks turned OFF." +
                                       $" {counter} power block{(counter == 1 ? " was" : "s were")} fixed since it was turned on.";
                             Log.Out(msg);
                             throw new FriendlyMessageException(msg);
@@ -163,7 +165,17 @@ namespace ScriptingMod.Commands
             return (isFixMode, pos);
         }
 
-        private void OnLogMessageReceived(string condition, string stackTrace, LogType type)
+        public static void InitAutomaticCheck()
+        {
+            if (PersistentData.Instance.CheckPowerAuto)
+            {
+                Log.Out("Automatic fixing of broken power blocks ist still ON.");
+                Application.logMessageReceived += OnLogMessageReceived;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private static void OnLogMessageReceived(string condition, string stackTrace, LogType type)
         {
             // Only check once every 5 seconds
             if (lastAutomaticCheck.AddSeconds(5) > DateTime.Now)
@@ -174,13 +186,26 @@ namespace ScriptingMod.Commands
             // Check if this is the exception we are looking for
             if (type != LogType.Exception || stackTrace == null || !stackTrace.StartsWith("NullReferenceException: Object reference not set to an instance of an object\r\n  at TileEntityPoweredTrigger.write"))
             {
-                Log.Debug("Detected NRE TileEntityPoweredTrigger.write. Starting scan for broken power blocks ...");
-                ScanAllChunks(true, out var _, out var brokenBlocks);
-                if (brokenBlocks >= 1)
+                Log.Debug("Detected NRE TileEntityPoweredTrigger.write. Starting scan for broken power blocks in background ...");
+                ThreadManager.AddSingleTaskSafe(delegate
                 {
-                    PersistentData.Instance.CheckPowerCounter += brokenBlocks;
-                    PersistentData.Instance.Save();
-                }
+                    // Doing it in background task so that NRE appears before our output in log
+                    // and so that we can use ThreadManager.IsMainThread() to determie command or background mode
+                    try
+                    {
+                        ScanAllChunks(true, out var _, out var brokenBlocks);
+                        if (brokenBlocks >= 1)
+                        {
+                            PersistentData.Instance.CheckPowerCounter += brokenBlocks;
+                            PersistentData.Instance.Save();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Error while automatically fixing broken power block in background: ", ex);
+                        throw;
+                    }
+                });
             }
         }
 
@@ -192,7 +217,8 @@ namespace ScriptingMod.Commands
         /// <param name="brokenBlocks">Returns the number of broken blocks (that should be now fixed if isFixMode was true)</param>
         private static void ScanAllChunks(bool isFixMode, out int scannedChunks, out int brokenBlocks)
         {
-            SdtdConsole.Instance.Output("Scanning all loaded chunks for broken power blocks ...");
+            if (ThreadManager.IsMainThread()) // because this is also called async where Output is not available or needed
+                SdtdConsole.Instance.Output("Scanning all loaded chunks for broken power blocks ...");
             var chunks = GameManager.Instance.World.ChunkCache.GetChunkArray().ToList();
             scannedChunks = chunks.Count;
             brokenBlocks = chunks.Sum(chunk => ScanChunk(chunk, isFixMode));
@@ -223,7 +249,7 @@ namespace ScriptingMod.Commands
         /// <returns>Number of broken power blocks found (and fixed)</returns>
         private static int ScanChunk([NotNull] Chunk chunk, bool isFixMode)
         {
-            int counter = 0;
+            var counter = 0;
             var tileEntities = chunk.GetTileEntities().Values.ToList();
 
             foreach (var tileEntity in tileEntities)
@@ -232,18 +258,22 @@ namespace ScriptingMod.Commands
                 if (te == null || !IsBrokenTileEntityPowered(te))
                     continue;
 
-                Log.Warning($"Found broken power block at {tileEntity.ToWorldPos()} in {chunk}.");
+                var msg = $"{(isFixMode ? "Found and fixed" : "Found")} broken power block at {tileEntity.ToWorldPos()} in {chunk}.";
 
                 if (isFixMode)
                 {
                     RecreateTileEntity(tileEntity);
                     counter++;
-                    SdtdConsole.Instance.Output($"Fixed broken power block at position {tileEntity.ToWorldPos()} in {chunk}.");
+                    Log.Warning(msg);
+                    if (ThreadManager.IsMainThread()) // because this is also called async where Output is not available or needed
+                        SdtdConsole.Instance.Output(msg);
                 }
                 else
                 {
                     counter++;
-                    SdtdConsole.Instance.Output($"Found broken power block at position {tileEntity.ToWorldPos()} in {chunk}.");
+                    Log.Warning(msg);
+                    if (ThreadManager.IsMainThread()) // because this is also called async where Output is not available or needed
+                        SdtdConsole.Instance.Output(msg);
                 }
             }
 

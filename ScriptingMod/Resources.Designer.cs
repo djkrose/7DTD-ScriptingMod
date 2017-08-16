@@ -97,25 +97,6 @@ namespace ScriptingMod {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;
-        ///&lt;xml&gt;
-        ///  &lt;ModInfo&gt;
-        ///    &lt;Name value=&quot;djkrose&apos;s Scripting Mod&quot;/&gt;
-        ///    &lt;Description value=&quot;Adds scripting support and other useful functionality to 7 Days To Die dedicated server.&quot;/&gt;
-        ///    &lt;Author value=&quot;djkrose&quot;/&gt;
-        ///    &lt;Version value=&quot;0.8&quot;/&gt;
-        ///    &lt;Website value=&quot;https://github.com/djkrose/7DTD-ScriptingMod&quot;/&gt;
-        ///  &lt;/ModInfo&gt;
-        ///&lt;/xml&gt;
-        ///.
-        /// </summary>
-        internal static string ModInfo {
-            get {
-                return ResourceManager.GetString("ModInfo", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Chunk regeneration in walk mode turned off..
         /// </summary>
         internal static string MsgRegenerationWalkOff {

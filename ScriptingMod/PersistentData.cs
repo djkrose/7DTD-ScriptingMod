@@ -33,7 +33,7 @@ namespace ScriptingMod
                         var serializer = new XmlSerializer(this.GetType());
                         serializer.Serialize(writer, this);
                         writer.Flush();
-                        Log.Debug("Persistend data saved.");
+                        Log.Out($"Persistent data saved in {SaveFileName}.");
                     }
                 }
                 catch (Exception ex)
@@ -62,7 +62,7 @@ namespace ScriptingMod
                         var serializer = new XmlSerializer(typeof(PersistentData));
                         instance = serializer.Deserialize(reader) as PersistentData;
                     }
-                    Log.Debug("Persistend data loaded.");
+                    Log.Out($"Persistent data loaded from {SaveFileName}.");
                 }
                 catch (Exception ex)
                 {
