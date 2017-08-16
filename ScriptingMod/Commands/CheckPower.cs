@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.Tools;
+using UnityEngine;
 
 namespace ScriptingMod.Commands
 {
     [UsedImplicitly]
     public class CheckPower : ConsoleCmdAbstract
     {
+
+        private static DateTime lastAutomaticCheck = DateTime.Now;
+
         /// <summary>
         /// For TileEntityPoweredTrigger objects this lists the TriggerTypes and which power item class are allowed together.
         /// Last updated: A16.2 b7
@@ -50,9 +55,11 @@ namespace ScriptingMod.Commands
                     1. dj-check-power [/fix]
                     2. dj-check-power here [/fix]
                     3. dj-check-power <x> <z> [/fix]
+                    4. dj-check-power auto [/fix]
                 1. Scans (and optionally fixes) all loaded chunks for corrupt power blocks.
                 2. Scans (and optionally fixes) the chunk where you are currently standing.
                 3. Scans (and optionally fixes) the chunk that contains the given world coordinate.
+                4. Turns automatic fixing of broken power blocks on or off.
                 Use optional parameter /fix to automatically repair errors.
                 ".Unindent();
         }
@@ -63,25 +70,25 @@ namespace ScriptingMod.Commands
             {
                 (bool isFixMode, Vector3i? worldPos) = ParseParams(parameters, senderInfo);
 
-                int countBroken;
-                int countChunks;
+                int scannedChunks;
+                int brokenBlocks;
 
-                if (worldPos != null)
+                if (worldPos == null)
                 {
-                    countChunks = 1;
-                    countBroken = ScanChunkAt(worldPos.Value, isFixMode);
+                    ScanAllChunks(isFixMode, out scannedChunks, out brokenBlocks);
                 }
-                else // scan all chunks
+                else
                 {
-                    (countChunks, countBroken) = ScanAllChunks(isFixMode);
+                    scannedChunks = 1;
+                    brokenBlocks = ScanChunkAt(worldPos.Value, isFixMode);
                 }
 
-                var strChunks = $"chunk{(countChunks != 1 ? "s" : "")}";
-                var strPowerBlocks = $"power block{(countBroken != 1 ? "s" : "")}";
+                var strChunks = $"chunk{(scannedChunks != 1 ? "s" : "")}";
+                var strPowerBlocks = $"power block{(brokenBlocks != 1 ? "s" : "")}";
                 var msg = isFixMode
-                    ? ($"Found and fixed {countBroken} broken {strPowerBlocks} in {countChunks} {strChunks}.")
-                    : ($"Found {countBroken} broken {strPowerBlocks} in {countChunks} {strChunks}."
-                      + (countBroken > 0 ? $" Use option /fix to fix {(countBroken != 1 ? "them" : "it")}." : ""));
+                    ? ($"Found and fixed {brokenBlocks} broken {strPowerBlocks} in {scannedChunks} {strChunks}.")
+                    : ($"Found {brokenBlocks} broken {strPowerBlocks} in {scannedChunks} {strChunks}."
+                      + (brokenBlocks > 0 ? $" Use option /fix to fix {(brokenBlocks != 1 ? "them" : "it")}." : ""));
 
                 SdtdConsole.Instance.Output(msg);
                 Log.Out(msg);
@@ -103,19 +110,52 @@ namespace ScriptingMod.Commands
                     pos = null;
                     break;
                 case 1:
-                    if (parameters[0] != "here")
+                    if (parameters[0] == "here")
+                    {
+                        pos = PlayerTools.GetPosition(senderInfo);
+                    }
+                    else if (parameters[0] == "auto")
+                    {
+                        if (!PersistentData.Instance.CheckPowerAuto)
+                        {
+                            // Turn on
+                            if (!isFixMode)
+                                throw new FriendlyMessageException("Automatic mode doesn't make sense without fixing it. Option /fix is mandatory here.");
+
+                            Application.logMessageReceived += OnLogMessageReceived;
+
+                            PersistentData.Instance.CheckPowerAuto = true;
+                            PersistentData.Instance.CheckPowerCounter = 0;
+                            PersistentData.Instance.Save();
+
+                            var msg = "Automatic fixing of broken power blockes turned ON.";
+                            Log.Out(msg);
+                            throw new FriendlyMessageException(msg);
+                        }
+                        else
+                        {
+                            // Turn off
+                            Application.logMessageReceived -= OnLogMessageReceived;
+
+                            var counter = PersistentData.Instance.CheckPowerCounter;
+
+                            PersistentData.Instance.CheckPowerAuto = false;
+                            PersistentData.Instance.CheckPowerCounter = 0;
+                            PersistentData.Instance.Save();
+
+                            var msg = "Automatic fixing of broken power blockes turned OFF." +
+                                      $" {counter} power block{(counter == 1 ? " was" : "s were")} fixed since it was turned on.";
+                            Log.Out(msg);
+                            throw new FriendlyMessageException(msg);
+                        }
+                    }
+                    else
+                    {
                         throw new FriendlyMessageException("Wrong second parameter. See help.");
-                    pos = PlayerTools.GetPosition(senderInfo);
+                    }
                     break;
                 case 2:
-                    try
-                    {
-                        pos = new Vector3i(Int32.Parse(parameters[0]), 0, Int32.Parse(parameters[1]));
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.", ex);
-                    }
+                    pos = CommandTools.ParseXZ(parameters, 0);
                     break;
                 default:
                     throw new FriendlyMessageException("Wrong number of parameters. See help.");
@@ -124,21 +164,39 @@ namespace ScriptingMod.Commands
             return (isFixMode, pos);
         }
 
+        private void OnLogMessageReceived(string condition, string stackTrace, LogType type)
+        {
+            // Only check once every 5 seconds
+            if (lastAutomaticCheck.AddSeconds(5) > DateTime.Now)
+                return;
+
+            lastAutomaticCheck = DateTime.Now;
+
+            // Check if this is the exception we are looking for
+            if (type != LogType.Exception || stackTrace == null || !stackTrace.StartsWith("NullReferenceException: Object reference not set to an instance of an object\r\n  at TileEntityPoweredTrigger.write"))
+            {
+                Log.Debug("Detected NRE TileEntityPoweredTrigger.write. Starting scan for broken power blocks ...");
+                ScanAllChunks(true, out var _, out var brokenBlocks);
+                if (brokenBlocks >= 1)
+                {
+                    PersistentData.Instance.CheckPowerCounter += brokenBlocks;
+                    PersistentData.Instance.Save();
+                }
+            }
+        }
+
         /// <summary>
         /// Iterate over all currently loaded chunks and scans (and optionally fixes) them
         /// </summary>
         /// <param name="isFixMode">true if broken blocks should be fixed, false if just counted</param>
-        /// <returns>
-        /// countChunks = number of chunks processed;
-        /// countBroken = number of broken power blocks found (and fixed)
-        /// </returns>
-        private static (int countChunks, int countBroken) ScanAllChunks(bool isFixMode)
+        /// <param name="scannedChunks">Returns the number of scanned chunks</param>
+        /// <param name="brokenBlocks">Returns the number of broken blocks (that should be now fixed if isFixMode was true)</param>
+        private static void ScanAllChunks(bool isFixMode, out int scannedChunks, out int brokenBlocks)
         {
             SdtdConsole.Instance.Output("Scanning all loaded chunks for broken power blocks ...");
             var chunks = GameManager.Instance.World.ChunkCache.GetChunkArray().ToList();
-            var countBroken = chunks.Sum(chunk => ScanChunk(chunk, isFixMode));
-            var countChunks = chunks.Count;
-            return (countChunks, countBroken);
+            scannedChunks = chunks.Count;
+            brokenBlocks = chunks.Sum(chunk => ScanChunk(chunk, isFixMode));
         }
 
         /// <summary>

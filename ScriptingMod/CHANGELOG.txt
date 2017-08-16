@@ -2,6 +2,7 @@
 
 - Updated compatibility to 7DTD A16.3 (b1)
 - Added command dj-regen to regenerate and redecorate chunks
+- Added automatic mode to dj-check-power
 - Improved parameter parsing and error messages
 
 Version 0.7 - compatible ONLY with A16.2 (b7)
