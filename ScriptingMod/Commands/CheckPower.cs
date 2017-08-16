@@ -45,7 +45,7 @@ namespace ScriptingMod.Commands
                     NullReferenceException: Object reference not set to an instance of an object
                     at TileEntityPoweredTrigger.write (System.IO.BinaryWriter _bw, StreamModeWrite _eStreamMode)
                     [...]
-                Works only on currently LOADED chunks, that means you most GO there and CAUSE the error to fix it.
+                Works only on currently LOADED chunks, that means a player must BE there and CAUSE the error to fix it.
                 Usage:
                     1. dj-check-power [/fix]
                     2. dj-check-power here [/fix]
@@ -210,10 +210,10 @@ namespace ScriptingMod.Commands
             var teTrigger = te as TileEntityPoweredTrigger;
             if (teTrigger != null)
             {
-                // Trigger must be handled differently, because there multiple possible power items for one power item type,
-                // and the PowerItemType determines the power item class only together with the TriggerType.
+                // Trigger must be handled differently, because there are multiple possible power items for one TileEntityPoweredTriger,
+                // and the PowerItemType is sometimes just (incorrectly) "PowerSource" when the TriggerType determines the *real* power type.
 
-                // Power item should be of type PowerTrigger if this is a PoweredTrigger TE
+                // CHECK 1: Power item should be of type PowerTrigger if this is a TileEntityPoweredTrigger
                 var piTrigger = pi as PowerTrigger;
                 if (piTrigger == null)
                 {
@@ -221,7 +221,9 @@ namespace ScriptingMod.Commands
                     return true;
                 }
 
-                // Trigger TE's sometimes have the default PowerItemType value, because the TriggerType determines the power item object
+                // CHECK 2: PowerItemType should match the actual power item's object type, or be at least "PowerSource",
+                // because TileEntityPoweredTrigger sometimes has the (incorrect) default PowerItemType "PowerSource" value
+                // and only TriggerType is reliable. It "smells" but we have to accept it.
                 if (te.PowerItemType != pi.PowerItemType && te.PowerItemType != PowerItem.PowerItemTypes.Consumer)
                 {
                     Log.Debug($"[{te.ToWorldPos()}] {teType}.PowerItemType=\"{te.PowerItemType}\" doesn't match with {piType}.PowerItemType=\"{pi.PowerItemType}\" " +
@@ -229,7 +231,7 @@ namespace ScriptingMod.Commands
                     return true;
                 }
 
-                // TriggerType and actual power item type should be compatible
+                // CHECK 3: TriggerType and actual power item type should be compatible
                 var expectedClass = ValidTriggerTypes.GetValue(teTrigger.TriggerType);
                 if (expectedClass == null)
                     Log.Warning($"Unknown enum value PowerTrigger.TriggerTypes.{teTrigger.TriggerType} found.");
@@ -240,7 +242,7 @@ namespace ScriptingMod.Commands
                     return true;
                 }
 
-                // TE's TriggerType and PI's TriggerType should match
+                // CHECK 4: Tile entity's TriggerType and power items's TriggerType should match
                 if (teTrigger.TriggerType != piTrigger.TriggerType)
                 {
                     Log.Debug($"[{te.ToWorldPos()}] {teType}.TriggerType=\"{teTrigger.TriggerType}\" doesn't match with {piType}.PowerItemType=\"{piTrigger.TriggerType}\".");
@@ -249,7 +251,7 @@ namespace ScriptingMod.Commands
             }
             else
             {
-                // For all non-trigger tile entities the power item type must match with the actual object
+                // CHECK 5: For all non-trigger tile entities, the power item type must match with the actual object
                 if (te.PowerItemType != pi.PowerItemType)
                 {
                     Log.Debug($"[{te.ToWorldPos()}] {teType}.PowerItemType=\"{te.PowerItemType}\" doesn't match with {piType}.PowerItemType=\"{pi.PowerItemType}\".");
@@ -299,7 +301,7 @@ namespace ScriptingMod.Commands
                 // Create power item according to PowerItemType and TriggerType
                 newPowered.InitializePowerData();
 
-                // TODO [P3]: Restore parent/childs and wires from old power item. Must also correctly set backlinks from parents/childs and update TE wiredata.
+                // Wires to the broken block are cut and not restored. We could try to reattach everything, but meh...
             }
 
             var newPowerItem = newPowered?.GetPowerItem();
