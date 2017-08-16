@@ -66,6 +66,7 @@ console.log("Hello JavaScript World!");
   &ndash;&nbsp; Fully restore griefed bases with one command!<br>
   &ndash;&nbsp; Copy buildings from server to server or between server versions after world reset.<br>
   &ndash;&nbsp; Create prefabs with complex electricity setups
+* Fully regenerate chunks or large areas including terrain, prefabs, cars, loot, vegetation, and even trader NPCs
 * Fix for broken power blocks causing NullReferenceException [...] at TileEntityPoweredTrigger.write and other errors
 * Command to show position including chunk number, region file, and other position data
 * [more to come shortly]
