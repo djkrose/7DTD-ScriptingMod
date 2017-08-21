@@ -1,8 +1,14 @@
-﻿Version 0.8 - compatible ONLY with A16.2 (b7)
+﻿Version 0.9 - compatible ONLY with A16.2 (b7)
+
+- Fixed bug that would trigger automatic fixing of power chunks also on unrelated errors
+
+
+Version 0.8 - compatible ONLY with A16.2 (b7)
 
 - Added command dj-regen to regenerate and redecorate chunks
 - Added automatic mode to dj-check-power
 - Improved parameter parsing and error messages
+
 
 Version 0.7 - compatible ONLY with A16.2 (b7)
 

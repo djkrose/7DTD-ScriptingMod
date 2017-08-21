@@ -184,13 +184,15 @@ namespace ScriptingMod.Commands
             lastAutomaticCheck = DateTime.Now;
 
             // Check if this is the exception we are looking for
-            if (type != LogType.Exception || stackTrace == null || !stackTrace.StartsWith("NullReferenceException: Object reference not set to an instance of an object\r\n  at TileEntityPoweredTrigger.write"))
+            if (type == LogType.Exception 
+                && condition == "NullReferenceException: Object reference not set to an instance of an object" 
+                && stackTrace != null && stackTrace.StartsWith("TileEntityPoweredTrigger.write"))
             {
-                Log.Debug("Detected NRE TileEntityPoweredTrigger.write. Starting scan for broken power blocks in background ...");
                 ThreadManager.AddSingleTaskSafe(delegate
                 {
                     // Doing it in background task so that NRE appears before our output in log
                     // and so that we can use ThreadManager.IsMainThread() to determie command or background mode
+                    Log.Out("Detected NRE TileEntityPoweredTrigger.write. Starting integrity scan in background ...");
                     try
                     {
                         ScanAllChunks(true, out var _, out var brokenBlocks);
@@ -202,10 +204,14 @@ namespace ScriptingMod.Commands
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("Error while automatically fixing broken power block in background: ", ex);
+                        Log.Error("Error while running integrity scan in background: ", ex);
                         throw;
                     }
                 });
+            }
+            else
+            {
+                Log.Debug($"Intercepted unknown log message:\r\ncondition={condition ?? "<null>"}\r\ntype={type}\r\nstackTrace={stackTrace ?? "<null>"}");
             }
         }
 
