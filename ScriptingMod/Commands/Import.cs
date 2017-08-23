@@ -206,13 +206,9 @@ namespace ScriptingMod.Commands
                     throw new FriendlyMessageException($"File format version of {fileName} is {fileVersion} but only {Export.TileEntityFileVersion} is supported.");
 
                 var originalPos1 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos1
+                // ReSharper disable once UnusedVariable
                 var originalPos2 = NetworkUtils.ReadVector3i(reader);                       // [Vector3i] original area worldPos2
-                var expectedSize = pos2 - pos1 + Vector3i.one;
-                var actualSize   = originalPos2 - originalPos1 + Vector3i.one;
                 var posDelta     = pos1 - originalPos1;
-
-                if (actualSize != expectedSize)
-                    throw new ApplicationException($"Dimensions of tile entitiy file ({actualSize}) does not match with expected dimensions ({expectedSize}).");
 
                 // See Assembly-CSharp::Chunk.read() -> search "tileentity.read"
                 tileEntitiyCount = reader.ReadInt32();                                      // [Int32]   number of tile entities
