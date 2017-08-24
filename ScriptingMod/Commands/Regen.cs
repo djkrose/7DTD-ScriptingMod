@@ -83,20 +83,21 @@ namespace ScriptingMod.Commands
             {
                 case 0:
                     // one point is enough; area will extend to the chunk
-                    pos1 = pos2 = PlayerTools.GetPosition(senderInfo);
+                    pos1 = pos2 = senderInfo.GetRemoteClientInfo().GetEntityPlayer().GetServerPos().ToVector3i();
                     break;
                 case 1:
-                    var ci = PlayerTools.GetClientInfo(senderInfo);
+                    var ci = senderInfo.GetRemoteClientInfo();
+                    var currentPos = ci.GetEntityPlayer().GetServerPos().ToVector3i();
                     switch (parameters[0])
                     {
                         case "from":
-                            savedPos[ci.entityId] = PlayerTools.GetPosition(ci);
+                            savedPos[ci.entityId] = currentPos;
                             throw new FriendlyMessageException("Your current position was saved: " + savedPos[ci.entityId]);
                         case "to":
                             if (!savedPos.ContainsKey(ci.entityId))
                                 throw new FriendlyMessageException("Please save start point of the area first. See help for details.");
                             pos1 = savedPos[ci.entityId];
-                            pos2 = PlayerTools.GetPosition(ci);
+                            pos2 = currentPos;
                             break;
                         default:
                             throw new FriendlyMessageException("Parameter unknown. See help for details.");
@@ -211,6 +212,7 @@ namespace ScriptingMod.Commands
             
             // Replace old chunk with new chunk
             Log.Debug("Replacing current chunk with new chunk ...");
+            // TODO: Handle nod being able to add chunk better; maybe restore old chunk or try again
             if (chunkCache.ContainsChunkSync(chunkKey))
                 chunkCache.RemoveChunkSync(chunkKey);
             if (!chunkCache.AddChunkSync(newChunk))

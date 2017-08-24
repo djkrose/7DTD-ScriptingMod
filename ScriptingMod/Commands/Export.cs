@@ -99,8 +99,8 @@ namespace ScriptingMod.Commands
         {
             if (parameters.Count == 0)
             {
-                var ci = PlayerTools.GetClientInfo(senderInfo);
-                savedPos[ci.entityId] = PlayerTools.GetPosition(ci);
+                var ci = senderInfo.GetRemoteClientInfo();
+                savedPos[ci.entityId] = ci.GetEntityPlayer().GetServerPos().ToVector3i();
                 throw new FriendlyMessageException("Your current position was saved: " + savedPos[ci.entityId]);
             }
 
@@ -114,11 +114,11 @@ namespace ScriptingMod.Commands
 
             if (parameters.Count == 1)
             {
-                var ci = PlayerTools.GetClientInfo(senderInfo);
+                var ci = senderInfo.GetRemoteClientInfo();
                 if (!savedPos.ContainsKey(ci.entityId))
                     throw new FriendlyMessageException("Please save start point of the area first. See help for details.");
                 pos1 = savedPos[ci.entityId];
-                pos2 = PlayerTools.GetPosition(ci);
+                pos2 = ci.GetEntityPlayer().GetServerPos().ToVector3i();
             }
             else if (parameters.Count == 7)
             {

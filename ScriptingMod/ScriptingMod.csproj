@@ -79,6 +79,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
+    <Compile Include="Extensions\ClientInfoExtensions.cs" />
+    <Compile Include="Extensions\CommandSenderInfoExtensions.cs" />
+    <Compile Include="Extensions\EntityPlayerExtensions.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="Vector2xz.cs" />
     <Compile Include="Commands\Regen.cs" />

@@ -15,8 +15,8 @@ namespace ScriptingMod.Commands
     [UsedImplicitly]
     public class CheckPower : ConsoleCmdAbstract
     {
-
-        private static DateTime lastAutomaticCheck = DateTime.Now;
+        private static ulong    maxAllowedRespawnDelayCache = 0UL;
+        private static DateTime lastAutomaticCheck          = DateTime.Now;
 
         /// <summary>
         /// For TileEntityPoweredTrigger objects this lists the TriggerTypes and which power item class are allowed together.
@@ -32,6 +32,39 @@ namespace ScriptingMod.Commands
             { PowerTrigger.TriggerTypes.Motion,        typeof(PowerTrigger) },
             { PowerTrigger.TriggerTypes.TripWire,      typeof(PowerTripWireRelay) }
         };
+
+        /// <summary>
+        /// Returns the cached maximum allowed respawn delay in world ticks for ChunkBiomeSpawnData entires.
+        /// See: ChunkAreaBiomeSpawnData.SetRespawnLocked(..) and EntityPlayer.onSpawnStateChanged(..)
+        /// </summary>
+        private static ulong MaxAllowedRespawnDelay
+        {
+            get
+            {
+                if (maxAllowedRespawnDelayCache == 0UL)
+                {
+                    maxAllowedRespawnDelayCache = (ulong)(GamePrefs.GetInt(EnumGamePrefs.PlayerSafeZoneHours) * 1000);
+
+                    foreach (var biome in GameManager.Instance.World.Biomes.GetBiomeMap().Values)
+                    {
+                        if (biome == null)
+                            continue;
+                        var spawnEntityGroupList = BiomeSpawningClass.list[biome.m_sBiomeName];
+                        if (spawnEntityGroupList == null)
+                            continue;
+                        foreach (var spawnEntityGroupData in spawnEntityGroupList.list)
+                        {
+                            if (spawnEntityGroupData == null)
+                                continue;
+                            if (maxAllowedRespawnDelayCache < (ulong)spawnEntityGroupData.respawnDelayInWorldTime)
+                                maxAllowedRespawnDelayCache = (ulong)spawnEntityGroupData.respawnDelayInWorldTime;
+                        }
+                    }
+                }
+
+                return maxAllowedRespawnDelayCache;
+            }
+        }
 
         public override string[] GetCommands()
         {
@@ -113,7 +146,7 @@ namespace ScriptingMod.Commands
                 case 1:
                     if (parameters[0] == "here")
                     {
-                        pos = PlayerTools.GetPosition(senderInfo);
+                        pos = senderInfo.GetRemoteClientInfo().GetEntityPlayer().GetServerPos().ToVector3i();
                     }
                     else if (parameters[0] == "auto")
                     {
@@ -255,6 +288,39 @@ namespace ScriptingMod.Commands
         /// <returns>Number of broken power blocks found (and fixed)</returns>
         private static int ScanChunk([NotNull] Chunk chunk, bool isFixMode)
         {
+            if (chunk.IsAreaMaster())
+            {
+                var spawnData = chunk.GetChunkBiomeSpawnData();
+                if (spawnData != null)
+                {
+                    //Log.Debug($"Area master chunk {chunk.X}, {chunk.Z} has spawn data: {spawnData}");
+                    foreach (var groupName in spawnData.GetEntityGroupNames())
+                    {
+                        var respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
+                        if (respawnLockedUntil > GameManager.Instance.World.worldTime + MaxAllowedRespawnDelay)
+                        {
+                            // spawnData.ClearRespawnLocked(groupName);
+                            Log.Warning($"Respawn of \"{groupName}\" in chunk {chunk.X}, {chunk.Z} unlocked because it was locked for more than {MaxAllowedRespawnDelay / 1000} game hours, possibly due to manual time modification.");
+                        }
+                        else if (respawnLockedUntil == 0UL)
+                        {
+                            int registeredEntites = spawnData.GetEntitiesSpawned(groupName);
+                            int spawnedEntities = GameManager.Instance.World.Entities.list.Count(
+                                e => e.GetSpawnerSource() == EnumSpawnerSource.Biome
+                                     && e.GetSpawnerSourceChunkKey() == chunk.Key
+                                     && e.GetSpawnerSourceEntityGroupName() == groupName);
+
+                            if (registeredEntites != spawnedEntities)
+                            {
+                                // spawnData.ClearRespawnLocked(groupName);
+                                Log.Warning($"Area master chunk {chunk.X}, {chunk.Z} records {registeredEntites} entites from group \"{groupName}\", but there are actually {spawnedEntities}.");
+                            }
+                        }
+                    }
+                    
+                }
+            }
+
             var counter = 0;
             var tileEntities = chunk.GetTileEntities().Values.ToList();
 

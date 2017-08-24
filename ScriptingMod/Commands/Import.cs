@@ -123,11 +123,11 @@ namespace ScriptingMod.Commands
             Vector3i pos1;
             if (parameters.Count == 1 || parameters.Count == 2)
             {
-                pos1 = PlayerTools.GetPosition(senderInfo);
+                pos1 = senderInfo.GetRemoteClientInfo().GetEntityPlayer().GetServerPos().ToVector3i();
             }
             else if (parameters.Count == 4 || parameters.Count == 5)
             {
-                pos1 = CommandTools.ParseXYZ(parameters, 1);
+                pos1 = senderInfo.GetRemoteClientInfo().GetEntityPlayer().GetServerPos().ToVector3i();
             }
             else
             {

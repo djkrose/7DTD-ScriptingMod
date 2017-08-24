@@ -135,7 +135,7 @@ namespace ScriptingMod.Tools
             return new Vector2xz(WorldChunkCache.extractX(chunkKey), WorldChunkCache.extractZ(chunkKey));
         }
 
-        public static Vector2xz ChunkXZToAreaXZ(Vector2xz chunkXZ)
+        public static Vector2xz ChunkXZToRegionXZ(Vector2xz chunkXZ)
         {
             return new Vector2xz((int)Math.Floor(chunkXZ.x / 32.0d), (int)Math.Floor(chunkXZ.z / 32.0d));
         }
