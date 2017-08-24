@@ -82,11 +82,13 @@
     <Compile Include="Extensions\ClientInfoExtensions.cs" />
     <Compile Include="Extensions\CommandSenderInfoExtensions.cs" />
     <Compile Include="Extensions\EntityPlayerExtensions.cs" />
+    <Compile Include="Extensions\EnumExtensionscs.cs" />
     <Compile Include="PersistentData.cs" />
+    <Compile Include="RepairEngine.cs" />
     <Compile Include="Vector2xz.cs" />
     <Compile Include="Commands\Regen.cs" />
     <Compile Include="Commands\Test.cs" />
-    <Compile Include="Commands\CheckPower.cs" />
+    <Compile Include="Commands\Repair.cs" />
     <Compile Include="Commands\Pos.cs" />
     <Compile Include="Commands\ResetJs.cs" />
     <Compile Include="Constants.cs" />

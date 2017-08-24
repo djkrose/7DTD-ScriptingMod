@@ -16,9 +16,27 @@ namespace ScriptingMod
         private static PersistentData instance;
         public  static PersistentData Instance => instance ?? (instance = new PersistentData());
 
-        public const int FileVersion = 1;
+        public const int FileVersion = 2;
+
+        [Obsolete("Use RepairAuto instead.")]
         public bool CheckPowerAuto;
-        public int  CheckPowerCounter;
+        private bool _repairAuto;
+        public bool RepairAuto
+        {
+            get { return _repairAuto || CheckPowerAuto; }
+            set { CheckPowerAuto = _repairAuto = value; }
+        }
+
+        public bool RepairAutoSimulate;
+
+        [Obsolete("Use RepairCounter instead.")]
+        public int CheckPowerCounter;
+        private int _repairCounter;
+        public int RepairCounter
+        {
+            get { return Math.Max(_repairCounter, CheckPowerCounter); }
+            set { CheckPowerCounter = _repairCounter = value; }
+        }
 
         public void Save()
         {

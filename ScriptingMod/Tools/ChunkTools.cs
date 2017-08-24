@@ -139,5 +139,10 @@ namespace ScriptingMod.Tools
         {
             return new Vector2xz((int)Math.Floor(chunkXZ.x / 32.0d), (int)Math.Floor(chunkXZ.z / 32.0d));
         }
+
+        public static long ChunkXZToChunkKey(Vector2xz chunkXZ)
+        {
+            return WorldChunkCache.MakeChunkKey(chunkXZ.x, chunkXZ.z, 0);
+        }
     }
 }

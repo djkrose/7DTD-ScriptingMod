@@ -177,8 +177,8 @@ namespace ScriptingMod.Commands
                     var tileEntityPowered = tileEntity as TileEntityPowered;
                     if (tileEntityPowered != null)
                     {
-                        if (CheckPower.IsBrokenTileEntityPowered(tileEntityPowered))
-                            throw new FriendlyMessageException("The area contains a corrupt power block. Please fix it first with the \"dj-check-power\" command.");
+                        if (!RepairEngine.IsValidTileEntityPowered(tileEntityPowered))
+                            throw new FriendlyMessageException("The area contains a corrupt power block. Please fix it first with the \"dj-repair\" command.");
 
                         var powerItem = tileEntityPowered.GetPowerItem()
                             ?? PowerItem.CreateItem(tileEntityPowered.PowerItemType);
