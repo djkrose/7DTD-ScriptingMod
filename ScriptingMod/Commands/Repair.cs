@@ -80,7 +80,7 @@ namespace ScriptingMod.Commands
 
         private (bool simulate, Vector3i? worldPos) ParseParams(List<string> parameters, CommandSenderInfo senderInfo)
         {
-            var simulate = parameters.Remove("/simulate");
+            var simulate = parameters.Remove("/simulate") || parameters.Remove("/sim");
             Vector3i? pos;
 
             switch (parameters.Count)
@@ -120,8 +120,8 @@ namespace ScriptingMod.Commands
                             PersistentData.Instance.RepairCounter = 0;
                             PersistentData.Instance.Save();
 
-                            var msg = $"Automatic {(simulate ? " simulated" : "" )} repair of corrupt data turned OFF." +
-                                      $" {counter} problem{(counter == 1 ? " was" : "s were")} were identified since it was turned on.";
+                            var msg = $"Automatic background {(simulate ? "scan" : "repair" )} for corrupt data turned OFF." +
+                                      $" {counter} problem{(counter == 1 ? " was" : "s were")} identified since it was turned on.";
                             Log.Out(msg);
                             throw new FriendlyMessageException(msg);
                         }

@@ -141,7 +141,7 @@ namespace ScriptingMod.Tools
             }
             catch (Exception)
             {
-                throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
+                throw new FriendlyMessageException(Resources.ErrorCoordinateNotInteger);
             }
         }
 
@@ -158,7 +158,7 @@ namespace ScriptingMod.Tools
             }
             catch (Exception)
             {
-                throw new FriendlyMessageException("At least one of the given coordinates is not a valid integer.");
+                throw new FriendlyMessageException(Resources.ErrorCoordinateNotInteger);
             }
         }
 

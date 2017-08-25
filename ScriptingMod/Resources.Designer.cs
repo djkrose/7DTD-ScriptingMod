@@ -19,7 +19,7 @@ namespace ScriptingMod {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -66,6 +66,15 @@ namespace ScriptingMod {
         internal static string ErrorAreaTooFarAway {
             get {
                 return ResourceManager.GetString("ErrorAreaTooFarAway", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to At least one of the given coordinates is not a valid integer..
+        /// </summary>
+        internal static string ErrorCoordinateNotInteger {
+            get {
+                return ResourceManager.GetString("ErrorCoordinateNotInteger", resourceCulture);
             }
         }
         

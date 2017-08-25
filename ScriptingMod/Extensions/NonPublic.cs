@@ -49,7 +49,6 @@ namespace ScriptingMod.Extensions
         private static readonly MethodInfo      mi_ChunkProviderGenerateWorld_DecorateChunkOverlapping; // ChunkProviderGenerateWorld -> private void DE(Chunk _param1) { World world = this.world; ...
 
         private static readonly FieldInfo       fi_ChunkAreaBiomeSpawnData_dict;         // ChunkAreaBiomeSpawnData -> private Dictionary<string, ChunkAreaBiomeSpawnData.LK> FP
-        private static readonly FieldInfo       fi_ChunkAreaBiomeSpawnData_dict_count;   // ChunkAreaBiomeSpawnData -> struct LK -> public int MP;
 
         static NonPublic()
         {
@@ -82,7 +81,6 @@ namespace ScriptingMod.Extensions
 
                 var t_ChunkAreaBiomeSpawnData_SpawnData = GetNestedType(typeof(ChunkAreaBiomeSpawnData), typeof(ulong)); // private struct LK, has public ulong PP;
                 fi_ChunkAreaBiomeSpawnData_dict         = GetField(typeof(ChunkAreaBiomeSpawnData), typeof(Dictionary<,>).MakeGenericType(typeof(string), t_ChunkAreaBiomeSpawnData_SpawnData));
-                fi_ChunkAreaBiomeSpawnData_dict_count   = GetField(t_ChunkAreaBiomeSpawnData_SpawnData, typeof(int));
 
                 Log.Debug("Successfilly established reflection references.");
             }
@@ -236,19 +234,6 @@ namespace ScriptingMod.Extensions
         public static IEnumerable<string> GetEntityGroupNames(this ChunkAreaBiomeSpawnData target)
         {
             return ((IDictionary)fi_ChunkAreaBiomeSpawnData_dict.GetValue(target)).Keys.Cast<string>();
-        }
-
-        public static void SetEntitiesSpawned(this ChunkAreaBiomeSpawnData target, string entityGroupName, int entitiesSpawned)
-        {
-            var dict = (IDictionary) fi_ChunkAreaBiomeSpawnData_dict.GetValue(target);
-            if (dict.Contains(entityGroupName))
-            {
-                fi_ChunkAreaBiomeSpawnData_dict_count.SetValue(dict[entityGroupName], entitiesSpawned);
-            }
-            else
-            {
-                throw new NotImplementedException("Method can only set number of spawned entities if there is already an entry for the entityGroupName.");
-            }
         }
 
         #endregion

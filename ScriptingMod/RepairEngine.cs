@@ -6,16 +6,17 @@ using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod
 {
     [Flags]
     internal enum RepairEngineScans
     {
-        WrongPowerItem = 1,
+        WrongPowerItem     = 1,
         LockedChunkRespawn = 2,
-        DeathScreenLoop = 4,
-        All = WrongPowerItem | LockedChunkRespawn | DeathScreenLoop
+        DeathScreenLoop    = 4,
+        All                = WrongPowerItem | LockedChunkRespawn | DeathScreenLoop
     }
 
     internal class RepairEngine
@@ -75,14 +76,14 @@ namespace ScriptingMod
                 {
                     _maxAllowedRespawnDelayCache = (ulong)(GamePrefs.GetInt(EnumGamePrefs.PlayerSafeZoneHours) * 1000);
 
-                    foreach (var biome in World.Biomes.GetBiomeMap().Values)
+                    foreach (var biome in World.Biomes.GetBiomeMap().Values.ToList())
                     {
                         if (biome == null)
                             continue;
                         var spawnEntityGroupList = BiomeSpawningClass.list[biome.m_sBiomeName];
                         if (spawnEntityGroupList == null)
                             continue;
-                        foreach (var spawnEntityGroupData in spawnEntityGroupList.list)
+                        foreach (var spawnEntityGroupData in spawnEntityGroupList.list.ToList())
                         {
                             if (spawnEntityGroupData == null)
                                 continue;
@@ -102,9 +103,8 @@ namespace ScriptingMod
             {
                 if (WorldPos == null)
                 {
-                    var chunks = World.ChunkCache.GetChunkArray().ToList();
-                    Output("Scanning all loaded chunks for inconsistent data ...");
-                    foreach (var chunk in chunks)
+                    Output("Scanning all loaded chunks for corrupt data ...");
+                    foreach (var chunk in World.ChunkCache.GetChunkArray().ToList())
                     {
                         RepairChunk(chunk);
                     }
@@ -115,7 +115,7 @@ namespace ScriptingMod
                     if (chunk == null)
                         throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
 
-                    Output($"Scanning {chunk} for inconsistent data ...");
+                    Output($"Scanning {chunk} for corrupt data ...");
                     RepairChunk(chunk);
                 }
             }
@@ -123,7 +123,7 @@ namespace ScriptingMod
             // Scan players
             if (Scans.HasFlag(RepairEngineScans.DeathScreenLoop))
             {
-                Output("Scanning all players for inconsistent data ...");
+                Output("Scanning all players for corrupt data ...");
                 // TODO
             }
         }
@@ -156,8 +156,8 @@ namespace ScriptingMod
             if (spawnData == null)
                 return;
 
-            Log.Debug($"Scanning area master chunk {chunk.X}, {chunk.Z} with spawn data: {spawnData}");
-            foreach (var groupName in spawnData.GetEntityGroupNames())
+            Log.Debug($"Scanning area master {chunk} with spawn data: {spawnData}");
+            foreach (var groupName in spawnData.GetEntityGroupNames().ToList())
             {
                 // Fix respawn problems
                 if (!IsValidSpawnData(spawnData, groupName))
@@ -169,14 +169,13 @@ namespace ScriptingMod
 
                     Vector3i from = chunk.ToWorldPos(Vector3i.zero);
                     Vector3i to = new Vector3i(from.x + Chunk.cAreaMasterSizeBlocks - 1, byte.MaxValue, from.y + Chunk.cAreaMasterSizeBlocks - 1);
-                    string msg = $"{(Simulate ? "Found" : "Repaired")} locked respawn of {groupName} in area {from} to {to}.";
+                    string msg = $"{(Simulate ? "Found" : "Repaired")} locked respawn of {groupName} in area master chunk {chunk.X}, {chunk.Z} (position {from} to {to}).";
                     Log.Warning(msg);
                     Output(msg);
                 }
 
             }
         }
-
 
         private void RepairTileEntity([NotNull] TileEntity tileEntity)
         {
@@ -200,28 +199,52 @@ namespace ScriptingMod
         /// </summary>
         private static bool IsValidSpawnData(ChunkAreaBiomeSpawnData spawnData, string groupName)
         {
+            var chunk = spawnData.chunk;
+
             var respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
             if (respawnLockedUntil > World.worldTime + MaxAllowedRespawnDelay)
             {
-                Log.Debug($"Area master {spawnData.chunk} has respawning of {groupName} locked for {respawnLockedUntil / 1000} game hours, which is more than the maximum allowed {MaxAllowedRespawnDelay / 1000} game hours");
+                Log.Debug($"Area master {chunk} has respawning of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days, which is more than the maximum allowed {MaxAllowedRespawnDelay / 1000 / 24} game days");
                 return false;
             }
 
-            if (respawnLockedUntil == 0UL)
+            if (respawnLockedUntil == 0UL && AllChunksOfAreaMasterLoaded(chunk))
             {
-                int registeredEntites = spawnData.GetEntitiesSpawned(groupName);
-                int spawnedEntities = World.Entities.list.Count(
-                    e => e.GetSpawnerSource() == EnumSpawnerSource.Biome
-                         && e.GetSpawnerSourceChunkKey() == spawnData.chunk.Key
-                         && e.GetSpawnerSourceEntityGroupName() == groupName);
+                var registeredEntities = spawnData.GetEntitiesSpawned(groupName);
+                var spawnedEntities = CountSpawnedEntities(EnumSpawnerSource.Biome, chunk.Key, groupName);
 
-                if (registeredEntites > spawnedEntities)
+                if (registeredEntities > spawnedEntities)
                 {
-                    Log.Debug($"Area master {spawnData.chunk} has {registeredEntites} entites of {groupName} registered, but there are {spawnedEntities} in the world.");
+                    Log.Debug($"Area master {chunk} has {registeredEntities} entites of {groupName} registered, but there are {spawnedEntities} in the world.");
                     return false;
                 }
             }
 
+            return true;
+        }
+
+        private static int CountSpawnedEntities(EnumSpawnerSource spawnerSource, long spawnerSourceChunkKey, string spawnerSourceEntityGroupName)
+        {
+            return World.Entities.list.Count(
+                e => e.GetSpawnerSource() == spawnerSource
+                     && e.GetSpawnerSourceChunkKey() == spawnerSourceChunkKey
+                     && e.GetSpawnerSourceEntityGroupName() == spawnerSourceEntityGroupName);
+        }
+
+        /// <summary>
+        /// Returns true if all chunks that belong to the given area master chunk are currently loaded.
+        /// Do not use Chunk.IsAreaMasterCornerChunksLoaded, because it wrongly assumes the area master chunk is in the middle,
+        /// and also only checks the corner chunks not all chunks, which have no significance with multiple players online.
+        /// </summary>
+        private static bool AllChunksOfAreaMasterLoaded(Chunk areaMasterChunk)
+        {
+            if (!areaMasterChunk.IsAreaMaster())
+                throw new ArgumentException("Given chunk is not an area master chunk.", nameof(areaMasterChunk));
+
+            for (int x = areaMasterChunk.X; x < areaMasterChunk.X + Chunk.cAreaMasterSizeChunks; x++)
+                for (int z = areaMasterChunk.Z; z < areaMasterChunk.Z + Chunk.cAreaMasterSizeChunks; z++)
+                    if (!World.ChunkCache.ContainsChunkSync(WorldChunkCache.MakeChunkKey(x, z, areaMasterChunk.ClrIdx)))
+                        return false;
             return true;
         }
 

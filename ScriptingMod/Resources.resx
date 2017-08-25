@@ -136,4 +136,7 @@
   <data name="ErrorParameerCountNotValid" xml:space="preserve">
     <value>Parameter count not valid. See help for details.</value>
   </data>
+  <data name="ErrorCoordinateNotInteger" xml:space="preserve">
+    <value>At least one of the given coordinates is not a valid integer.</value>
+  </data>
 </root>
