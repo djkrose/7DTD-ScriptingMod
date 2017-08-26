@@ -1,6 +1,7 @@
 ﻿Version 0.9 - compatible ONLY with A16.2 (b7)
 
 - Fixed bug that would trigger automatic fixing of power chunks also on unrelated errors
+- Fixed error message on import of rotated prefab with /all option
 
 
 Version 0.8 - compatible ONLY with A16.2 (b7)
