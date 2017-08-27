@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -14,13 +15,16 @@ namespace ScriptingMod
     internal enum RepairEngineScans
     {
         WrongPowerItem     = 1,
-        LockedChunkRespawn = 2,
+        LockedBiomeRespawn = 2,
         DeathScreenLoop    = 4,
-        All                = WrongPowerItem | LockedChunkRespawn | DeathScreenLoop
+        Default            = WrongPowerItem,
+        //All                = WrongPowerItem | LockedBiomeRespawn | DeathScreenLoop
     }
 
     internal class RepairEngine
     {
+        private const int EntitiySearchRadius = 4; // entities are allowed to wander this many chunks away from their initial 5x5 chunk area
+
         /// <summary>
         /// Allows assigning a method that outputs status information to the console, e.g. SdtdConsole.Output
         /// </summary>
@@ -40,10 +44,12 @@ namespace ScriptingMod
         /// Allows defining the problems to scan for, using binary flags (multiple possible)
         /// Default: RepairEngineScans.All
         /// </summary>
-        public RepairEngineScans Scans = RepairEngineScans.All;
+        public RepairEngineScans Scans = RepairEngineScans.Default;
 
         public int ScannedChunks;
         public int ProblemsFound;
+
+        private string FoundOrRepaired => Simulate ? "Found" : "Repaired";
 
         /// <summary>
         /// For TileEntityPoweredTrigger objects this lists the TriggerTypes and which power item class are allowed together.
@@ -76,14 +82,14 @@ namespace ScriptingMod
                 {
                     _maxAllowedRespawnDelayCache = (ulong)(GamePrefs.GetInt(EnumGamePrefs.PlayerSafeZoneHours) * 1000);
 
-                    foreach (var biome in World.Biomes.GetBiomeMap().Values.ToList())
+                    foreach (var biome in World.Biomes.GetBiomeMap().Values)
                     {
                         if (biome == null)
                             continue;
                         var spawnEntityGroupList = BiomeSpawningClass.list[biome.m_sBiomeName];
                         if (spawnEntityGroupList == null)
                             continue;
-                        foreach (var spawnEntityGroupData in spawnEntityGroupList.list.ToList())
+                        foreach (var spawnEntityGroupData in spawnEntityGroupList.list)
                         {
                             if (spawnEntityGroupData == null)
                                 continue;
@@ -99,12 +105,14 @@ namespace ScriptingMod
         public void Start()
         {
             // Scan chunks -> tile entities
-            if (Scans.HasFlag(RepairEngineScans.WrongPowerItem) || Scans.HasFlag(RepairEngineScans.LockedChunkRespawn))
+            if (Scans.HasFlag(RepairEngineScans.WrongPowerItem) || Scans.HasFlag(RepairEngineScans.LockedBiomeRespawn))
             {
+                //CollectEntityStubs();
+
                 if (WorldPos == null)
                 {
                     Output("Scanning all loaded chunks for corrupt data ...");
-                    foreach (var chunk in World.ChunkCache.GetChunkArray().ToList())
+                    foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
                     {
                         RepairChunk(chunk);
                     }
@@ -128,13 +136,102 @@ namespace ScriptingMod
             }
         }
 
+        //private struct EntityStubSpawnData : IEquatable<EntityStubSpawnData>
+        //{
+        //    public EnumSpawnerSource spawnerSource;
+        //    public long chunkKey;
+        //    public string groupName;
+        //    public ulong worldTimeBorn;
+
+        //    public bool Equals(EntityStubSpawnData other)
+        //    {
+        //        return spawnerSource == other.spawnerSource && chunkKey == other.chunkKey && string.Equals(groupName, other.groupName);
+        //    }
+
+        //    public override bool Equals(object obj)
+        //    {
+        //        if (ReferenceEquals(null, obj)) return false;
+        //        return obj is EntityStubSpawnData && Equals((EntityStubSpawnData) obj);
+        //    }
+
+        //    public override int GetHashCode()
+        //    {
+        //        unchecked
+        //        {
+        //            var hashCode = (int) spawnerSource;
+        //            hashCode = (hashCode * 397) ^ chunkKey.GetHashCode();
+        //            hashCode = (hashCode * 397) ^ (groupName != null ? groupName.GetHashCode() : 0);
+        //            return hashCode;
+        //        }
+        //    }
+
+        //    public static bool operator ==(EntityStubSpawnData a, EntityStubSpawnData b)
+        //    {
+        //        return a.Equals(b);
+        //    }
+
+        //    public static bool operator !=(EntityStubSpawnData a, EntityStubSpawnData b)
+        //    {
+        //        return !a.Equals(b);
+        //    }
+        //}
+
+        //private void CollectEntityStubs()
+        //{
+        //    _entityStubs = new List<EntityStubSpawnData>();
+        //    foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
+        //    {
+        //        foreach (var entityStub in chunk.GetEntityStubs().ToList())
+        //        {
+        //            if (entityStub.entityData.Length <= 0)
+        //                continue;
+
+        //            try
+        //            {
+        //                entityStub.entityData.Position = 0;
+        //                var br = new BinaryReader(entityStub.entityData);
+        //                var spawnerSource = (EnumSpawnerSource)br.ReadByte();
+        //                if (spawnerSource != EnumSpawnerSource.Biome)
+        //                    continue;
+
+        //                _entityStubs.Add(new EntityStubSpawnData
+        //                {
+        //                    spawnerSource = spawnerSource,
+        //                    groupName     = br.ReadString(),
+        //                    chunkKey      = br.ReadInt64(),
+        //                    worldTimeBorn = br.ReadUInt64()
+        //                });
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                Log.Error($"Error loading entity data {entityStub.id} from entity stub of {chunk}: " + ex);
+        //            }
+        //        }
+        //    }
+
+        //    foreach (var entity in World.Entities.list.ToList())
+        //    {
+        //        _entityStubs.Add(new EntityStubSpawnData
+        //        {
+        //            spawnerSource = entity.GetSpawnerSource(),
+        //            groupName = entity.GetSpawnerSourceEntityGroupName(),
+        //            chunkKey = entity.GetSpawnerSourceChunkKey(),
+        //            worldTimeBorn = entity.WorldTimeBorn
+        //        });
+        //    }
+
+        //    _entityStubs = _entityStubs.Distinct().ToList();
+
+        //    Log.Debug($"Collected {_entityStubs.Count} entity stubs from all loaded chunks.");
+        //}
+
         /// <summary>
         /// Scans the given chunk object for broken power blocks and optionally fixes them
         /// </summary>
         /// <param name="chunk">The chunk object; must be loaded and ready</param>
         private void RepairChunk([NotNull] Chunk chunk)
         {
-            if (Scans.HasFlag(RepairEngineScans.LockedChunkRespawn))
+            if (Scans.HasFlag(RepairEngineScans.LockedBiomeRespawn))
                 RepairChunkRespawn(chunk);
 
             foreach (var tileEntity in chunk.GetTileEntities().Values.ToList())
@@ -159,22 +256,43 @@ namespace ScriptingMod
             Log.Debug($"Scanning area master {chunk} with spawn data: {spawnData}");
             foreach (var groupName in spawnData.GetEntityGroupNames().ToList())
             {
-                // Fix respawn problems
-                if (!IsValidSpawnData(spawnData, groupName))
+                ulong respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
+                int   registeredEntities = spawnData.GetEntitiesSpawned(groupName);
+
+                // Check if respawn is locked for an unusual long time (more than 7 in-game days)
+                if (respawnLockedUntil > World.worldTime + MaxAllowedRespawnDelay)
                 {
                     ProblemsFound++;
-
-                    if (!Simulate)
-                        spawnData.ClearRespawnLocked(groupName);
-
-                    Vector3i from = chunk.ToWorldPos(Vector3i.zero);
-                    Vector3i to = new Vector3i(from.x + Chunk.cAreaMasterSizeBlocks - 1, byte.MaxValue, from.y + Chunk.cAreaMasterSizeBlocks - 1);
-                    string msg = $"{(Simulate ? "Found" : "Repaired")} locked respawn of {groupName} in area master chunk {chunk.X}, {chunk.Z} (position {from} to {to}).";
-                    Log.Warning(msg);
-                    Output(msg);
+                    spawnData.ClearRespawnLocked(groupName);
+                    chunk.isModified = true;
+                    Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days in area master {chunk}.");
+                    Output($"{FoundOrRepaired} respawn of {groupName} locked for incorrect duration in {chunk}.");
                 }
+                // Check if registered entities can be found online
+                else if (registeredEntities > 0 && respawnLockedUntil == 0UL && AllChunksLoaded(chunk, EntitiySearchRadius))
+                {
+                    var spawnedEntities = CountSpawnedEntities(EnumSpawnerSource.Biome, chunk.Key, groupName);
 
+                    if (registeredEntities > spawnedEntities)
+                    {
+                        ProblemsFound++;
+                        SetEntitiesSpawned(spawnData, groupName, spawnedEntities);
+                        chunk.isModified = true;
+                        int lostEntities = registeredEntities - spawnedEntities;
+                        Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "entity" : "entities")} in area master {chunk}.");
+                        Output($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "zombies/animals" : "zombie/animal")} in {chunk}.");
+                    }
+                }
             }
+        }
+
+        private static void SetEntitiesSpawned(ChunkAreaBiomeSpawnData spawnData, string groupName, int entitiesSpawned)
+        {
+            int delta = entitiesSpawned - spawnData.GetEntitiesSpawned(groupName);
+            for (int i = 0; i < delta; i++)
+                spawnData.IncEntitiesSpawned(groupName);
+            for (int i = 0; i > delta; i--)
+                spawnData.DecEntitiesSpawned(groupName);
         }
 
         private void RepairTileEntity([NotNull] TileEntity tileEntity)
@@ -188,39 +306,10 @@ namespace ScriptingMod
                 if (!Simulate)
                     RecreateTileEntity(tileEntity);
 
-                var msg = $"{(Simulate ? "Found" : "Repaired")} broken power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.";
+                var msg = $"{FoundOrRepaired} broken power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.";
                 Log.Warning(msg);
                 Output(msg);
             }
-        }
-
-        /// <summary>
-        /// Returns false if respawn appears to be locked for the given groupName, true otherwise
-        /// </summary>
-        private static bool IsValidSpawnData(ChunkAreaBiomeSpawnData spawnData, string groupName)
-        {
-            var chunk = spawnData.chunk;
-
-            var respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
-            if (respawnLockedUntil > World.worldTime + MaxAllowedRespawnDelay)
-            {
-                Log.Debug($"Area master {chunk} has respawning of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days, which is more than the maximum allowed {MaxAllowedRespawnDelay / 1000 / 24} game days");
-                return false;
-            }
-
-            if (respawnLockedUntil == 0UL && AllChunksOfAreaMasterLoaded(chunk))
-            {
-                var registeredEntities = spawnData.GetEntitiesSpawned(groupName);
-                var spawnedEntities = CountSpawnedEntities(EnumSpawnerSource.Biome, chunk.Key, groupName);
-
-                if (registeredEntities > spawnedEntities)
-                {
-                    Log.Debug($"Area master {chunk} has {registeredEntities} entites of {groupName} registered, but there are {spawnedEntities} in the world.");
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         private static int CountSpawnedEntities(EnumSpawnerSource spawnerSource, long spawnerSourceChunkKey, string spawnerSourceEntityGroupName)
@@ -232,17 +321,17 @@ namespace ScriptingMod
         }
 
         /// <summary>
-        /// Returns true if all chunks that belong to the given area master chunk are currently loaded.
-        /// Do not use Chunk.IsAreaMasterCornerChunksLoaded, because it wrongly assumes the area master chunk is in the middle,
-        /// and also only checks the corner chunks not all chunks, which have no significance with multiple players online.
+        /// Returns true if all chunks that belong to the given area master chunk, extended by the given value, are currently loaded.
         /// </summary>
-        private static bool AllChunksOfAreaMasterLoaded(Chunk areaMasterChunk)
+        /// <param name="areaMasterChunk">The area master chunk to use as basis</param>
+        /// <param name="extendBy">Number of chunks to extend the check area in all directions, additionally to the 5x5 area master</param>
+        private static bool AllChunksLoaded([NotNull] Chunk areaMasterChunk, int extendBy)
         {
             if (!areaMasterChunk.IsAreaMaster())
                 throw new ArgumentException("Given chunk is not an area master chunk.", nameof(areaMasterChunk));
 
-            for (int x = areaMasterChunk.X; x < areaMasterChunk.X + Chunk.cAreaMasterSizeChunks; x++)
-                for (int z = areaMasterChunk.Z; z < areaMasterChunk.Z + Chunk.cAreaMasterSizeChunks; z++)
+            for (int x = areaMasterChunk.X - extendBy; x < areaMasterChunk.X + Chunk.cAreaMasterSizeChunks + extendBy; x++)
+                for (int z = areaMasterChunk.Z - extendBy; z < areaMasterChunk.Z + Chunk.cAreaMasterSizeChunks + extendBy; z++)
                     if (!World.ChunkCache.ContainsChunkSync(WorldChunkCache.MakeChunkKey(x, z, areaMasterChunk.ClrIdx)))
                         return false;
             return true;

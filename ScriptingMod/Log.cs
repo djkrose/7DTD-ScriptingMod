@@ -76,7 +76,7 @@ namespace ScriptingMod
             global::Log.Warning(PREFIX + _s);
         }
 
-        public new static void Error(string _format, params object[] _values)
+        private new static void Error(string _format, params object[] _values)
         {
             global::Log.Error(PREFIX + _format, _values);
         }

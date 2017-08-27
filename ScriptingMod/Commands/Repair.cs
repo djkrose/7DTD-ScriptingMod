@@ -45,7 +45,8 @@ namespace ScriptingMod.Commands
                 2. Repairs the chunk where you are currently standing.
                 3. Repairs the chunk that contains the given world coordinate.
                 4. Turns periodic background scans with automatic repair on or off. State is kept between server restarts.
-                Use optional parameter ""/simulate"" to just scan and report without actually repairing anything.
+                Use optional parameter ""/simulate"" or just ""/sim"" to scan and report without actually repairing anything.
+                Use optional parameter ""/respawn"" to fix locked biome respawn (experimental).
                 ".Unindent();
         }
 
@@ -53,7 +54,7 @@ namespace ScriptingMod.Commands
         {
             try
             {
-                (var simulate, var worldPos) = ParseParams(parameters, senderInfo);
+                (var simulate, var respawn, var worldPos) = ParseParams(parameters, senderInfo);
 
                 var repairEngine = new RepairEngine();
                 repairEngine.ConsoleOutput = SdtdConsole.Instance.Output;
@@ -62,7 +63,10 @@ namespace ScriptingMod.Commands
 
                 // Can only do specific scans when limited to a world pos
                 if (repairEngine.WorldPos != null)
-                    repairEngine.Scans = RepairEngineScans.LockedChunkRespawn | RepairEngineScans.WrongPowerItem;
+                    repairEngine.Scans = RepairEngineScans.LockedBiomeRespawn | RepairEngineScans.WrongPowerItem;
+
+                if (respawn)
+                    repairEngine.Scans = RepairEngineScans.LockedBiomeRespawn;
 
                 repairEngine.Start();
 
@@ -78,9 +82,10 @@ namespace ScriptingMod.Commands
             }
         }
 
-        private (bool simulate, Vector3i? worldPos) ParseParams(List<string> parameters, CommandSenderInfo senderInfo)
+        private (bool simulate, bool respawn, Vector3i? worldPos) ParseParams(List<string> parameters, CommandSenderInfo senderInfo)
         {
             var simulate = parameters.Remove("/simulate") || parameters.Remove("/sim");
+            var respawn = parameters.Remove("/respawn");
             Vector3i? pos;
 
             switch (parameters.Count)
@@ -138,7 +143,7 @@ namespace ScriptingMod.Commands
                     throw new FriendlyMessageException("Wrong number of parameters. See help.");
             }
 
-            return (simulate, pos);
+            return (simulate, respawn, pos);
         }
 
         public static void InitAuto()
@@ -184,7 +189,7 @@ namespace ScriptingMod.Commands
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("Error while running integrity scan in background: ", ex);
+                        Log.Error("Error while running integrity scan in background: " + ex);
                         throw;
                     }
                 });

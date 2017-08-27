@@ -87,7 +87,7 @@ namespace ScriptingMod.Commands
                     }
                     catch (Exception)
                     {
-                        Log.Warning("Exception thrown while cleaning up files because of another exception.", ex);
+                        Log.Warning("Exception thrown while cleaning up files because of another exception: " + ex);
                     }
                 }
 
