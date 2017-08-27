@@ -212,11 +212,13 @@ namespace ScriptingMod.Commands
             
             // Replace old chunk with new chunk
             Log.Debug("Replacing current chunk with new chunk ...");
-            // TODO: Handle nod being able to add chunk better; maybe restore old chunk or try again
-            if (chunkCache.ContainsChunkSync(chunkKey))
-                chunkCache.RemoveChunkSync(chunkKey);
-            if (!chunkCache.AddChunkSync(newChunk))
-                throw new ApplicationException("Could not add newly generated chunk to cache.");
+            lock (chunkCache.GetSyncRoot())
+            {
+                if (chunkCache.ContainsChunkSync(chunkKey))
+                    chunkCache.RemoveChunkSync(chunkKey);
+                if (!chunkCache.AddChunkSync(newChunk))
+                    throw new ApplicationException("Could not add newly generated chunk to cache."); 
+            }
 
             // Add overlapping decorations and smoothen out terrain borders; needs this and all 8 neighbouring chunks in cache
             Log.Debug("Placing overlapping decorations and smoothing transitions to other chunks ...");
