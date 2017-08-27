@@ -231,7 +231,7 @@ namespace ScriptingMod.Commands
         }
 
         /// <summary>
-        /// Returns all chunks that are located (also partly) in the given area.
+        /// Returns all chunk keys that are located (also partly) in the given area.
         /// </summary>
         /// <param name="pos1">South-West corner of area; y is ignored</param>
         /// <param name="pos2">North-East corner of area; y is ignored</param>

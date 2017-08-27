@@ -256,37 +256,104 @@ namespace ScriptingMod
             Log.Debug($"Scanning area master {chunk} with spawn data: {spawnData}");
             foreach (var groupName in spawnData.GetEntityGroupNames().ToList())
             {
-                ulong respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
-                int   registeredEntities = spawnData.GetEntitiesSpawned(groupName);
+                //ulong respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
 
-                // Check if respawn is locked for an unusual long time (more than 7 in-game days)
-                if (respawnLockedUntil > World.worldTime + MaxAllowedRespawnDelay)
-                {
-                    ProblemsFound++;
-                    spawnData.ClearRespawnLocked(groupName);
-                    chunk.isModified = true;
-                    Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days in area master {chunk}.");
-                    Output($"{FoundOrRepaired} respawn of {groupName} locked for incorrect duration in {chunk}.");
-                }
-                // Check if registered entities can be found online
-                else if (registeredEntities > 0 && respawnLockedUntil == 0UL && AllChunksLoaded(chunk, EntitiySearchRadius))
-                {
-                    var spawnedEntities = CountSpawnedEntities(EnumSpawnerSource.Biome, chunk.Key, groupName);
+                //// Check if respawn is locked for an unusual long time (more than 7 in-game days)
+                //if (respawnLockedUntil > World.worldTime + MaxAllowedRespawnDelay)
+                //{
+                //    ProblemsFound++;
+                //    spawnData.ClearRespawnLocked(groupName);
+                //    chunk.isModified = true;
+                //    Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days in area master {chunk}.");
+                //    Output($"{FoundOrRepaired} respawn of {groupName} locked for incorrect duration in {chunk}.");
+                //    continue;
+                //}
 
-                    if (registeredEntities > spawnedEntities)
-                    {
-                        ProblemsFound++;
-                        SetEntitiesSpawned(spawnData, groupName, spawnedEntities);
-                        chunk.isModified = true;
-                        int lostEntities = registeredEntities - spawnedEntities;
-                        Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "entity" : "entities")} in area master {chunk}.");
-                        Output($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "zombies/animals" : "zombie/animal")} in {chunk}.");
-                    }
-                }
+                RepairLongRespawnLock(spawnData, groupName);
+                RepairLostEntities(spawnData, groupName);
+
+                //// Check if registered entities can be found online
+                //int registeredEntities = spawnData.GetEntitiesSpawned(groupName);
+                //if (registeredEntities > 0 && respawnLockedUntil == 0UL)
+                //{
+                //    if (!AllChunksLoaded(chunk, EntitiySearchRadius))
+                //    {
+                //        Log.Debug($"Skipped scanning area master {chunk} for lost entities because not all it's chunks + {EntitiySearchRadius} chunks around them are loaded.");
+                //        continue;
+                //    }
+
+                //    var spawnedEntities = CountSpawnedEntities(EnumSpawnerSource.Biome, chunk.Key, groupName);
+                //    if (registeredEntities > spawnedEntities)
+                //    {
+                //        ProblemsFound++;
+                //        SetEntitiesSpawned(spawnData, groupName, spawnedEntities);
+                //        chunk.isModified = true;
+                //        int lostEntities = registeredEntities - spawnedEntities;
+                //        Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "entity" : "entities")} in area master {chunk}.");
+                //        Output($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "zombies/animals" : "zombie/animal")} in {chunk}.");
+                //    }
+                //}
             }
         }
 
-        private static void SetEntitiesSpawned(ChunkAreaBiomeSpawnData spawnData, string groupName, int entitiesSpawned)
+        private void RepairLongRespawnLock([NotNull] ChunkAreaBiomeSpawnData spawnData, string groupName)
+        {
+            // Respawn is allowed to be locked for max 7 in-game days (MaxAllowedRespawnDelay)
+            ulong respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
+            if (respawnLockedUntil <= World.worldTime + MaxAllowedRespawnDelay)
+                return;
+
+            // Problem: Respawn locked is too long; possibly due to modified worldtime with "settime"
+
+            ProblemsFound++;
+            if (!Simulate)
+            {
+                spawnData.ClearRespawnLocked(groupName);
+                spawnData.chunk.isModified = true;
+            }
+            Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days in area master {spawnData.chunk}.");
+            Output($"{FoundOrRepaired} respawn of {groupName} locked for incorrect duration in {spawnData.chunk}.");
+        }
+
+        private void RepairLostEntities([NotNull] ChunkAreaBiomeSpawnData spawnData, string groupName)
+        {
+            // No need to check if no entities are locked
+            int registeredEntities = spawnData.GetEntitiesSpawned(groupName);
+            if (registeredEntities <= 0)
+                return;
+
+            // Lock with timeout is handled by RepairLongRespawnLock(..)
+            ulong respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
+            if (respawnLockedUntil > 0)
+                return;
+
+            // Less or equal entities are registered than online is normal;
+            // less registered can occur when zombies from other chunks wander in
+            var spawnedEntities = CountSpawnedEntities(EnumSpawnerSource.Biome, spawnData.chunk.Key, groupName);
+            if (registeredEntities <= spawnedEntities)
+                return;
+
+            int lostEntities = registeredEntities - spawnedEntities;
+
+            // Ignore missing zombies when it could come from surrounding chunks not loaded
+            if (!AllChunksLoaded(spawnData.chunk, EntitiySearchRadius))
+            {
+                Log.Debug($"Ignoring {lostEntities} lost {groupName} in area master {spawnData.chunk} because not all it's 5x5 chunks + {EntitiySearchRadius} chunks around them are loaded.");
+                return;
+            }
+
+            // Problem: Zombies are registered in the chunk that cannot be found alive anywhere; they might have disappeared or wandered too far off
+
+            ProblemsFound++;
+            if (!Simulate)
+            {
+                SetEntitiesSpawned(spawnData, groupName, spawnedEntities);
+            }
+            Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "entity" : "entities")} in area master {spawnData.chunk}.");
+            Output($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "zombie/animal" : "zombies/animals")} in {spawnData.chunk}.");
+        }
+
+        private static void SetEntitiesSpawned([NotNull] ChunkAreaBiomeSpawnData spawnData, string groupName, int entitiesSpawned)
         {
             int delta = entitiesSpawned - spawnData.GetEntitiesSpawned(groupName);
             for (int i = 0; i < delta; i++)
@@ -330,10 +397,13 @@ namespace ScriptingMod
             if (!areaMasterChunk.IsAreaMaster())
                 throw new ArgumentException("Given chunk is not an area master chunk.", nameof(areaMasterChunk));
 
-            for (int x = areaMasterChunk.X - extendBy; x < areaMasterChunk.X + Chunk.cAreaMasterSizeChunks + extendBy; x++)
-                for (int z = areaMasterChunk.Z - extendBy; z < areaMasterChunk.Z + Chunk.cAreaMasterSizeChunks + extendBy; z++)
-                    if (!World.ChunkCache.ContainsChunkSync(WorldChunkCache.MakeChunkKey(x, z, areaMasterChunk.ClrIdx)))
-                        return false;
+            lock (World.ChunkCache.GetSyncRoot())
+            {
+                for (int x = areaMasterChunk.X - extendBy; x < areaMasterChunk.X + Chunk.cAreaMasterSizeChunks + extendBy; x++)
+                    for (int z = areaMasterChunk.Z - extendBy; z < areaMasterChunk.Z + Chunk.cAreaMasterSizeChunks + extendBy; z++)
+                        if (!World.ChunkCache.ContainsChunkSync(WorldChunkCache.MakeChunkKey(x, z, areaMasterChunk.ClrIdx)))
+                            return false;
+            }
             return true;
         }
 
