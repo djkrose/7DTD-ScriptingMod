@@ -1,29 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
-using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
-using ScriptingMod.Tools;
 
 namespace ScriptingMod
 {
     [Flags]
-    internal enum RepairEngineScans
+    public enum RepairTasks
     {
-        WrongPowerItem     = 1,
-        LockedBiomeRespawn = 2,
-        DeathScreenLoop    = 4,
-        Default            = WrongPowerItem,
-        //All                = WrongPowerItem | LockedBiomeRespawn | DeathScreenLoop
+        //                     |----------------------------------(max length: 120 char)----------------------------------------------------------------|
+        [RepairTask('D', "Repair block density causing distorted terrain and falling through the world.")]
+        BlockDensity            = 1,
+        [RepairTask('L', "Fix death screen loop due to corrupt player files.")]
+        DeathScreenLoop    = 2,
+        [RepairTask('M', "Bring all stuck minibikes to the surface.")]
+        StuckMinibikes     = 4,
+        [RepairTask('P', "Fix corrupt power blocks and error message \"NullReferenceException at TileEntityPoweredTrigger.write ...\".")]
+        CorruptPowerBlocks = 8,
+        [RepairTask('R', "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen. (EXPERIMENTAL)")]
+        LockedBiomeRespawn = 16,
+
+        None               = 0,
+        Default            = ~0
     }
 
     internal class RepairEngine
     {
-        private const int EntitiySearchRadius = 4; // entities are allowed to wander this many chunks away from their initial 5x5 chunk area
+        /// <summary>
+        /// Entities are allowed to wander this many chunks away from their initial 5x5 chunk area
+        /// </summary>
+        private const int EntitiySearchRadius = 4;
 
         /// <summary>
         /// Allows assigning a method that outputs status information to the console, e.g. SdtdConsole.Output
@@ -36,18 +45,18 @@ namespace ScriptingMod
         public bool Simulate;
 
         /// <summary>
-        /// If set, only the chunk containing this world position is scanned
+        /// Allows defining the problems to scan for, using binary flags (multiple possible)
+        /// Default: RepairTasks.All
         /// </summary>
-        public Vector3i? WorldPos = null;
+        public RepairTasks Tasks = RepairTasks.Default;
 
         /// <summary>
-        /// Allows defining the problems to scan for, using binary flags (multiple possible)
-        /// Default: RepairEngineScans.All
+        /// Number of problems that this repair engine has found (and attempted fixing unless simulating) so far
         /// </summary>
-        public RepairEngineScans Scans = RepairEngineScans.Default;
-
-        public int ScannedChunks;
         public int ProblemsFound;
+
+        private Stopwatch _stopwatch;
+        private int _scannedChunks;
 
         private string FoundOrRepaired => Simulate ? "Found" : "Repaired";
 
@@ -104,142 +113,63 @@ namespace ScriptingMod
 
         public void Start()
         {
+            if (Tasks == RepairTasks.None)
+                throw new ApplicationException("No repair tasks set.");
+
+            _stopwatch = new MicroStopwatch(true);
+
+            LogAndOutput($"{(Simulate ? "Scan (without repair)" : "Repair")} for server problem(s) {GetTaskLetters(Tasks)} started.");
+
             // Scan chunks -> tile entities
-            if (Scans.HasFlag(RepairEngineScans.WrongPowerItem) || Scans.HasFlag(RepairEngineScans.LockedBiomeRespawn))
+            if (Tasks.HasFlag(RepairTasks.CorruptPowerBlocks) || Tasks.HasFlag(RepairTasks.LockedBiomeRespawn))
             {
-                //CollectEntityStubs();
-
-                if (WorldPos == null)
-                {
-                    Output("Scanning all loaded chunks for corrupt data ...");
-                    foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
-                    {
-                        RepairChunk(chunk);
-                    }
-                }
-                else
-                {
-                    var chunk = World.GetChunkFromWorldPos(WorldPos.Value) as Chunk;
-                    if (chunk == null)
-                        throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
-
-                    Output($"Scanning {chunk} for corrupt data ...");
+                Output("Scanning all loaded chunks ...");
+                foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
                     RepairChunk(chunk);
-                }
             }
 
             // Scan players
-            if (Scans.HasFlag(RepairEngineScans.DeathScreenLoop))
-            {
-                Output("Scanning all players for corrupt data ...");
-                // TODO
-            }
+            //if (Tasks.HasFlag(RepairTasks.DeathScreenLoop))
+            //{
+            //    Output("Scanning all players ...");
+            //    // TODO
+            //}
+
+            LogAndOutput($"{(Simulate ? "Identified" : "Repaired")} {ProblemsFound} problem{(ProblemsFound != 1 ? "s" : "")} " +
+                         $"in {_scannedChunks} chunk{(_scannedChunks != 1 ? "s" : "")}. [details in server log]");
+
+            Log.Debug($"Repair engine done. Execution took {_stopwatch.ElapsedMilliseconds} ms.");
         }
 
-        //private struct EntityStubSpawnData : IEquatable<EntityStubSpawnData>
-        //{
-        //    public EnumSpawnerSource spawnerSource;
-        //    public long chunkKey;
-        //    public string groupName;
-        //    public ulong worldTimeBorn;
-
-        //    public bool Equals(EntityStubSpawnData other)
-        //    {
-        //        return spawnerSource == other.spawnerSource && chunkKey == other.chunkKey && string.Equals(groupName, other.groupName);
-        //    }
-
-        //    public override bool Equals(object obj)
-        //    {
-        //        if (ReferenceEquals(null, obj)) return false;
-        //        return obj is EntityStubSpawnData && Equals((EntityStubSpawnData) obj);
-        //    }
-
-        //    public override int GetHashCode()
-        //    {
-        //        unchecked
-        //        {
-        //            var hashCode = (int) spawnerSource;
-        //            hashCode = (hashCode * 397) ^ chunkKey.GetHashCode();
-        //            hashCode = (hashCode * 397) ^ (groupName != null ? groupName.GetHashCode() : 0);
-        //            return hashCode;
-        //        }
-        //    }
-
-        //    public static bool operator ==(EntityStubSpawnData a, EntityStubSpawnData b)
-        //    {
-        //        return a.Equals(b);
-        //    }
-
-        //    public static bool operator !=(EntityStubSpawnData a, EntityStubSpawnData b)
-        //    {
-        //        return !a.Equals(b);
-        //    }
-        //}
-
-        //private void CollectEntityStubs()
-        //{
-        //    _entityStubs = new List<EntityStubSpawnData>();
-        //    foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
-        //    {
-        //        foreach (var entityStub in chunk.GetEntityStubs().ToList())
-        //        {
-        //            if (entityStub.entityData.Length <= 0)
-        //                continue;
-
-        //            try
-        //            {
-        //                entityStub.entityData.Position = 0;
-        //                var br = new BinaryReader(entityStub.entityData);
-        //                var spawnerSource = (EnumSpawnerSource)br.ReadByte();
-        //                if (spawnerSource != EnumSpawnerSource.Biome)
-        //                    continue;
-
-        //                _entityStubs.Add(new EntityStubSpawnData
-        //                {
-        //                    spawnerSource = spawnerSource,
-        //                    groupName     = br.ReadString(),
-        //                    chunkKey      = br.ReadInt64(),
-        //                    worldTimeBorn = br.ReadUInt64()
-        //                });
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                Log.Error($"Error loading entity data {entityStub.id} from entity stub of {chunk}: " + ex);
-        //            }
-        //        }
-        //    }
-
-        //    foreach (var entity in World.Entities.list.ToList())
-        //    {
-        //        _entityStubs.Add(new EntityStubSpawnData
-        //        {
-        //            spawnerSource = entity.GetSpawnerSource(),
-        //            groupName = entity.GetSpawnerSourceEntityGroupName(),
-        //            chunkKey = entity.GetSpawnerSourceChunkKey(),
-        //            worldTimeBorn = entity.WorldTimeBorn
-        //        });
-        //    }
-
-        //    _entityStubs = _entityStubs.Distinct().ToList();
-
-        //    Log.Debug($"Collected {_entityStubs.Count} entity stubs from all loaded chunks.");
-        //}
+        /// <summary>
+        /// Returns all task letters of the given tasks flag combinations, e.g. "DLMPR" for RepairTasks.Default
+        /// </summary>
+        /// <param name="tasks">Binary flags of RepairTasks</param>
+        /// <returns>Sorted uppercase letters as string</returns>
+        public static string GetTaskLetters(RepairTasks tasks)
+        {
+            return Enum.GetValues(typeof(RepairTasks))
+                .Cast<RepairTasks>()
+                .Where(task => tasks.HasFlag(task))
+                .Select(task => task.GetAttributeOfType<RepairTaskAttribute>())
+                .Where(attr => attr != null)
+                .OrderBy(attr => attr.Letter)
+                .Aggregate("", (str, attr) => str + attr.Letter);
+        }
 
         /// <summary>
-        /// Scans the given chunk object for broken power blocks and optionally fixes them
+        /// Scans the given chunk object for corrupt power blocks and optionally fixes them
         /// </summary>
         /// <param name="chunk">The chunk object; must be loaded and ready</param>
         private void RepairChunk([NotNull] Chunk chunk)
         {
-            if (Scans.HasFlag(RepairEngineScans.LockedBiomeRespawn))
+            if (Tasks.HasFlag(RepairTasks.LockedBiomeRespawn))
                 RepairChunkRespawn(chunk);
 
             foreach (var tileEntity in chunk.GetTileEntities().Values.ToList())
-            {
                 RepairTileEntity(tileEntity);
-            }
 
-            ScannedChunks++;
+            _scannedChunks++;
         }
 
         private void RepairChunkRespawn([NotNull] Chunk chunk)
@@ -256,43 +186,8 @@ namespace ScriptingMod
             Log.Debug($"Scanning area master {chunk} with spawn data: {spawnData}");
             foreach (var groupName in spawnData.GetEntityGroupNames().ToList())
             {
-                //ulong respawnLockedUntil = spawnData.GetRespawnLockedUntilWorldTime(groupName);
-
-                //// Check if respawn is locked for an unusual long time (more than 7 in-game days)
-                //if (respawnLockedUntil > World.worldTime + MaxAllowedRespawnDelay)
-                //{
-                //    ProblemsFound++;
-                //    spawnData.ClearRespawnLocked(groupName);
-                //    chunk.isModified = true;
-                //    Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days in area master {chunk}.");
-                //    Output($"{FoundOrRepaired} respawn of {groupName} locked for incorrect duration in {chunk}.");
-                //    continue;
-                //}
-
                 RepairLongRespawnLock(spawnData, groupName);
                 RepairLostEntities(spawnData, groupName);
-
-                //// Check if registered entities can be found online
-                //int registeredEntities = spawnData.GetEntitiesSpawned(groupName);
-                //if (registeredEntities > 0 && respawnLockedUntil == 0UL)
-                //{
-                //    if (!AllChunksLoaded(chunk, EntitiySearchRadius))
-                //    {
-                //        Log.Debug($"Skipped scanning area master {chunk} for lost entities because not all it's chunks + {EntitiySearchRadius} chunks around them are loaded.");
-                //        continue;
-                //    }
-
-                //    var spawnedEntities = CountSpawnedEntities(EnumSpawnerSource.Biome, chunk.Key, groupName);
-                //    if (registeredEntities > spawnedEntities)
-                //    {
-                //        ProblemsFound++;
-                //        SetEntitiesSpawned(spawnData, groupName, spawnedEntities);
-                //        chunk.isModified = true;
-                //        int lostEntities = registeredEntities - spawnedEntities;
-                //        Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "entity" : "entities")} in area master {chunk}.");
-                //        Output($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "zombies/animals" : "zombie/animal")} in {chunk}.");
-                //    }
-                //}
             }
         }
 
@@ -311,8 +206,7 @@ namespace ScriptingMod
                 spawnData.ClearRespawnLocked(groupName);
                 spawnData.chunk.isModified = true;
             }
-            Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days in area master {spawnData.chunk}.");
-            Output($"{FoundOrRepaired} respawn of {groupName} locked for incorrect duration in {spawnData.chunk}.");
+            WarningAndOutput($"{FoundOrRepaired} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days in area master {spawnData.chunk}.");
         }
 
         private void RepairLostEntities([NotNull] ChunkAreaBiomeSpawnData spawnData, string groupName)
@@ -338,7 +232,8 @@ namespace ScriptingMod
             // Ignore missing zombies when it could come from surrounding chunks not loaded
             if (!AllChunksLoaded(spawnData.chunk, EntitiySearchRadius))
             {
-                Log.Debug($"Ignoring {lostEntities} lost {groupName} in area master {spawnData.chunk} because not all it's 5x5 chunks + {EntitiySearchRadius} chunks around them are loaded.");
+                Log.Debug($"Ignoring {lostEntities} lost {groupName} in area master {spawnData.chunk} " +
+                          $"because not all it's 5x5 chunks + {EntitiySearchRadius} chunks around them are loaded.");
                 return;
             }
 
@@ -349,10 +244,17 @@ namespace ScriptingMod
             {
                 SetEntitiesSpawned(spawnData, groupName, spawnedEntities);
             }
-            Log.Warning($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "entity" : "entities")} in area master {spawnData.chunk}.");
-            Output($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost {(lostEntities == 1 ? "zombie/animal" : "zombies/animals")} in {spawnData.chunk}.");
+            WarningAndOutput($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost " +
+                             $"{(lostEntities == 1 ? "entity" : "entities")} in area master {spawnData.chunk}.");
         }
 
+        /// <summary>
+        /// The the entitiesSpawned private variable in spawnData for the given groupName to the new value
+        /// by repeatedly calling Inc.. or Dec.. methods. This is faster and less complicated than reflection
+        /// </summary>
+        /// <param name="spawnData">Class to modify</param>
+        /// <param name="groupName">Spawn group name to change entry for</param>
+        /// <param name="entitiesSpawned">New value</param>
         private static void SetEntitiesSpawned([NotNull] ChunkAreaBiomeSpawnData spawnData, string groupName, int entitiesSpawned)
         {
             int delta = entitiesSpawned - spawnData.GetEntitiesSpawned(groupName);
@@ -362,9 +264,13 @@ namespace ScriptingMod
                 spawnData.DecEntitiesSpawned(groupName);
         }
 
+        /// <summary>
+        /// Find/fix problems with TileEntityPowered objects and their PowerItems,
+        /// which may caus NRE at TileEntityPoweredTrigger.write and other problems
+        /// </summary>
+        /// <param name="tileEntity">Tile entity to repair; currently only TileEntityPowered type is scanned/repaired</param>
         private void RepairTileEntity([NotNull] TileEntity tileEntity)
         {
-            // Find/fix problems with TileEntityPowered objects and their PowerItems
             var powered = tileEntity as TileEntityPowered;
             if (powered != null && !IsValidTileEntityPowered(powered))
             {
@@ -373,12 +279,17 @@ namespace ScriptingMod
                 if (!Simulate)
                     RecreateTileEntity(tileEntity);
 
-                var msg = $"{FoundOrRepaired} broken power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.";
-                Log.Warning(msg);
-                Output(msg);
+                LogAndOutput($"{FoundOrRepaired} corrupt power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.");
             }
         }
 
+        /// <summary>
+        /// Returns the number of active entities in the world, filtered by the given spawner source, sourceChunkKey, and sourceEntityGroup
+        /// </summary>
+        /// <param name="spawnerSource"></param>
+        /// <param name="spawnerSourceChunkKey"></param>
+        /// <param name="spawnerSourceEntityGroupName"></param>
+        /// <returns>The number of found entities; can be 0</returns>
         private static int CountSpawnedEntities(EnumSpawnerSource spawnerSource, long spawnerSourceChunkKey, string spawnerSourceEntityGroupName)
         {
             return World.Entities.list.Count(
@@ -486,7 +397,7 @@ namespace ScriptingMod
             // Prevent further errors on client updates; crucial when removing power item!
             tileEntity.SetDisableModifiedCheck(true);
 
-            // Remove broken tile entity
+            // Remove corrupt tile entity
             chunk.RemoveTileEntity(World, tileEntity);
 
             // Remove power item
@@ -515,12 +426,24 @@ namespace ScriptingMod
                 // Create power item according to PowerItemType and TriggerType
                 newPowered.InitializePowerData();
 
-                // Wires to the broken block are cut and not restored. We could try to reattach everything, but meh...
+                // Wires to the corrupt block are cut and not restored. We could try to reattach everything, but meh...
             }
 
             var newPowerItem = newPowered?.GetPowerItem();
             Log.Debug($"[{tileEntity.ToWorldPos()}] Replaced old {tileEntity.GetType()} with new {newTileEntity.GetType()}" +
                       $"{(newPowerItem != null ? " and new power item " + newPowerItem.GetType() : "")}.");
+        }
+
+        private void WarningAndOutput(string msg)
+        {
+            Log.Warning(msg);
+            Output(msg);
+        }
+
+        private void LogAndOutput(string msg)
+        {
+            Log.Out(msg);
+            Output(msg);
         }
 
         private void Output(string msg)

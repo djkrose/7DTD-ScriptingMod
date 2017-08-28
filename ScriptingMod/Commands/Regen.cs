@@ -127,27 +127,20 @@ namespace ScriptingMod.Commands
                 var chunksToRegenerate = GetChunksForArea(pos1, pos2);
                 var chunksToReload = GetChunksForArea(pos1, pos2, +1);
 
-                var msg = $"Started regenerating {chunksToRegenerate.Count} chunk{(chunksToRegenerate.Count != 1 ? "s" : "")} in background ...";
-                Log.Out(msg);
-                SdtdConsole.Instance.OutputAsync(senderInfo, msg);
+                SdtdConsole.Instance.LogAndOutputAsync(senderInfo, $"Started regenerating {chunksToRegenerate.Count} chunk{(chunksToRegenerate.Count != 1 ? "s" : "")} in background ...");
 
                 for (int i=0; i<chunksToRegenerate.Count; i++)
                 {
                     RegenerateChunk(chunksToRegenerate.ElementAt(i));
                     if (chunksToRegenerate.Count > 1)
-                    {
-                        msg = $"Regenerated chunk {i + 1}/{chunksToRegenerate.Count}.";
-                        SdtdConsole.Instance.OutputAsync(senderInfo, msg);
-                    }
+                        SdtdConsole.Instance.OutputAsync(senderInfo, $"Regenerated chunk {i + 1}/{chunksToRegenerate.Count}.");
                 }
 
                 // Redefine pos1/2 to actual regenerated area dimensions
                 var realPos1 = new Vector3i(World.toChunkXZ(pos1.x) * Constants.ChunkSize, 0, World.toChunkXZ(pos1.z) * Constants.ChunkSize);
                 var realPos2 = new Vector3i(World.toChunkXZ(pos2.x) * Constants.ChunkSize + Constants.ChunkSize - 1, Constants.ChunkHeight, World.toChunkXZ(pos2.z) * Constants.ChunkSize + Constants.ChunkSize - 1);
 
-                msg = $"Regenerated {chunksToRegenerate.Count} chunk{(chunksToRegenerate.Count != 1 ? "s" : "")} for area from {realPos1} to {realPos2}.";
-                Log.Out(msg);
-                SdtdConsole.Instance.OutputAsync(senderInfo, msg);
+                SdtdConsole.Instance.LogAndOutputAsync(senderInfo, $"Regenerated {chunksToRegenerate.Count} chunk{(chunksToRegenerate.Count != 1 ? "s" : "")} for area from {realPos1} to {realPos2}.");
                 // Reload chunks for clients, including neighbouring chunks for smooth terrain transition
                 ChunkTools.ReloadForClients(chunksToReload);
             }

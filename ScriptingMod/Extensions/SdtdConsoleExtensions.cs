@@ -23,5 +23,17 @@ namespace ScriptingMod.Extensions
             else
                 Log.Warning("Could not find a way to send output to console asynchronously: " + msg);
         }
+
+        public static void LogAndOutput(this SdtdConsole target, string msg)
+        {
+            Log.Out(msg);
+            target.Output(msg);
+        }
+
+        public static void LogAndOutputAsync(this SdtdConsole target, CommandSenderInfo senderInfo, string msg)
+        {
+            Log.Out(msg);
+            target.OutputAsync(senderInfo, msg);
+        }
     }
 }

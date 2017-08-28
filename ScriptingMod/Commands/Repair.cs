@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.Policy;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
@@ -15,7 +14,39 @@ namespace ScriptingMod.Commands
     [UsedImplicitly]
     public class Repair : ConsoleCmdAbstract
     {
-        private static DateTime lastAutomaticCheck = DateTime.Now;
+        private static DateTime _lastLogMessageTriggeredScan = default(DateTime);
+
+        /// <summary>
+        /// Sorted repair task letters that make up the RepairTasks.Default flag, e.g. "DLMPR".
+        /// RepairTasks.Default doesn't HAVE to include ALL tasks but could exclude experimental tasks.
+        /// </summary>
+        private static readonly string DefaultTaskLetters = Enum.GetValues(typeof(RepairTasks))
+            .Cast<RepairTasks>()
+            .Where(task => RepairTasks.Default.HasFlag(task))
+            .Select(task => task.GetAttributeOfType<RepairTaskAttribute>())
+            .Where(attr => attr != null)
+            .OrderBy(attr => attr.Letter)
+            .Aggregate("", (str, attr) => str + attr.Letter);
+
+        /// <summary>
+        /// Dictionary of repair task letter => Task to quickly find the task for a letter
+        /// </summary>
+        private static readonly Dictionary<char, RepairTasks> TasksDict = Enum.GetValues(typeof(RepairTasks))
+            .Cast<RepairTasks>()
+            .Select(task => new { Attribute = task.GetAttributeOfType<RepairTaskAttribute>(), Task = task })
+            .Where(o => o.Attribute != null)
+            .ToDictionary(o => o.Attribute.Letter, o => o.Task);
+
+        /// <summary>
+        /// List of "repair task letter  =>  description" as multi-line string with indentation except for the first line
+        /// </summary>
+        private static readonly string TasksHelp = Enum.GetValues(typeof(RepairTasks))
+            .Cast<RepairTasks>()
+            .Select(task => task.GetAttributeOfType<RepairTaskAttribute>())
+            .Where(attr => attr != null)
+            .OrderBy(attr => attr.Letter)
+            .Aggregate("", (str, attr) => str + $"                    {attr.Letter}  =>  {attr.Description}\r\n")
+            .Trim();
 
         public override string[] GetCommands()
         {
@@ -24,29 +55,23 @@ namespace ScriptingMod.Commands
 
         public override string GetDescription()
         {
-            return "Repairs data corruption of various kinds.";
+            return "Repairs server problems of various kinds.";
         }
 
         public override string GetHelp()
         {
             // ----------------------------------(max length: 120 char)----------------------------------------------------------------|
-            return @"
-                Scans for data corruption of various kinds and tries to repair it. Works only on loaded chunks with nearby players.
-                Currently supported scans and fixes:
-                 - Player stuck on login screen because of NullReferenceException at TileEntityPoweredTrigger.write
-                 - Area cannot be exported due to corrupt power block state
-                 - Biome spawn of zombies and animals halted in a chunk, especially after using settime, bc-remove, or dj-regen
+            return $@"
+                Scans for server problems of various kinds and tries to repair them. Currently supported scan & repair tasks:
+                    {TasksHelp}
                 Usage:
-                    1. dj-repair [/simulate]
-                    2. dj-repair here [/simulate]
-                    3. dj-repair <x> <z> [/simulate]
-                    4. dj-repair auto [/simulate]
-                1. Repairs all loaded chunks.
-                2. Repairs the chunk where you are currently standing.
-                3. Repairs the chunk that contains the given world coordinate.
-                4. Turns periodic background scans with automatic repair on or off. State is kept between server restarts.
-                Use optional parameter ""/simulate"" or just ""/sim"" to scan and report without actually repairing anything.
-                Use optional parameter ""/respawn"" to fix locked biome respawn (experimental).
+                    1. dj-repair [/sim] [/auto]
+                    2. dj-repair <task letters> [/sim] [/auto]
+                1. Performs all default repair tasks. Same as ""dj-repair {DefaultTaskLetters}"".
+                2. Performs the repair tasks identified by their letter(s), for example ""dj-repair MR"" to repair only minibikes and respawn.
+                Optional parameters:
+                    /sim   Simulate scan and report results without actually repairing anything
+                    /auto  Turn automatic repairing in background on or off. See logfile for ongoing repair results.
                 ".Unindent();
         }
 
@@ -54,27 +79,55 @@ namespace ScriptingMod.Commands
         {
             try
             {
-                (var simulate, var respawn, var worldPos) = ParseParams(parameters, senderInfo);
+                ParseParams(parameters, out var tasks, out bool simulate, out bool auto);
 
-                var repairEngine = new RepairEngine();
-                repairEngine.ConsoleOutput = SdtdConsole.Instance.Output;
-                repairEngine.Simulate = simulate;
-                repairEngine.WorldPos = worldPos;
+                if (auto)
+                {
+                    if (!PersistentData.Instance.RepairAuto)
+                    {
+                        // Turn automatic mode ON
+                        PersistentData.Instance.RepairAuto     = true;
+                        PersistentData.Instance.RepairTasks    = tasks;
+                        PersistentData.Instance.RepairSimulate = simulate;
+                        PersistentData.Instance.RepairCounter  = 0;
+                        PersistentData.Instance.Save();
 
-                // Can only do specific scans when limited to a world pos
-                if (repairEngine.WorldPos != null)
-                    repairEngine.Scans = RepairEngineScans.LockedBiomeRespawn | RepairEngineScans.WrongPowerItem;
+                        if (tasks.HasFlag(RepairTasks.CorruptPowerBlocks))
+                            Application.logMessageReceived += OnLogMessageReceived;
 
-                if (respawn)
-                    repairEngine.Scans = RepairEngineScans.LockedBiomeRespawn;
+                        // TODO: Initialize background scanning thread for other tasks
 
-                repairEngine.Start();
+                        SdtdConsole.Instance.LogAndOutput($"Automatic background {(simulate ? "scan (without repair)" : "repair")} for server problem(s) {RepairEngine.GetTaskLetters(tasks)} turned ON.");
+                        SdtdConsole.Instance.Output("To turn off, enter the same command again.");
+                    }
+                    else
+                    {
+                        // Turn automatic mode OFF
+                        PersistentData.Instance.RepairAuto = false;
+                        PersistentData.Instance.Save();
 
-                var strChunks = $"chunk{(repairEngine.ScannedChunks != 1 ? "s" : "")}";
-                var strProblems = $"problem{(repairEngine.ProblemsFound != 1 ? "s" : "")}";
-                var msg = $"{(repairEngine.Simulate ? "Identified" : "Repaired")} {repairEngine.ProblemsFound} {strProblems} in {repairEngine.ScannedChunks} {strChunks}. [details in server log]";
-                SdtdConsole.Instance.Output(msg);
-                Log.Out(msg);
+                        Application.logMessageReceived -= OnLogMessageReceived;
+
+                        // TODO: Stop and dispose other background threads
+
+                        SdtdConsole.Instance.LogAndOutput(
+                            $"Automatic background {(PersistentData.Instance.RepairSimulate ? "scan (without repair)" : "repair")} for server problems " +
+                            $"{RepairEngine.GetTaskLetters(PersistentData.Instance.RepairTasks)} turned OFF.");
+                        SdtdConsole.Instance.LogAndOutput(
+                            $"Report: {PersistentData.Instance.RepairCounter} problem{(PersistentData.Instance.RepairCounter == 1 ? " was" : "s were")} " +
+                            $"{(PersistentData.Instance.RepairSimulate ? "identified" : "repaired")} since it was turned on.");
+                    }
+                }
+                else
+                { 
+                    var repairEngine = new RepairEngine
+                    {
+                        ConsoleOutput = SdtdConsole.Instance.Output,
+                        Simulate      = simulate,
+                        Tasks         = tasks
+                    };
+                    repairEngine.Start();
+                }
             }
             catch (Exception ex)
             {
@@ -82,75 +135,40 @@ namespace ScriptingMod.Commands
             }
         }
 
-        private (bool simulate, bool respawn, Vector3i? worldPos) ParseParams(List<string> parameters, CommandSenderInfo senderInfo)
+        private static void ParseParams(List<string> parameters, out RepairTasks tasks, out bool simulate, out bool auto)
         {
-            var simulate = parameters.Remove("/simulate") || parameters.Remove("/sim");
-            var respawn = parameters.Remove("/respawn");
-            Vector3i? pos;
+            simulate = parameters.Remove("/sim");
+            auto     = parameters.Remove("/auto");
 
             switch (parameters.Count)
             {
                 case 0:
-                    pos = null;
+                    tasks = RepairTasks.Default;
                     break;
+
                 case 1:
-                    if (parameters[0] == "here")
+                    tasks = RepairTasks.None;
+                    string taskLetters = parameters[0].ToUpper().Trim();
+
+                    foreach (char letter in taskLetters)
                     {
-                        pos = senderInfo.GetRemoteClientInfo().GetEntityPlayer().GetServerPos().ToVector3i();
-                    }
-                    else if (parameters[0] == "auto")
-                    {
-                        if (!PersistentData.Instance.RepairAuto)
-                        {
-                            // Turn on
-                            Application.logMessageReceived += OnLogMessageReceived;
-
-                            PersistentData.Instance.RepairAuto = true;
-                            PersistentData.Instance.RepairAutoSimulate = simulate;
-                            PersistentData.Instance.RepairCounter = 0;
-                            PersistentData.Instance.Save();
-
-                            var msg = $"Automatic{(simulate ? " simulated" : "" )} repair of corrupt data turned ON.";
-                            Log.Out(msg);
-                            throw new FriendlyMessageException(msg);
-                        }
-                        else
-                        {
-                            // Turn off
-                            Application.logMessageReceived -= OnLogMessageReceived;
-
-                            var counter = PersistentData.Instance.RepairCounter;
-
-                            PersistentData.Instance.RepairAuto = false;
-                            PersistentData.Instance.RepairCounter = 0;
-                            PersistentData.Instance.Save();
-
-                            var msg = $"Automatic background {(simulate ? "scan" : "repair" )} for corrupt data turned OFF." +
-                                      $" {counter} problem{(counter == 1 ? " was" : "s were")} identified since it was turned on.";
-                            Log.Out(msg);
-                            throw new FriendlyMessageException(msg);
-                        }
-                    }
-                    else
-                    {
-                        throw new FriendlyMessageException("Wrong second parameter. See help.");
+                        if (!TasksDict.ContainsKey(letter))
+                            throw new FriendlyMessageException($"Did not recognize task letter '{letter}'. See help.");
+                        tasks |= TasksDict[letter];
                     }
                     break;
-                case 2:
-                    pos = CommandTools.ParseXZ(parameters, 0);
-                    break;
+
                 default:
                     throw new FriendlyMessageException("Wrong number of parameters. See help.");
             }
-
-            return (simulate, respawn, pos);
         }
 
         public static void InitAuto()
         {
-            if (PersistentData.Instance.RepairAuto)
+            if (PersistentData.Instance.RepairAuto && PersistentData.Instance.RepairTasks.HasFlag(RepairTasks.CorruptPowerBlocks))
             {
-                Log.Out($"Automatic{(PersistentData.Instance.RepairAutoSimulate ? " simulated" : "" )} repair of corrupt data is still turned ON.");
+                Log.Out($"Automatic {(PersistentData.Instance.RepairSimulate ? " scan (without repair)" : "repair")} of server problem(s) " +
+                        $"{RepairEngine.GetTaskLetters(PersistentData.Instance.RepairTasks)} is still turned ON.");
                 Application.logMessageReceived += OnLogMessageReceived;
             }
         }
@@ -159,10 +177,10 @@ namespace ScriptingMod.Commands
         private static void OnLogMessageReceived(string condition, string stackTrace, LogType type)
         {
             // Only check once every 5 seconds
-            if (lastAutomaticCheck.AddSeconds(5) > DateTime.Now)
+            if (_lastLogMessageTriggeredScan.AddSeconds(5) > DateTime.Now)
                 return;
 
-            lastAutomaticCheck = DateTime.Now;
+            _lastLogMessageTriggeredScan = DateTime.Now;
 
             // Check if this is the exception we are looking for
             if (type == LogType.Exception 
@@ -176,9 +194,11 @@ namespace ScriptingMod.Commands
                     Log.Out("Detected NRE TileEntityPoweredTrigger.write. Starting integrity scan in background ...");
                     try
                     {
-                        var repairEngine = new RepairEngine();
-                        repairEngine.Simulate = PersistentData.Instance.RepairAutoSimulate;
-                        repairEngine.Scans = RepairEngineScans.WrongPowerItem;
+                        var repairEngine = new RepairEngine
+                        {
+                            Simulate = PersistentData.Instance.RepairSimulate,
+                            Tasks = RepairTasks.CorruptPowerBlocks
+                        };
                         repairEngine.Start();
 
                         if (repairEngine.ProblemsFound >= 1)

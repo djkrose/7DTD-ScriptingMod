@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using JetBrains.Annotations;
 
 namespace ScriptingMod
 {
@@ -16,9 +17,13 @@ namespace ScriptingMod
         private static PersistentData instance;
         public  static PersistentData Instance => instance ?? (instance = new PersistentData());
 
-        public const int FileVersion = 2;
+        [UsedImplicitly]
+        public const int FileVersion = 3;
+        public bool RepairSimulate;
+        public RepairTasks RepairTasks;
 
-        [Obsolete("Use RepairAuto instead.")]
+        [Obsolete("Use RepairAuto instead. To be removed in version 0.10.")]
+        [UsedImplicitly]
         public bool CheckPowerAuto;
         private bool _repairAuto;
         public bool RepairAuto
@@ -27,9 +32,8 @@ namespace ScriptingMod
             set { CheckPowerAuto = _repairAuto = value; }
         }
 
-        public bool RepairAutoSimulate;
-
-        [Obsolete("Use RepairCounter instead.")]
+        [Obsolete("Use RepairCounter instead. To be removed in version 0.10.")]
+        [UsedImplicitly]
         public int CheckPowerCounter;
         private int _repairCounter;
         public int RepairCounter
