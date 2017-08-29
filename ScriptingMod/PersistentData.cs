@@ -21,6 +21,7 @@ namespace ScriptingMod
         public const int FileVersion = 3;
         public bool RepairSimulate;
         public RepairTasks RepairTasks;
+        public int RepairInterval; // seconds
 
         [Obsolete("Use RepairAuto instead. To be removed in version 0.10.")]
         [UsedImplicitly]

@@ -62,13 +62,18 @@ namespace ScriptingMod.Commands
                 Scans for server problems of various kinds and tries to repair them. Currently supported scan & repair tasks:
                     {TasksHelp}
                 Usage:
-                    1. dj-repair [/sim] [/auto]
-                    2. dj-repair <task letters> [/sim] [/auto]
+                    1. dj-repair [/sim] [/auto] [/interval=<seconds>]
+                    2. dj-repair <task letters> [/sim] [/auto] [/interval=<seconds>]
                 1. Performs all default repair tasks. Same as ""dj-repair {DefaultTaskLetters}"".
-                2. Performs the repair tasks identified by their letter(s), for example ""dj-repair MR"" to repair only minibikes and respawn.
+                2. Performs the repair tasks identified by their letter(s).
                 Optional parameters:
-                    /sim   Simulate scan and report results without actually repairing anything
-                    /auto  Turn automatic repairing in background on or off. See logfile for ongoing repair results.
+                    /sim                 Simulate scan and report results without actually repairing anything
+                    /auto                Turn automatic repairing in background on or off. See logfile for ongoing repair results.
+                    /interval=<seconds>  Interval for how often automatic repairing should occur. Default: 600 (every 10 minutes)
+                Examples:
+                    dj-repair                          Perform the default repair tasks now.
+                    dj-repair P /sim                   Scan for corrupt powerblocks but don't repair anything.
+                    dj-repair DM /auto /interval=300   Repair density and minibikes every 5 minutes.
                 ".Unindent();
         }
 
@@ -76,10 +81,12 @@ namespace ScriptingMod.Commands
         {
             try
             {
-                ParseParams(parameters, out var tasks, out bool simulate, out bool auto);
+                ParseParams(parameters, out var tasks, out bool simulate, out bool auto, out int? timerInterval);
 
                 var repairEngine = new RepairEngine(tasks, simulate);
                 repairEngine.ConsoleOutput = SdtdConsole.Instance.Output;
+                if (timerInterval != null)
+                    repairEngine.TimerInterval = timerInterval.Value;
 
                 if (auto)
                 {
@@ -99,10 +106,14 @@ namespace ScriptingMod.Commands
             }
         }
 
-        private static void ParseParams(List<string> parameters, out RepairTasks tasks, out bool simulate, out bool auto)
+        private static void ParseParams(List<string> parameters, out RepairTasks tasks, out bool simulate, out bool auto, out int? timerInterval)
         {
             simulate = parameters.Remove("/sim");
-            auto     = parameters.Remove("/auto");
+            auto = parameters.Remove("/auto");
+            timerInterval = CommandTools.ParseOptionAsInt(parameters, "/interval", true);
+
+            if (!auto && timerInterval != null)
+                throw new FriendlyMessageException("Setting an interval without turning on automatic repair is useless. Please add the \"/auto\" option.");
 
             switch (parameters.Count)
             {

@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
 using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
@@ -160,6 +161,44 @@ namespace ScriptingMod.Tools
             {
                 throw new FriendlyMessageException(Resources.ErrorCoordinateNotInteger);
             }
+        }
+
+        /// <summary>
+        /// Looks for an option with string value of the format "paramName=lala" in the list of parameters
+        /// and if existing returns it. If no such parameter exists, null is returned.
+        /// </summary>
+        /// <returns>The string of the option value, which can be empty, or null if option does not exist</returns>
+        [CanBeNull]
+        public static string ParseOption(List<string> parameters, string paramName, bool remove = false)
+        {
+            var index = parameters.FindIndex(p => p.StartsWith(paramName + "="));
+            if (index == -1)
+                return null;
+
+            string value = parameters[index].Split(new char[] {'='}, 2)[1];
+            if (remove)
+                parameters.RemoveAt(index);
+            return value;
+        }
+
+
+        /// <summary>
+        /// Looks for an option with int value of the format "/paramName=123" in the list of parameters
+        /// and if existing parses it to int. If no such parameter exists, null is returned.
+        /// </summary>
+        /// <returns>The parsed int value, or null if option is missing in parameters</returns>
+        /// <exception cref="FriendlyMessageException">If the option exists but cannot be parsed to int</exception>
+        [CanBeNull]
+        public static int? ParseOptionAsInt(List<string> parameters, string paramName, bool remove = false)
+        {
+            var value = ParseOption(parameters, paramName, remove);
+            if (value == null)
+                return null;
+
+            if (!int.TryParse(value, out int result))
+                throw new FriendlyMessageException($"The value for parameter {paramName} is not a valid integer.");
+
+            return result;
         }
 
     }

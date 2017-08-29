@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
@@ -21,7 +22,7 @@ namespace ScriptingMod
     {
         //                     |----------------------------------(max length: 120 char)----------------------------------------------------------------|
         [RepairTask('D', "Repair block density causing distorted terrain and falling through the world.")]
-        BlockDensity            = 1,
+        BlockDensity       = 1,
         [RepairTask('L', "Fix death screen loop due to corrupt player files.")]
         DeathScreenLoop    = 2,
         [RepairTask('M', "Bring all stuck minibikes to the surface.")]
@@ -43,14 +44,26 @@ namespace ScriptingMod
         private const int EntitiySearchRadius = 4;
 
         /// <summary>
+        /// Delay to wait until first background timer execution, in ms
+        /// </summary>
+        private const int TimerDelay = 10000;
+
+        /// <summary>
         /// If set to true, problems will only be reported without fixing them
         /// </summary>
+        // Will later probably used in PersistentData, therefore:
+        // ReSharper disable once FieldCanBeMadeReadOnly.Global
+        // ReSharper disable once MemberCanBePrivate.Global
         public bool Simulate;
 
         /// <summary>
         /// Allows defining the problems to scan for, using binary flags (multiple possible)
         /// Default: RepairTasks.All
         /// </summary>
+        // Will later probably used in PersistentData, therefore:
+        // ReSharper disable once FieldCanBeMadeReadOnly.Global
+        // ReSharper disable once MemberCanBePrivate.Global
+        // ReSharper disable once MemberInitializerValueIgnored
         public RepairTasks Tasks = RepairTasks.Default;
 
         /// <summary>
@@ -58,6 +71,23 @@ namespace ScriptingMod
         /// </summary>
         [CanBeNull]
         public Action<string> ConsoleOutput;
+
+        private int _timerInterval = 60 * 10; // every 10 minutes
+
+        /// <summary>
+        /// Interval of background timer execution, in seconds
+        /// </summary>
+        public int TimerInterval
+        {
+            // ReSharper disable once MemberCanBePrivate.Global // more constistent interface
+            get { return _timerInterval; }
+            set
+            {
+                if (value < 60)
+                    throw new FriendlyMessageException("The timer interval cannot be shorter than 60 seconds.");
+                _timerInterval = value;
+            }
+        }
 
         private Stopwatch _stopwatch;
 
@@ -85,6 +115,8 @@ namespace ScriptingMod
         private readonly World World = GameManager.Instance.World;
         private static ulong _maxAllowedRespawnDelayCache;
         private static DateTime _lastLogMessageTriggeredScan = default(DateTime);
+        private static System.Threading.Timer _backgroundTimer;
+        private static object _syncLock = new object();
 
         public RepairEngine(RepairTasks tasks, bool simulate)
         {
@@ -129,6 +161,23 @@ namespace ScriptingMod
 
         public void Start()
         {
+            if (!Monitor.TryEnter(_syncLock))
+            {
+                WarningAndOutput("Skipping repair task because another repair is already running.");
+                return;
+            }
+            try
+            {
+                StartUnsynchronized();
+            }
+            finally
+            {
+                Monitor.Exit(_syncLock);
+            }
+        }
+
+        private void StartUnsynchronized()
+        {
             // Should not happen when parameters are parsed correctly
             if (Tasks == RepairTasks.None)
                 throw new ApplicationException("No repair tasks set.");
@@ -156,7 +205,7 @@ namespace ScriptingMod
             //if (Tasks.HasFlag(RepairTasks.DeathScreenLoop))
             //{
             //    Output("Scanning all players ...");
-            //    // TODO
+            //    
             //}
 
             var msg = $"{(Simulate ? "Identified" : "Repaired")} {_problemsFound} problem{(_problemsFound != 1 ? "s" : "")} " +
@@ -166,54 +215,78 @@ namespace ScriptingMod
             Log.Debug($"Repair engine done. Execution took {_stopwatch.ElapsedMilliseconds} ms.");
         }
 
+        /// <summary>
+        /// Activates automatic background repairs.
+        /// Will NOT reset the counters so that it can be also used to continue background checks after restart.
+        /// </summary>
         public void AutoOn()
         {
             PersistentData.Instance.RepairAuto = true;
             PersistentData.Instance.RepairTasks = Tasks;
             PersistentData.Instance.RepairSimulate = Simulate;
-            PersistentData.Instance.RepairCounter = 0;
+            PersistentData.Instance.RepairInterval = TimerInterval;
             PersistentData.Instance.Save();
 
             if (Tasks.HasFlag(RepairTasks.CorruptPowerBlocks))
                 Application.logMessageReceived += OnLogMessageReceived;
 
-            // TODO: Initialize background scanning thread for other tasks
+            _backgroundTimer = new System.Threading.Timer(delegate
+            {
+                Log.Debug("Automatic background repair timer started.");
+                try
+                {
+                    var repairEngine = new RepairEngine(PersistentData.Instance.RepairTasks, PersistentData.Instance.RepairSimulate);
+                    repairEngine.Start();
 
-            LogAndOutput($"Automatic background {(Simulate ? "scan (without repair)" : "repair")} for server problem(s) {GetTaskLetters(Tasks)} turned ON.");
-            Output("To turn off, enter the same command again.");
+                    if (repairEngine._problemsFound >= 1)
+                    {
+                        PersistentData.Instance.RepairCounter += repairEngine._problemsFound;
+                        PersistentData.Instance.Save();
+                    }
+                    Log.Debug("Automatic background repair timer ended.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error while running repair in background: " + ex);
+                    throw;
+                }
+            }, null, TimerDelay, TimerInterval * 1000);
+
+            LogAndOutput($"Automatic background {(Simulate ? "scan (without repair)" : "repair")} for server problem(s) {GetTaskLetters(Tasks)} every {TimerInterval} seconds turned ON.");
+            Output("To turn off, enter \"dj-repair /auto\" again.");
         }
 
+        /// <summary>
+        /// Turn automatic background repairs off, log the results, and reset the counters
+        /// </summary>
         public void AutoOff()
         {
-            PersistentData.Instance.RepairAuto = false;
-            PersistentData.Instance.Save();
-
             Application.logMessageReceived -= OnLogMessageReceived;
-
-            // TODO: Stop and dispose other background threads
+            _backgroundTimer?.Dispose();
 
             LogAndOutput($"Automatic background {(PersistentData.Instance.RepairSimulate ? "scan (without repair)" : "repair")} for server problems " +
                          $"{GetTaskLetters(PersistentData.Instance.RepairTasks)} turned OFF.");
             Output($"Report: {PersistentData.Instance.RepairCounter} problem{(PersistentData.Instance.RepairCounter == 1 ? " was" : "s were")} " +
                    $"{(PersistentData.Instance.RepairSimulate ? "identified" : "repaired")} since it was turned on.");
+
+            PersistentData.Instance.RepairCounter = 0;
+            PersistentData.Instance.RepairAuto = false;
+            PersistentData.Instance.Save();
         }
 
         public static void InitAuto()
         {
-            if (PersistentData.Instance.RepairAuto && PersistentData.Instance.RepairTasks.HasFlag(RepairTasks.CorruptPowerBlocks))
+            if (PersistentData.Instance.RepairAuto)
             {
-                Log.Out($"Automatic {(PersistentData.Instance.RepairSimulate ? " scan (without repair)" : "repair")} of server problem(s) " +
-                        $"{GetTaskLetters(PersistentData.Instance.RepairTasks)} is still turned ON.");
-                Application.logMessageReceived += OnLogMessageReceived;
+                var repairEngine = new RepairEngine(PersistentData.Instance.RepairTasks, PersistentData.Instance.RepairSimulate);
+                repairEngine.TimerInterval = PersistentData.Instance.RepairInterval;
+                repairEngine.AutoOn();
             }
-
-            // TODO: Initialize background scanning thread for other tasks
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         private static void OnLogMessageReceived(string condition, string stackTrace, LogType type)
         {
-            // Only check once every 5 seconds
+            // Scan not more than every 5 seconds while log is spammed with error messages
             if (_lastLogMessageTriggeredScan.AddSeconds(5) > DateTime.Now)
                 return;
 
@@ -227,7 +300,6 @@ namespace ScriptingMod
                 ThreadManager.AddSingleTaskSafe(delegate
                 {
                     // Doing it in background task so that NRE appears before our output in log
-                    // and so that we can use ThreadManager.IsMainThread() to determie command or background mode
                     Log.Out("Detected NRE TileEntityPoweredTrigger.write. Starting integrity scan in background ...");
                     try
                     {
@@ -242,7 +314,7 @@ namespace ScriptingMod
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("Error while running integrity scan in background: " + ex);
+                        Log.Error("Error while running power block repair in background: " + ex);
                         throw;
                     }
                 });
@@ -258,7 +330,6 @@ namespace ScriptingMod
         /// </summary>
         /// <param name="tasks">Binary flags of RepairTasks</param>
         /// <returns>Sorted uppercase letters as string</returns>
-        [Pure]
         private static string GetTaskLetters(RepairTasks tasks)
         {
             return Enum.GetValues(typeof(RepairTasks))
