@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.Tools;
-using UnityEngine;
 
 namespace ScriptingMod.Commands
 {
     [UsedImplicitly]
     public class Repair : ConsoleCmdAbstract
     {
-        private static DateTime _lastLogMessageTriggeredScan = default(DateTime);
 
         /// <summary>
         /// Sorted repair task letters that make up the RepairTasks.Default flag, e.g. "DLMPR".
@@ -81,51 +78,18 @@ namespace ScriptingMod.Commands
             {
                 ParseParams(parameters, out var tasks, out bool simulate, out bool auto);
 
+                var repairEngine = new RepairEngine(tasks, simulate);
+                repairEngine.ConsoleOutput = SdtdConsole.Instance.Output;
+
                 if (auto)
                 {
                     if (!PersistentData.Instance.RepairAuto)
-                    {
-                        // Turn automatic mode ON
-                        PersistentData.Instance.RepairAuto     = true;
-                        PersistentData.Instance.RepairTasks    = tasks;
-                        PersistentData.Instance.RepairSimulate = simulate;
-                        PersistentData.Instance.RepairCounter  = 0;
-                        PersistentData.Instance.Save();
-
-                        if (tasks.HasFlag(RepairTasks.CorruptPowerBlocks))
-                            Application.logMessageReceived += OnLogMessageReceived;
-
-                        // TODO: Initialize background scanning thread for other tasks
-
-                        SdtdConsole.Instance.LogAndOutput($"Automatic background {(simulate ? "scan (without repair)" : "repair")} for server problem(s) {RepairEngine.GetTaskLetters(tasks)} turned ON.");
-                        SdtdConsole.Instance.Output("To turn off, enter the same command again.");
-                    }
+                        repairEngine.AutoOn();
                     else
-                    {
-                        // Turn automatic mode OFF
-                        PersistentData.Instance.RepairAuto = false;
-                        PersistentData.Instance.Save();
-
-                        Application.logMessageReceived -= OnLogMessageReceived;
-
-                        // TODO: Stop and dispose other background threads
-
-                        SdtdConsole.Instance.LogAndOutput(
-                            $"Automatic background {(PersistentData.Instance.RepairSimulate ? "scan (without repair)" : "repair")} for server problems " +
-                            $"{RepairEngine.GetTaskLetters(PersistentData.Instance.RepairTasks)} turned OFF.");
-                        SdtdConsole.Instance.LogAndOutput(
-                            $"Report: {PersistentData.Instance.RepairCounter} problem{(PersistentData.Instance.RepairCounter == 1 ? " was" : "s were")} " +
-                            $"{(PersistentData.Instance.RepairSimulate ? "identified" : "repaired")} since it was turned on.");
-                    }
+                        repairEngine.AutoOff();
                 }
                 else
                 { 
-                    var repairEngine = new RepairEngine
-                    {
-                        ConsoleOutput = SdtdConsole.Instance.Output,
-                        Simulate      = simulate,
-                        Tasks         = tasks
-                    };
                     repairEngine.Start();
                 }
             }
@@ -162,63 +126,5 @@ namespace ScriptingMod.Commands
                     throw new FriendlyMessageException("Wrong number of parameters. See help.");
             }
         }
-
-        public static void InitAuto()
-        {
-            if (PersistentData.Instance.RepairAuto && PersistentData.Instance.RepairTasks.HasFlag(RepairTasks.CorruptPowerBlocks))
-            {
-                Log.Out($"Automatic {(PersistentData.Instance.RepairSimulate ? " scan (without repair)" : "repair")} of server problem(s) " +
-                        $"{RepairEngine.GetTaskLetters(PersistentData.Instance.RepairTasks)} is still turned ON.");
-                Application.logMessageReceived += OnLogMessageReceived;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private static void OnLogMessageReceived(string condition, string stackTrace, LogType type)
-        {
-            // Only check once every 5 seconds
-            if (_lastLogMessageTriggeredScan.AddSeconds(5) > DateTime.Now)
-                return;
-
-            _lastLogMessageTriggeredScan = DateTime.Now;
-
-            // Check if this is the exception we are looking for
-            if (type == LogType.Exception 
-                && condition == "NullReferenceException: Object reference not set to an instance of an object" 
-                && stackTrace != null && stackTrace.StartsWith("TileEntityPoweredTrigger.write"))
-            {
-                ThreadManager.AddSingleTaskSafe(delegate
-                {
-                    // Doing it in background task so that NRE appears before our output in log
-                    // and so that we can use ThreadManager.IsMainThread() to determie command or background mode
-                    Log.Out("Detected NRE TileEntityPoweredTrigger.write. Starting integrity scan in background ...");
-                    try
-                    {
-                        var repairEngine = new RepairEngine
-                        {
-                            Simulate = PersistentData.Instance.RepairSimulate,
-                            Tasks = RepairTasks.CorruptPowerBlocks
-                        };
-                        repairEngine.Start();
-
-                        if (repairEngine.ProblemsFound >= 1)
-                        {
-                            PersistentData.Instance.RepairCounter += repairEngine.ProblemsFound;
-                            PersistentData.Instance.Save();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Error while running integrity scan in background: " + ex);
-                        throw;
-                    }
-                });
-            }
-            else
-            {
-                Log.Debug($"Intercepted unknown log message:\r\ncondition={condition ?? "<null>"}\r\ntype={type}\r\nstackTrace={stackTrace ?? "<null>"}");
-            }
-        }
-
     }
 }

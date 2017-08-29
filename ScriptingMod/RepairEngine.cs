@@ -2,12 +2,20 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using JetBrains.Annotations;
+using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
+using UnityEngine;
 
 namespace ScriptingMod
 {
+    /*
+     * TODO [P2]: Simplify RepairTasks enum to use letters
+     * TODO [P2]: Simplify persistency to store entire RepairEngine for background tasks
+     */
+
     [Flags]
     public enum RepairTasks
     {
@@ -35,11 +43,6 @@ namespace ScriptingMod
         private const int EntitiySearchRadius = 4;
 
         /// <summary>
-        /// Allows assigning a method that outputs status information to the console, e.g. SdtdConsole.Output
-        /// </summary>
-        public Action<string> ConsoleOutput;
-
-        /// <summary>
         /// If set to true, problems will only be reported without fixing them
         /// </summary>
         public bool Simulate;
@@ -51,14 +54,18 @@ namespace ScriptingMod
         public RepairTasks Tasks = RepairTasks.Default;
 
         /// <summary>
-        /// Number of problems that this repair engine has found (and attempted fixing unless simulating) so far
+        /// Allows assigning a method that outputs status information to the console, e.g. SdtdConsole.Output
         /// </summary>
-        public int ProblemsFound;
+        [CanBeNull]
+        public Action<string> ConsoleOutput;
 
         private Stopwatch _stopwatch;
-        private int _scannedChunks;
 
-        private string FoundOrRepaired => Simulate ? "Found" : "Repaired";
+        /// <summary>
+        /// Number of problems that this repair engine has found (and attempted fixing unless simulating) so far
+        /// </summary>
+        private int _problemsFound;
+        private int _scannedChunks;
 
         /// <summary>
         /// For TileEntityPoweredTrigger objects this lists the TriggerTypes and which power item class are allowed together.
@@ -75,21 +82,30 @@ namespace ScriptingMod
                 { PowerTrigger.TriggerTypes.TripWire,      typeof(PowerTripWireRelay) }
             };
 
-        private static readonly World World = GameManager.Instance.World;
-
+        private readonly World World = GameManager.Instance.World;
         private static ulong _maxAllowedRespawnDelayCache;
+        private static DateTime _lastLogMessageTriggeredScan = default(DateTime);
+
+        public RepairEngine(RepairTasks tasks, bool simulate)
+        {
+            Tasks = tasks;
+            Simulate = simulate;
+        }
 
         /// <summary>
         /// The cached maximum allowed respawn delay in world ticks for ChunkBiomeSpawnData entires.
         /// See: ChunkAreaBiomeSpawnData.SetRespawnLocked(..) and EntityPlayer.onSpawnStateChanged(..)
         /// </summary>
-        private static ulong MaxAllowedRespawnDelay
+        private ulong MaxAllowedRespawnDelay
         {
             get
             {
                 if (_maxAllowedRespawnDelayCache == 0UL)
                 {
                     _maxAllowedRespawnDelayCache = (ulong)(GamePrefs.GetInt(EnumGamePrefs.PlayerSafeZoneHours) * 1000);
+
+                    if (World == null)
+                        throw new ApplicationException("World not yet loaded.");
 
                     foreach (var biome in World.Biomes.GetBiomeMap().Values)
                     {
@@ -113,6 +129,7 @@ namespace ScriptingMod
 
         public void Start()
         {
+            // Should not happen when parameters are parsed correctly
             if (Tasks == RepairTasks.None)
                 throw new ApplicationException("No repair tasks set.");
 
@@ -123,9 +140,16 @@ namespace ScriptingMod
             // Scan chunks -> tile entities
             if (Tasks.HasFlag(RepairTasks.CorruptPowerBlocks) || Tasks.HasFlag(RepairTasks.LockedBiomeRespawn))
             {
-                Output("Scanning all loaded chunks ...");
-                foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
-                    RepairChunk(chunk);
+                if (World.ChunkCache == null || World.ChunkCache.Count() == 0)
+                {
+                    Output("No chunks loaded. Skipping all chunk-related tasks.");
+                }
+                else
+                {
+                    Output("Scanning all loaded chunks ...");
+                    foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
+                        RepairChunk(chunk);
+                }
             }
 
             // Scan players
@@ -135,10 +159,98 @@ namespace ScriptingMod
             //    // TODO
             //}
 
-            LogAndOutput($"{(Simulate ? "Identified" : "Repaired")} {ProblemsFound} problem{(ProblemsFound != 1 ? "s" : "")} " +
-                         $"in {_scannedChunks} chunk{(_scannedChunks != 1 ? "s" : "")}. [details in server log]");
-
+            var msg = $"{(Simulate ? "Identified" : "Repaired")} {_problemsFound} problem{(_problemsFound != 1 ? "s" : "")} " +
+                      $"in {_scannedChunks} chunk{(_scannedChunks != 1 ? "s" : "")}.";
+            Log.Out(msg);
+            Output(msg + " [details in server log]");
             Log.Debug($"Repair engine done. Execution took {_stopwatch.ElapsedMilliseconds} ms.");
+        }
+
+        public void AutoOn()
+        {
+            PersistentData.Instance.RepairAuto = true;
+            PersistentData.Instance.RepairTasks = Tasks;
+            PersistentData.Instance.RepairSimulate = Simulate;
+            PersistentData.Instance.RepairCounter = 0;
+            PersistentData.Instance.Save();
+
+            if (Tasks.HasFlag(RepairTasks.CorruptPowerBlocks))
+                Application.logMessageReceived += OnLogMessageReceived;
+
+            // TODO: Initialize background scanning thread for other tasks
+
+            LogAndOutput($"Automatic background {(Simulate ? "scan (without repair)" : "repair")} for server problem(s) {GetTaskLetters(Tasks)} turned ON.");
+            Output("To turn off, enter the same command again.");
+        }
+
+        public void AutoOff()
+        {
+            PersistentData.Instance.RepairAuto = false;
+            PersistentData.Instance.Save();
+
+            Application.logMessageReceived -= OnLogMessageReceived;
+
+            // TODO: Stop and dispose other background threads
+
+            LogAndOutput($"Automatic background {(PersistentData.Instance.RepairSimulate ? "scan (without repair)" : "repair")} for server problems " +
+                         $"{GetTaskLetters(PersistentData.Instance.RepairTasks)} turned OFF.");
+            Output($"Report: {PersistentData.Instance.RepairCounter} problem{(PersistentData.Instance.RepairCounter == 1 ? " was" : "s were")} " +
+                   $"{(PersistentData.Instance.RepairSimulate ? "identified" : "repaired")} since it was turned on.");
+        }
+
+        public static void InitAuto()
+        {
+            if (PersistentData.Instance.RepairAuto && PersistentData.Instance.RepairTasks.HasFlag(RepairTasks.CorruptPowerBlocks))
+            {
+                Log.Out($"Automatic {(PersistentData.Instance.RepairSimulate ? " scan (without repair)" : "repair")} of server problem(s) " +
+                        $"{GetTaskLetters(PersistentData.Instance.RepairTasks)} is still turned ON.");
+                Application.logMessageReceived += OnLogMessageReceived;
+            }
+
+            // TODO: Initialize background scanning thread for other tasks
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private static void OnLogMessageReceived(string condition, string stackTrace, LogType type)
+        {
+            // Only check once every 5 seconds
+            if (_lastLogMessageTriggeredScan.AddSeconds(5) > DateTime.Now)
+                return;
+
+            _lastLogMessageTriggeredScan = DateTime.Now;
+
+            // Check if this is the exception we are looking for
+            if (type == LogType.Exception
+                && condition == "NullReferenceException: Object reference not set to an instance of an object"
+                && stackTrace != null && stackTrace.StartsWith("TileEntityPoweredTrigger.write"))
+            {
+                ThreadManager.AddSingleTaskSafe(delegate
+                {
+                    // Doing it in background task so that NRE appears before our output in log
+                    // and so that we can use ThreadManager.IsMainThread() to determie command or background mode
+                    Log.Out("Detected NRE TileEntityPoweredTrigger.write. Starting integrity scan in background ...");
+                    try
+                    {
+                        var repairEngine = new RepairEngine(RepairTasks.CorruptPowerBlocks, PersistentData.Instance.RepairSimulate);
+                        repairEngine.Start();
+
+                        if (repairEngine._problemsFound >= 1)
+                        {
+                            PersistentData.Instance.RepairCounter += repairEngine._problemsFound;
+                            PersistentData.Instance.Save();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Error while running integrity scan in background: " + ex);
+                        throw;
+                    }
+                });
+            }
+            else
+            {
+                Log.Debug($"Intercepted unknown log message:\r\ncondition={condition ?? "<null>"}\r\ntype={type}\r\nstackTrace={stackTrace ?? "<null>"}");
+            }
         }
 
         /// <summary>
@@ -146,7 +258,8 @@ namespace ScriptingMod
         /// </summary>
         /// <param name="tasks">Binary flags of RepairTasks</param>
         /// <returns>Sorted uppercase letters as string</returns>
-        public static string GetTaskLetters(RepairTasks tasks)
+        [Pure]
+        private static string GetTaskLetters(RepairTasks tasks)
         {
             return Enum.GetValues(typeof(RepairTasks))
                 .Cast<RepairTasks>()
@@ -200,13 +313,14 @@ namespace ScriptingMod
 
             // Problem: Respawn locked is too long; possibly due to modified worldtime with "settime"
 
-            ProblemsFound++;
+            _problemsFound++;
             if (!Simulate)
             {
                 spawnData.ClearRespawnLocked(groupName);
                 spawnData.chunk.isModified = true;
             }
-            WarningAndOutput($"{FoundOrRepaired} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} game days in area master {spawnData.chunk}.");
+            WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} " +
+                             $"game days in area master {spawnData.chunk}.");
         }
 
         private void RepairLostEntities([NotNull] ChunkAreaBiomeSpawnData spawnData, string groupName)
@@ -239,12 +353,12 @@ namespace ScriptingMod
 
             // Problem: Zombies are registered in the chunk that cannot be found alive anywhere; they might have disappeared or wandered too far off
 
-            ProblemsFound++;
+            _problemsFound++;
             if (!Simulate)
             {
                 SetEntitiesSpawned(spawnData, groupName, spawnedEntities);
             }
-            WarningAndOutput($"{FoundOrRepaired} respawn of {groupName} locked because of {lostEntities} lost " +
+            WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} respawn of {groupName} locked because of {lostEntities} lost " +
                              $"{(lostEntities == 1 ? "entity" : "entities")} in area master {spawnData.chunk}.");
         }
 
@@ -274,12 +388,12 @@ namespace ScriptingMod
             var powered = tileEntity as TileEntityPowered;
             if (powered != null && !IsValidTileEntityPowered(powered))
             {
-                ProblemsFound++;
+                _problemsFound++;
 
                 if (!Simulate)
                     RecreateTileEntity(tileEntity);
 
-                LogAndOutput($"{FoundOrRepaired} corrupt power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.");
+                LogAndOutput($"{(Simulate ? "Found" : "Repaired")} corrupt power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.");
             }
         }
 
@@ -290,7 +404,7 @@ namespace ScriptingMod
         /// <param name="spawnerSourceChunkKey"></param>
         /// <param name="spawnerSourceEntityGroupName"></param>
         /// <returns>The number of found entities; can be 0</returns>
-        private static int CountSpawnedEntities(EnumSpawnerSource spawnerSource, long spawnerSourceChunkKey, string spawnerSourceEntityGroupName)
+        private int CountSpawnedEntities(EnumSpawnerSource spawnerSource, long spawnerSourceChunkKey, string spawnerSourceEntityGroupName)
         {
             return World.Entities.list.Count(
                 e => e.GetSpawnerSource() == spawnerSource
@@ -303,8 +417,11 @@ namespace ScriptingMod
         /// </summary>
         /// <param name="areaMasterChunk">The area master chunk to use as basis</param>
         /// <param name="extendBy">Number of chunks to extend the check area in all directions, additionally to the 5x5 area master</param>
-        private static bool AllChunksLoaded([NotNull] Chunk areaMasterChunk, int extendBy)
+        private bool AllChunksLoaded([NotNull] Chunk areaMasterChunk, int extendBy)
         {
+            if (World.ChunkCache == null)
+                return false;
+
             if (!areaMasterChunk.IsAreaMaster())
                 throw new ArgumentException("Given chunk is not an area master chunk.", nameof(areaMasterChunk));
 
@@ -390,7 +507,7 @@ namespace ScriptingMod
         /// <summary>
         /// Deletes the given tile entity from it's chunk and creates a new one based on the tile entity type
         /// </summary>
-        private static void RecreateTileEntity([NotNull] TileEntity tileEntity)
+        private void RecreateTileEntity([NotNull] TileEntity tileEntity)
         {
             var chunk = tileEntity.GetChunk();
 
