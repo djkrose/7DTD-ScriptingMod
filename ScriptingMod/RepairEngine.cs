@@ -21,8 +21,8 @@ namespace ScriptingMod
     public enum RepairTasks
     {
         //                     |----------------------------------(max length: 120 char)----------------------------------------------------------------|
-        [RepairTask('D', "Repair block density causing distorted terrain, falling through the world, and the error message \"Failed setting triangles...\".")]
-        BlockDensity       = 1,
+        [RepairTask('D', "Repair chunk density causing distorted terrain, falling through the world, and the error message \"Failed setting triangles...\".")]
+        ChunkDensity       = 1,
         [RepairTask('L', "Fix death screen loop due to corrupt player files.")]
         DeathScreenLoop    = 2,
         [RepairTask('M', "Bring all stuck minibikes to the surface.")]
@@ -273,6 +273,10 @@ namespace ScriptingMod
 
         public void Start()
         {
+            // Should not happen when parameters are parsed correctly
+            if (Tasks == RepairTasks.None)
+                throw new ApplicationException("No repair tasks set.");
+
             if (!Monitor.TryEnter(_syncLock))
             {
                 WarningAndOutput("Skipping repair task because another repair is already running.");
@@ -290,10 +294,6 @@ namespace ScriptingMod
 
         private void StartUnsynchronized()
         {
-            // Should not happen when parameters are parsed correctly
-            if (Tasks == RepairTasks.None)
-                throw new ApplicationException("No repair tasks set.");
-
             _stopwatch = new MicroStopwatch(true);
             LogAndOutput($"{(Simulate ? "Scan (without repair)" : "Repair")} for server problem(s) {GetTaskLetters(Tasks)} started.");
 
@@ -322,8 +322,10 @@ namespace ScriptingMod
             //    
             //}
 
-            var msg = $"{(Simulate ? "Identified" : "Repaired")} {_problemsFound} problem{(_problemsFound != 1 ? "s" : "")} " +
-                      $"in {_scannedChunks} chunk{(_scannedChunks != 1 ? "s" : "")}.";
+            var msg = $"{(Simulate ? "Identified" : "Repaired")} {_problemsFound} problem{(_problemsFound != 1 ? "s" : "")}";
+            if (_scannedChunks > 0)
+                msg += $" in {_scannedChunks} chunk{(_scannedChunks != 1 ? "s" : "")}";
+            msg += ".";
             Log.Out(msg);
             Output(msg + " [details in server log]");
             Log.Debug($"Repair engine done. Execution took {_stopwatch.ElapsedMilliseconds} ms.");
@@ -334,6 +336,8 @@ namespace ScriptingMod
         /// </summary>
         private void RepairPowerVehicleSaving()
         {
+            Log.Debug("Scanning for stopped power and vehicle data saving ...");
+
             // A bit risky because we could catch the thread JUST during it is actually active,
             // but the fix will not last long anyway since it's fixed in A16.3 b7
             if (ThreadManager.ActiveThreads.ContainsKey("silent_powerDataSave"))
@@ -360,10 +364,58 @@ namespace ScriptingMod
             if (Tasks.HasFlag(RepairTasks.LockedBiomeRespawn))
                 RepairChunkRespawn(chunk);
 
+            if (Tasks.HasFlag(RepairTasks.ChunkDensity))
+                RepairChunkDensity(chunk);
+
             foreach (var tileEntity in chunk.GetTileEntities().Values.ToList())
                 RepairTileEntity(tileEntity);
 
             _scannedChunks++;
+        }
+
+        private void RepairChunkDensity([NotNull] Chunk chunk)
+        {
+            //Log.Debug($"Scanning for chunk density errors in {chunk} ...");
+            int problems = 0;
+
+            // Mostly taken from Chunk.RepairDensity(), improved performance, and added counting+simulation
+            Vector3i vector3i1 = new Vector3i(0, 0, 0);
+            Vector3i vector3i2 = new Vector3i(16, 256, 16);
+            for (int x = vector3i1.x; x < vector3i2.x; ++x)
+            {
+                for (int z = vector3i1.z; z < vector3i2.z; ++z)
+                {
+                    for (int y = vector3i1.y; y < vector3i2.y; ++y)
+                    {
+                        //BlockValue block1 = chunk.GetBlock(x, y, z);
+                        Block block = Block.list[chunk.GetBlockNoDamage(x, y, z).type];
+                        sbyte density = chunk.GetDensity(x, y, z);
+                        if (block.shape.IsTerrain())
+                        {
+                            if (density >= 0)
+                            {
+                                Log.Debug($"Density is {density} but should be < 0.");
+                                if (!Simulate)
+                                    chunk.SetDensity(x, y, z, -1);
+                                problems++;
+                            }
+                        }
+                        else if (density < 0)
+                        {
+                            Log.Debug($"Density is {density} but should be >= 0.");
+                            if (!Simulate)
+                                chunk.SetDensity(x, y, z, 1);
+                            problems++;
+                        }
+                    }
+                }
+            }
+
+            if (problems > 0)
+            {
+                WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} {problems} density problem{(problems == 1 ? "" : "s")} in {chunk}.");
+                _problemsFound += problems;
+            }
         }
 
         private void RepairChunkRespawn([NotNull] Chunk chunk)
