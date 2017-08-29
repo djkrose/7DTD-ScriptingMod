@@ -21,7 +21,7 @@ namespace ScriptingMod
     public enum RepairTasks
     {
         //                     |----------------------------------(max length: 120 char)----------------------------------------------------------------|
-        [RepairTask('D', "Repair block density causing distorted terrain and falling through the world.")]
+        [RepairTask('D', "Repair block density causing distorted terrain, falling through the world, and the error message \"Failed setting triangles...\".")]
         BlockDensity       = 1,
         [RepairTask('L', "Fix death screen loop due to corrupt player files.")]
         DeathScreenLoop    = 2,
@@ -31,6 +31,8 @@ namespace ScriptingMod
         CorruptPowerBlocks = 8,
         [RepairTask('R', "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen. (EXPERIMENTAL)")]
         LockedBiomeRespawn = 16,
+        [RepairTask('S', "Restart saving power and vehicle data (fixed in A16.3 b7).")]
+        PowerVehicleSaving = 32,
 
         None               = 0,
         Default            = ~0
@@ -159,62 +161,6 @@ namespace ScriptingMod
             }
         }
 
-        public void Start()
-        {
-            if (!Monitor.TryEnter(_syncLock))
-            {
-                WarningAndOutput("Skipping repair task because another repair is already running.");
-                return;
-            }
-            try
-            {
-                StartUnsynchronized();
-            }
-            finally
-            {
-                Monitor.Exit(_syncLock);
-            }
-        }
-
-        private void StartUnsynchronized()
-        {
-            // Should not happen when parameters are parsed correctly
-            if (Tasks == RepairTasks.None)
-                throw new ApplicationException("No repair tasks set.");
-
-            _stopwatch = new MicroStopwatch(true);
-
-            LogAndOutput($"{(Simulate ? "Scan (without repair)" : "Repair")} for server problem(s) {GetTaskLetters(Tasks)} started.");
-
-            // Scan chunks -> tile entities
-            if (Tasks.HasFlag(RepairTasks.CorruptPowerBlocks) || Tasks.HasFlag(RepairTasks.LockedBiomeRespawn))
-            {
-                if (World.ChunkCache == null || World.ChunkCache.Count() == 0)
-                {
-                    Output("No chunks loaded. Skipping all chunk-related tasks.");
-                }
-                else
-                {
-                    Output("Scanning all loaded chunks ...");
-                    foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
-                        RepairChunk(chunk);
-                }
-            }
-
-            // Scan players
-            //if (Tasks.HasFlag(RepairTasks.DeathScreenLoop))
-            //{
-            //    Output("Scanning all players ...");
-            //    
-            //}
-
-            var msg = $"{(Simulate ? "Identified" : "Repaired")} {_problemsFound} problem{(_problemsFound != 1 ? "s" : "")} " +
-                      $"in {_scannedChunks} chunk{(_scannedChunks != 1 ? "s" : "")}.";
-            Log.Out(msg);
-            Output(msg + " [details in server log]");
-            Log.Debug($"Repair engine done. Execution took {_stopwatch.ElapsedMilliseconds} ms.");
-        }
-
         /// <summary>
         /// Activates automatic background repairs.
         /// Will NOT reset the counters so that it can be also used to continue background checks after restart.
@@ -325,20 +271,84 @@ namespace ScriptingMod
             }
         }
 
-        /// <summary>
-        /// Returns all task letters of the given tasks flag combinations, e.g. "DLMPR" for RepairTasks.Default
-        /// </summary>
-        /// <param name="tasks">Binary flags of RepairTasks</param>
-        /// <returns>Sorted uppercase letters as string</returns>
-        private static string GetTaskLetters(RepairTasks tasks)
+        public void Start()
         {
-            return Enum.GetValues(typeof(RepairTasks))
-                .Cast<RepairTasks>()
-                .Where(task => tasks.HasFlag(task))
-                .Select(task => task.GetAttributeOfType<RepairTaskAttribute>())
-                .Where(attr => attr != null)
-                .OrderBy(attr => attr.Letter)
-                .Aggregate("", (str, attr) => str + attr.Letter);
+            if (!Monitor.TryEnter(_syncLock))
+            {
+                WarningAndOutput("Skipping repair task because another repair is already running.");
+                return;
+            }
+            try
+            {
+                StartUnsynchronized();
+            }
+            finally
+            {
+                Monitor.Exit(_syncLock);
+            }
+        }
+
+        private void StartUnsynchronized()
+        {
+            // Should not happen when parameters are parsed correctly
+            if (Tasks == RepairTasks.None)
+                throw new ApplicationException("No repair tasks set.");
+
+            _stopwatch = new MicroStopwatch(true);
+            LogAndOutput($"{(Simulate ? "Scan (without repair)" : "Repair")} for server problem(s) {GetTaskLetters(Tasks)} started.");
+
+            if (Tasks.HasFlag(RepairTasks.PowerVehicleSaving))
+                RepairPowerVehicleSaving();
+
+            // Scan chunks -> tile entities
+            if (Tasks.HasFlag(RepairTasks.CorruptPowerBlocks) || Tasks.HasFlag(RepairTasks.LockedBiomeRespawn))
+            {
+                if (World.ChunkCache == null || World.ChunkCache.Count() == 0)
+                {
+                    Output("No chunks loaded. Skipping all chunk-related tasks.");
+                }
+                else
+                {
+                    Output("Scanning all loaded chunks ...");
+                    foreach (var chunk in World.ChunkCache.GetChunkArrayCopySync())
+                        RepairChunk(chunk);
+                }
+            }
+
+            // Scan players
+            //if (Tasks.HasFlag(RepairTasks.DeathScreenLoop))
+            //{
+            //    Output("Scanning all players ...");
+            //    
+            //}
+
+            var msg = $"{(Simulate ? "Identified" : "Repaired")} {_problemsFound} problem{(_problemsFound != 1 ? "s" : "")} " +
+                      $"in {_scannedChunks} chunk{(_scannedChunks != 1 ? "s" : "")}.";
+            Log.Out(msg);
+            Output(msg + " [details in server log]");
+            Log.Debug($"Repair engine done. Execution took {_stopwatch.ElapsedMilliseconds} ms.");
+        }
+
+        /// <summary>
+        /// Removes thread list entries that sometimes keep existing after the save thread has ended and prevents further saving.
+        /// </summary>
+        private void RepairPowerVehicleSaving()
+        {
+            // A bit risky because we could catch the thread JUST during it is actually active,
+            // but the fix will not last long anyway since it's fixed in A16.3 b7
+            if (ThreadManager.ActiveThreads.ContainsKey("silent_powerDataSave"))
+            {
+                WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} apparently stopped saving of power data.");
+                if (!Simulate)
+                    ThreadManager.ActiveThreads.Remove("silent_powerDataSave");
+            }
+
+            if (ThreadManager.ActiveThreads.ContainsKey("silent_vehicleDataSave"))
+            {
+                WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} apparently stopped saving of vehicle data.");
+                if (!Simulate)
+                    ThreadManager.ActiveThreads.Remove("silent_vehicleDataSave");
+            }
         }
 
         /// <summary>
@@ -434,22 +444,6 @@ namespace ScriptingMod
         }
 
         /// <summary>
-        /// The the entitiesSpawned private variable in spawnData for the given groupName to the new value
-        /// by repeatedly calling Inc.. or Dec.. methods. This is faster and less complicated than reflection
-        /// </summary>
-        /// <param name="spawnData">Class to modify</param>
-        /// <param name="groupName">Spawn group name to change entry for</param>
-        /// <param name="entitiesSpawned">New value</param>
-        private static void SetEntitiesSpawned([NotNull] ChunkAreaBiomeSpawnData spawnData, string groupName, int entitiesSpawned)
-        {
-            int delta = entitiesSpawned - spawnData.GetEntitiesSpawned(groupName);
-            for (int i = 0; i < delta; i++)
-                spawnData.IncEntitiesSpawned(groupName);
-            for (int i = 0; i > delta; i--)
-                spawnData.DecEntitiesSpawned(groupName);
-        }
-
-        /// <summary>
         /// Find/fix problems with TileEntityPowered objects and their PowerItems,
         /// which may caus NRE at TileEntityPoweredTrigger.write and other problems
         /// </summary>
@@ -466,6 +460,38 @@ namespace ScriptingMod
 
                 LogAndOutput($"{(Simulate ? "Found" : "Repaired")} corrupt power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.");
             }
+        }
+
+        /// <summary>
+        /// Returns all task letters of the given tasks flag combinations, e.g. "DLMPR" for RepairTasks.Default
+        /// </summary>
+        /// <param name="tasks">Binary flags of RepairTasks</param>
+        /// <returns>Sorted uppercase letters as string</returns>
+        private static string GetTaskLetters(RepairTasks tasks)
+        {
+            return Enum.GetValues(typeof(RepairTasks))
+                .Cast<RepairTasks>()
+                .Where(task => tasks.HasFlag(task))
+                .Select(task => task.GetAttributeOfType<RepairTaskAttribute>())
+                .Where(attr => attr != null)
+                .OrderBy(attr => attr.Letter)
+                .Aggregate("", (str, attr) => str + attr.Letter);
+        }
+
+        /// <summary>
+        /// The the entitiesSpawned private variable in spawnData for the given groupName to the new value
+        /// by repeatedly calling Inc.. or Dec.. methods. This is faster and less complicated than reflection
+        /// </summary>
+        /// <param name="spawnData">Class to modify</param>
+        /// <param name="groupName">Spawn group name to change entry for</param>
+        /// <param name="entitiesSpawned">New value</param>
+        private static void SetEntitiesSpawned([NotNull] ChunkAreaBiomeSpawnData spawnData, string groupName, int entitiesSpawned)
+        {
+            int delta = entitiesSpawned - spawnData.GetEntitiesSpawned(groupName);
+            for (int i = 0; i < delta; i++)
+                spawnData.IncEntitiesSpawned(groupName);
+            for (int i = 0; i > delta; i--)
+                spawnData.DecEntitiesSpawned(groupName);
         }
 
         /// <summary>
