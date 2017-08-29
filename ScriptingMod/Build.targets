@@ -7,8 +7,10 @@
   
   <!-- Properties used in multiple targets -->
   <PropertyGroup>
-    <ModsFolder>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\Mods\</ModsFolder>
+    <GameFolder>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\</GameFolder>
+    <ModsFolder>$(GameFolder)Mods\</ModsFolder>
     <InstallFolder>$(ModsFolder)$(ProjectName)\</InstallFolder>
+    <ManagedFolder>$(GameFolder)7DaysToDieServer_Data\Managed\</ManagedFolder>
   </PropertyGroup>
   
   <!-- Remove old release zip files, which would otherwise be installed as mod or get packed itself into the new release -->
@@ -20,7 +22,7 @@
   </Target>
   
   <!-- Create Mono CLR symbol files (.mdb) -->
-  <Target Name="GenerateMonoSymbols" AfterTargets="AfterBuild" Condition=" Exists('$(OutputPath)\$(AssemblyName).pdb') ">
+  <Target Name="GenerateMonoSymbols" AfterTargets="AfterBuild" Condition="Exists('$(OutputPath)\$(AssemblyName).pdb')">
     <PropertyGroup>
       <MonoMdbGenerator>$(SolutionDir)packages\Mono.pdb2mdb.0.1.0.20130128\tools\pdb2mdb.exe</MonoMdbGenerator>
     </PropertyGroup>
@@ -28,6 +30,7 @@
     <Exec Command="$(MonoMdbGenerator) $(TargetPath)" WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" />
   </Target>
 
+  <!-- Shutdown a running server to free locked files before reinstalling the mod  -->
   <Target Name="ShutdownServer">
     <PropertyGroup>
       <ServerExe>7DaysToDieServer.exe</ServerExe>
@@ -44,13 +47,21 @@
   </Target>
   
   <!-- Copy all mod files into 7DTD Mods folder after the build -->
-  <Target Name="InstallMod" AfterTargets="AfterBuild" DependsOnTargets="ShutdownServer" Condition="Exists('$(ModsFolder).')">
+  <Target Name="InstallMod" AfterTargets="AfterBuild" DependsOnTargets="ShutdownServer" Condition="Exists('$(ModsFolder)')">
     <ItemGroup>
       <InstallFiles Include="$(OutputPath)**\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(InstallFiles)" DestinationFolder="$(InstallFolder)%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
 
+  <!-- Copy the Resharper extrernal annotations next to their DLLs so that Resharper picks them up -->
+  <Target Name="InstallExternalAnnotations" AfterTargets="BeforeBuild" Condition="Exists('$(ManagedFolder)')">
+    <ItemGroup>
+      <ExternalAnnotationsFiles Include="$(ProjectDir)*.ExternalAnnotations.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ExternalAnnotationsFiles)" DestinationFolder="$(ManagedFolder)" SkipUnchangedFiles="true"/>
+  </Target>
+  
   <!-- Pack all files together into a distribution zip file after the build -->
   <Target Name="ZipMod" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
     <ReadLinesFromFile File="ModInfo.xml">
@@ -81,8 +92,16 @@
   </Target>
 
   <!-- Remove installed mod from 7dtd as part of clean -->
-  <Target Name="CleanInstalledMod" AfterTargets="AfterClean" Condition="Exists('$(ModsFolder).')">
+  <Target Name="CleanInstalledMod" AfterTargets="AfterClean" DependsOnTargets="ShutdownServer" Condition="Exists('$(ModsFolder)')">
     <RemoveDir Directories="$(InstallFolder)" />
   </Target>
 
+  <!-- Remove Resharper external annotations for game DLLs -->
+  <Target Name="CleanExternalAnnotations" AfterTargets="AfterClean" Condition="Exists('$(ManagedFolder)')">
+    <ItemGroup>
+      <ExternalAnnotationsFiles Include="$(ManagedFolder)*.ExternalAnnotations.xml" />
+    </ItemGroup>
+    <Delete Files="@(ExternalAnnotationsFiles)" />
+  </Target>
+  
 </Project>
