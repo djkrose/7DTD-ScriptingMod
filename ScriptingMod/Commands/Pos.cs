@@ -47,16 +47,15 @@ namespace ScriptingMod.Commands
 
                 var chunkXZ = ChunkTools.WorldPosToChunkXZ(worldPos);
                 SdtdConsole.Instance.Output($"Chunk (x z): {chunkXZ.x} {chunkXZ.z}");
-                var chunk = world.GetChunkSync(chunkXZ.x, chunkXZ.z) as Chunk;
-                if (chunk != null && chunk.ChunkCustomData.Count > 0)
-                SdtdConsole.Instance.Output(DumpCustomChunkData(chunk));
+                //var chunk = world.GetChunkSync(chunkXZ.x, chunkXZ.z) as Chunk;
+                //if (chunk != null && chunk.ChunkCustomData.dict.Count > 0)
+                //    SdtdConsole.Instance.Output(DumpCustomChunkData(chunk));
 
                 var areaMasterChunkXY = Chunk.ToAreaMasterChunkPos(worldPos);
-                //var areaMasterChunkXY = new Vector3i(World.toChunkXZ(worldPos.x) / 5 * 5, World.toChunkY(worldPos.y), World.toChunkXZ(worldPos.z) / 5 * 5);
                 SdtdConsole.Instance.Output($"Area master chunk (x z): {areaMasterChunkXY.x} {areaMasterChunkXY.z}");
-                var araeMasterChunk = world.GetChunkSync(areaMasterChunkXY.x, areaMasterChunkXY.z) as Chunk;
-                if (araeMasterChunk != null && araeMasterChunk.ChunkCustomData.Count > 0)
-                    SdtdConsole.Instance.Output(DumpCustomChunkData(araeMasterChunk));
+                //var araeMasterChunk = world.GetChunkSync(areaMasterChunkXY.x, areaMasterChunkXY.z) as Chunk;
+                //if (araeMasterChunk != null && araeMasterChunk.ChunkCustomData.dict.Count > 0)
+                //    SdtdConsole.Instance.Output(DumpCustomChunkData(araeMasterChunk));
 
                 var regionXZ = ChunkTools.ChunkXZToRegionXZ(chunkXZ);
                 SdtdConsole.Instance.Output($"Region file: r.{regionXZ.x}.{regionXZ.z}.7rg");
@@ -67,22 +66,22 @@ namespace ScriptingMod.Commands
             }
         }
 
-        public static string DumpCustomChunkData(Chunk chunk)
-        {
-            var str = new StringBuilder();
-            foreach (var key in chunk.ChunkCustomData.Keys)
-            {
-                var ccd = chunk.ChunkCustomData[key];
-                str.Append($"    ChunkCustomData[{key}]=");
-                if (key == "bspd.main")
-                    str.AppendLine(chunk.GetChunkBiomeSpawnData().ToString());
-                else
-                    str.AppendLine(ccd.data.Length + " bytes, starting with: " + Encoding.Default.GetString(ccd.data).Substring(0, 10));
-                var expires = ccd.expiresInWorldTime == ulong.MaxValue ? "never" : "in " + (ccd.expiresInWorldTime - GameManager.Instance.World.worldTime) + " ticks";
-                str.AppendLine($"        expires {expires}");
-                str.AppendLine($"        is{(ccd.isSavedToNetwork ? "" : " not")} saved to network");
-            } 
-            return str.ToString().TrimEnd();
-        }
+        //public static string DumpCustomChunkData(Chunk chunk)
+        //{
+        //    var str = new StringBuilder();
+        //    foreach (var key in chunk.ChunkCustomData.keyList)
+        //    {
+        //        var ccd = chunk.ChunkCustomData.dict[key];
+        //        str.Append($"    ChunkCustomData[{key}]=");
+        //        if (key == "bspd.main")
+        //            str.AppendLine(chunk.GetChunkBiomeSpawnData().ToString());
+        //        else
+        //            str.AppendLine(ccd.data.Length + " bytes, starting with: " + Encoding.Default.GetString(ccd.data).Substring(0, 10));
+        //        var expires = ccd.expiresInWorldTime == ulong.MaxValue ? "never" : "in " + (ccd.expiresInWorldTime - GameManager.Instance.World.worldTime) + " ticks";
+        //        str.AppendLine($"        expires {expires}");
+        //        str.AppendLine($"        is{(ccd.isSavedToNetwork ? "" : " not")} saved to network");
+        //    } 
+        //    return str.ToString().TrimEnd();
+        //}
     }
 }

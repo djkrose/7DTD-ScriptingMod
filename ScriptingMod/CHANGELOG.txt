@@ -1,5 +1,6 @@
-﻿Version 0.9 - compatible ONLY with A16.2 (b7)
+﻿Version 0.9 - compatible ONLY with A16.3 (b12)
 
+- Updated compatibility to 7DTD A16.3 (b12)
 - Replaced dj-power with dj-repair to add other fix tasks in the future.
 - Added repair task to restart stopped saving of power and vehicle data (also fixed in A16.3 b7)
 - Added repair task to reset locked biome respawn.

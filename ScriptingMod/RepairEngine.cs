@@ -362,7 +362,7 @@ namespace ScriptingMod
             if (Tasks.Contains("d"))
                 RepairChunkDensity(chunk);
 
-            foreach (var tileEntity in chunk.GetTileEntities().Values.ToList())
+            foreach (var tileEntity in chunk.GetTileEntities().list.ToList())
                 RepairTileEntity(tileEntity);
 
             _scannedChunks++;
