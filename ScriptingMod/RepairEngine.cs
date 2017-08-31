@@ -21,7 +21,9 @@ namespace ScriptingMod
     public enum RepairTasks
     {
         //                     |----------------------------------(max length: 120 char)----------------------------------------------------------------|
+#if DEBUG
         [RepairTask('D', "Repair chunk density causing distorted terrain, falling through the world, and the error message \"Failed setting triangles...\".")]
+#endif
         ChunkDensity       = 1,
         [RepairTask('L', "Fix death screen loop due to corrupt player files.")]
         DeathScreenLoop    = 2,
@@ -33,6 +35,10 @@ namespace ScriptingMod
         LockedBiomeRespawn = 16,
         [RepairTask('S', "Restart saving power and vehicle data (fixed in A16.3 b7).")]
         PowerVehicleSaving = 32,
+#if DEBUG
+        [RepairTask('F', "Remove endlessly falling blocks.")]
+#endif
+        FallingBlocks = 64,
 
         None               = 0,
         Default            = ~0
