@@ -13,38 +13,6 @@ namespace ScriptingMod.Commands
     public class Repair : ConsoleCmdAbstract
     {
 
-        /// <summary>
-        /// Sorted repair task letters that make up the RepairTasks.Default flag, e.g. "DLMPR".
-        /// RepairTasks.Default doesn't HAVE to include ALL tasks but could exclude experimental tasks.
-        /// </summary>
-        private static readonly string DefaultTaskLetters = Enum.GetValues(typeof(RepairTasks))
-            .Cast<RepairTasks>()
-            .Where(task => RepairTasks.Default.HasFlag(task))
-            .Select(task => task.GetAttributeOfType<RepairTaskAttribute>())
-            .Where(attr => attr != null)
-            .OrderBy(attr => attr.Letter)
-            .Aggregate("", (str, attr) => str + attr.Letter);
-
-        /// <summary>
-        /// Dictionary of repair task letter => Task to quickly find the task for a letter
-        /// </summary>
-        private static readonly Dictionary<char, RepairTasks> TasksDict = Enum.GetValues(typeof(RepairTasks))
-            .Cast<RepairTasks>()
-            .Select(task => new { Attribute = task.GetAttributeOfType<RepairTaskAttribute>(), Task = task })
-            .Where(o => o.Attribute != null)
-            .ToDictionary(o => o.Attribute.Letter, o => o.Task);
-
-        /// <summary>
-        /// List of "repair task letter  =>  description" as multi-line string with indentation except for the first line
-        /// </summary>
-        private static readonly string TasksHelp = Enum.GetValues(typeof(RepairTasks))
-            .Cast<RepairTasks>()
-            .Select(task => task.GetAttributeOfType<RepairTaskAttribute>())
-            .Where(attr => attr != null)
-            .OrderBy(attr => attr.Letter)
-            .Aggregate("", (str, attr) => str + $"                    {attr.Letter}  =>  {attr.Description}\r\n")
-            .Trim();
-
         public override string[] GetCommands()
         {
             return new[] { "dj-repair" };
@@ -60,11 +28,11 @@ namespace ScriptingMod.Commands
             // ----------------------------------(max length: 120 char)----------------------------------------------------------------|
             return $@"
                 Scans for server problems of various kinds and tries to repair them. Currently supported scan & repair tasks:
-                    {TasksHelp}
+                    {RepairEngine.TasksDict.Aggregate("", (str, kv) => str + $"                    {kv.Key}  =>  {kv.Value}\r\n").Trim()}
                 Usage:
                     1. dj-repair [/sim] [/auto] [/interval=<seconds>]
                     2. dj-repair <task letters> [/sim] [/auto] [/interval=<seconds>]
-                1. Performs all default repair tasks. Same as ""dj-repair {DefaultTaskLetters}"".
+                1. Performs all default repair tasks. Same as ""dj-repair {RepairEngine.TasksDefault}"".
                 2. Performs the repair tasks identified by their letter(s).
                 Optional parameters:
                     /sim                 Simulate scan and report results without actually repairing anything
@@ -106,7 +74,7 @@ namespace ScriptingMod.Commands
             }
         }
 
-        private static void ParseParams(List<string> parameters, out RepairTasks tasks, out bool simulate, out bool auto, out int? timerInterval)
+        private static void ParseParams(List<string> parameters, out string tasks, out bool simulate, out bool auto, out int? timerInterval)
         {
             simulate = parameters.Remove("/sim");
             auto = parameters.Remove("/auto");
@@ -118,19 +86,22 @@ namespace ScriptingMod.Commands
             switch (parameters.Count)
             {
                 case 0:
-                    tasks = RepairTasks.Default;
+                    tasks = RepairEngine.TasksDefault;
                     break;
 
                 case 1:
-                    tasks = RepairTasks.None;
-                    string taskLetters = parameters[0].ToUpper().Trim();
-
-                    foreach (char letter in taskLetters)
+                    tasks = "";
+                    string letters = parameters[0];
+                    foreach (var key in RepairEngine.TasksDict.Keys)
                     {
-                        if (!TasksDict.ContainsKey(letter))
-                            throw new FriendlyMessageException($"Did not recognize task letter '{letter}'. See help.");
-                        tasks |= TasksDict[letter];
+                        if (letters.Contains(key))
+                        {
+                            tasks += key;
+                            letters = letters.Replace(key, "");
+                        }
                     }
+                    if (letters.Length > 0)
+                        throw new FriendlyMessageException($"Did not recognize task letter{(letters.Length == 1 ? "" : "s")} '{letters}'. See help.");
                     break;
 
                 default:

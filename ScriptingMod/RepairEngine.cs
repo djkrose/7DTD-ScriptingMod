@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -13,36 +12,8 @@ using UnityEngine;
 namespace ScriptingMod
 {
     /*
-     * TODO [P2]: Simplify RepairTasks enum to use letters
      * TODO [P2]: Simplify persistency to store entire RepairEngine for background tasks
      */
-
-    [Flags]
-    public enum RepairTasks
-    {
-        //                     |----------------------------------(max length: 120 char)----------------------------------------------------------------|
-#if DEBUG
-        [RepairTask('D', "Repair chunk density causing distorted terrain, falling through the world, and the error message \"Failed setting triangles...\".")]
-#endif
-        ChunkDensity       = 1,
-        [RepairTask('L', "Fix death screen loop due to corrupt player files.")]
-        DeathScreenLoop    = 2,
-        [RepairTask('M', "Bring all stuck minibikes to the surface.")]
-        StuckMinibikes     = 4,
-        [RepairTask('P', "Fix corrupt power blocks and error message \"NullReferenceException at TileEntityPoweredTrigger.write ...\".")]
-        CorruptPowerBlocks = 8,
-        [RepairTask('R', "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen. (EXPERIMENTAL)")]
-        LockedBiomeRespawn = 16,
-        [RepairTask('S', "Restart saving power and vehicle data (fixed in A16.3 b7).")]
-        PowerVehicleSaving = 32,
-#if DEBUG
-        [RepairTask('F', "Remove endlessly falling blocks.")]
-#endif
-        FallingBlocks = 64,
-
-        None               = 0,
-        Default            = ~0
-    }
 
     internal class RepairEngine
     {
@@ -65,14 +36,32 @@ namespace ScriptingMod
         public bool Simulate;
 
         /// <summary>
-        /// Allows defining the problems to scan for, using binary flags (multiple possible)
-        /// Default: RepairTasks.All
+        /// List of available repair tasks with a unique key and their description.
         /// </summary>
-        // Will later probably used in PersistentData, therefore:
-        // ReSharper disable once FieldCanBeMadeReadOnly.Global
-        // ReSharper disable once MemberCanBePrivate.Global
-        // ReSharper disable once MemberInitializerValueIgnored
-        public RepairTasks Tasks = RepairTasks.Default;
+        public static readonly SortedDictionary<string, string> TasksDict = new SortedDictionary<string, string>
+        {
+#if DEBUG
+            { "d", "Repair chunk density causing distorted terrain, falling through the world, and the error message \"Failed setting triangles...\"."},
+#endif
+            //{"f", "Remove endlessly falling blocks."},
+            //{"l", "Fix death screen loop due to corrupt player files."},
+            //{"m", "Bring all stuck minibikes to the surface."},
+            {"p", "Fix corrupt power blocks and error message \"NullReferenceException at TileEntityPoweredTrigger.write ...\"."},
+            {"r", "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen. (EXPERIMENTAL)"},
+            {"s", "Restart saving power and vehicle data (fixed in A16.3 b7)."},
+        };
+
+#if DEBUG
+        public const string TasksDefault = "dprs";
+#else
+        public const string TasksDefault = "RPS";
+#endif
+
+        /// <summary>
+        /// Uppercae letters of tasks to scan for; can be empty but never null
+        /// </summary>
+        [NotNull]
+        public string Tasks;
 
         /// <summary>
         /// Allows assigning a method that outputs status information to the console, e.g. SdtdConsole.Output
@@ -126,7 +115,7 @@ namespace ScriptingMod
         private static System.Threading.Timer _backgroundTimer;
         private static object _syncLock = new object();
 
-        public RepairEngine(RepairTasks tasks, bool simulate)
+        public RepairEngine(string tasks, bool simulate)
         {
             Tasks = tasks;
             Simulate = simulate;
@@ -179,7 +168,7 @@ namespace ScriptingMod
             PersistentData.Instance.RepairInterval = TimerInterval;
             PersistentData.Instance.Save();
 
-            if (Tasks.HasFlag(RepairTasks.CorruptPowerBlocks))
+            if (Tasks.Contains("p"))
                 Application.logMessageReceived += OnLogMessageReceived;
 
             _backgroundTimer = new System.Threading.Timer(delegate
@@ -204,7 +193,7 @@ namespace ScriptingMod
                 }
             }, null, TimerDelay, TimerInterval * 1000);
 
-            LogAndOutput($"Automatic background {(Simulate ? "scan (without repair)" : "repair")} for server problem(s) {GetTaskLetters(Tasks)} every {TimerInterval} seconds turned ON.");
+            LogAndOutput($"Automatic background {(Simulate ? "scan (without repair)" : "repair")} for server problem(s) {Tasks} every {TimerInterval} seconds turned ON.");
             Output("To turn off, enter \"dj-repair /auto\" again.");
         }
 
@@ -217,7 +206,7 @@ namespace ScriptingMod
             _backgroundTimer?.Dispose();
 
             LogAndOutput($"Automatic background {(PersistentData.Instance.RepairSimulate ? "scan (without repair)" : "repair")} for server problems " +
-                         $"{GetTaskLetters(PersistentData.Instance.RepairTasks)} turned OFF.");
+                         $"{PersistentData.Instance.RepairTasks} turned OFF.");
             Output($"Report: {PersistentData.Instance.RepairCounter} problem{(PersistentData.Instance.RepairCounter == 1 ? " was" : "s were")} " +
                    $"{(PersistentData.Instance.RepairSimulate ? "identified" : "repaired")} since it was turned on.");
 
@@ -255,7 +244,7 @@ namespace ScriptingMod
                     Log.Out("Detected NRE TileEntityPoweredTrigger.write. Starting integrity scan in background ...");
                     try
                     {
-                        var repairEngine = new RepairEngine(RepairTasks.CorruptPowerBlocks, PersistentData.Instance.RepairSimulate);
+                        var repairEngine = new RepairEngine("p", PersistentData.Instance.RepairSimulate);
                         repairEngine.Start();
 
                         if (repairEngine._problemsFound >= 1)
@@ -280,7 +269,7 @@ namespace ScriptingMod
         public void Start()
         {
             // Should not happen when parameters are parsed correctly
-            if (Tasks == RepairTasks.None)
+            if (Tasks == string.Empty)
                 throw new ApplicationException("No repair tasks set.");
 
             if (!Monitor.TryEnter(_syncLock))
@@ -301,13 +290,13 @@ namespace ScriptingMod
         private void StartUnsynchronized()
         {
             _stopwatch = new MicroStopwatch(true);
-            LogAndOutput($"{(Simulate ? "Scan (without repair)" : "Repair")} for server problem(s) {GetTaskLetters(Tasks)} started.");
+            LogAndOutput($"{(Simulate ? "Scan (without repair)" : "Repair")} for server problem(s) {Tasks} started.");
 
-            if (Tasks.HasFlag(RepairTasks.PowerVehicleSaving))
+            if (Tasks.Contains("s"))
                 RepairPowerVehicleSaving();
 
             // Scan chunks -> tile entities
-            if (Tasks.HasFlag(RepairTasks.CorruptPowerBlocks) || Tasks.HasFlag(RepairTasks.LockedBiomeRespawn))
+            if (Tasks.Contains("p") || Tasks.Contains("r"))
             {
                 if (World.ChunkCache == null || World.ChunkCache.Count() == 0)
                 {
@@ -367,10 +356,10 @@ namespace ScriptingMod
         /// <param name="chunk">The chunk object; must be loaded and ready</param>
         private void RepairChunk([NotNull] Chunk chunk)
         {
-            if (Tasks.HasFlag(RepairTasks.LockedBiomeRespawn))
+            if (Tasks.Contains("r"))
                 RepairChunkRespawn(chunk);
 
-            if (Tasks.HasFlag(RepairTasks.ChunkDensity))
+            if (Tasks.Contains("d"))
                 RepairChunkDensity(chunk);
 
             foreach (var tileEntity in chunk.GetTileEntities().Values.ToList())
@@ -518,22 +507,6 @@ namespace ScriptingMod
 
                 LogAndOutput($"{(Simulate ? "Found" : "Repaired")} corrupt power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.");
             }
-        }
-
-        /// <summary>
-        /// Returns all task letters of the given tasks flag combinations, e.g. "DLMPR" for RepairTasks.Default
-        /// </summary>
-        /// <param name="tasks">Binary flags of RepairTasks</param>
-        /// <returns>Sorted uppercase letters as string</returns>
-        private static string GetTaskLetters(RepairTasks tasks)
-        {
-            return Enum.GetValues(typeof(RepairTasks))
-                .Cast<RepairTasks>()
-                .Where(task => tasks.HasFlag(task))
-                .Select(task => task.GetAttributeOfType<RepairTaskAttribute>())
-                .Where(attr => attr != null)
-                .OrderBy(attr => attr.Letter)
-                .Aggregate("", (str, attr) => str + attr.Letter);
         }
 
         /// <summary>

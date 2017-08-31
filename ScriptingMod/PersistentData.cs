@@ -19,29 +19,11 @@ namespace ScriptingMod
 
         [UsedImplicitly]
         public const int FileVersion = 3;
+        public bool RepairAuto;
+        public string RepairTasks;
         public bool RepairSimulate;
-        public RepairTasks RepairTasks;
         public int RepairInterval; // seconds
-
-        [Obsolete("Use RepairAuto instead. To be removed in version 0.10.")]
-        [UsedImplicitly]
-        public bool CheckPowerAuto;
-        private bool _repairAuto;
-        public bool RepairAuto
-        {
-            get { return _repairAuto || CheckPowerAuto; }
-            set { CheckPowerAuto = _repairAuto = value; }
-        }
-
-        [Obsolete("Use RepairCounter instead. To be removed in version 0.10.")]
-        [UsedImplicitly]
-        public int CheckPowerCounter;
-        private int _repairCounter;
-        public int RepairCounter
-        {
-            get { return Math.Max(_repairCounter, CheckPowerCounter); }
-            set { CheckPowerCounter = _repairCounter = value; }
-        }
+        public int RepairCounter;
 
         public void Save()
         {
