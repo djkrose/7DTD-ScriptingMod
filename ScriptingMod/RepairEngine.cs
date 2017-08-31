@@ -48,14 +48,9 @@ namespace ScriptingMod
             //{"m", "Bring all stuck minibikes to the surface."},
             {"p", "Fix corrupt power blocks and error message \"NullReferenceException at TileEntityPoweredTrigger.write ...\"."},
             {"r", "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen. (EXPERIMENTAL)"},
-            {"s", "Restart saving power and vehicle data (fixed in A16.3 b7)."},
         };
 
-#if DEBUG
-        public const string TasksDefault = "dprs";
-#else
-        public const string TasksDefault = "RPS";
-#endif
+        public const string TasksDefault = "pr";
 
         /// <summary>
         /// Uppercae letters of tasks to scan for; can be empty but never null
@@ -193,7 +188,7 @@ namespace ScriptingMod
                 }
             }, null, TimerDelay, TimerInterval * 1000);
 
-            LogAndOutput($"Automatic background {(Simulate ? "scan (without repair)" : "repair")} for server problem(s) {Tasks} every {TimerInterval} seconds turned ON.");
+            LogAndOutput($"Automatic background {(Simulate ? "scan (without repair)" : "repair")} for server problem{(Tasks.Length == 1 ? "" : "s")} {Tasks} every {TimerInterval} seconds turned ON.");
             Output("To turn off, enter \"dj-repair /auto\" again.");
         }
 
@@ -292,11 +287,8 @@ namespace ScriptingMod
             _stopwatch = new MicroStopwatch(true);
             LogAndOutput($"{(Simulate ? "Scan (without repair)" : "Repair")} for server problem(s) {Tasks} started.");
 
-            if (Tasks.Contains("s"))
-                RepairPowerVehicleSaving();
-
             // Scan chunks -> tile entities
-            if (Tasks.Contains("p") || Tasks.Contains("r"))
+            if (Tasks.Contains("p") || Tasks.Contains("r") || Tasks.Contains("d"))
             {
                 if (World.ChunkCache == null || World.ChunkCache.Count() == 0)
                 {
@@ -324,30 +316,6 @@ namespace ScriptingMod
             Log.Out(msg);
             Output(msg + " [details in server log]");
             Log.Debug($"Repair engine done. Execution took {_stopwatch.ElapsedMilliseconds} ms.");
-        }
-
-        /// <summary>
-        /// Removes thread list entries that sometimes keep existing after the save thread has ended and prevents further saving.
-        /// </summary>
-        private void RepairPowerVehicleSaving()
-        {
-            Log.Debug("Scanning for stopped power and vehicle data saving ...");
-
-            // A bit risky because we could catch the thread JUST during it is actually active,
-            // but the fix will not last long anyway since it's fixed in A16.3 b7
-            if (ThreadManager.ActiveThreads.ContainsKey("silent_powerDataSave"))
-            {
-                WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} apparently stopped saving of power data.");
-                if (!Simulate)
-                    ThreadManager.ActiveThreads.Remove("silent_powerDataSave");
-            }
-
-            if (ThreadManager.ActiveThreads.ContainsKey("silent_vehicleDataSave"))
-            {
-                WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} apparently stopped saving of vehicle data.");
-                if (!Simulate)
-                    ThreadManager.ActiveThreads.Remove("silent_vehicleDataSave");
-            }
         }
 
         /// <summary>

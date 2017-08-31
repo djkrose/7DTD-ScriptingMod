@@ -40,8 +40,8 @@ namespace ScriptingMod.Commands
                     /interval=<seconds>  Interval for how often automatic repairing should occur. Default: 600 (every 10 minutes)
                 Examples:
                     dj-repair                          Perform the default repair tasks now.
-                    dj-repair P /sim                   Scan for corrupt powerblocks but don't repair anything.
-                    dj-repair DM /auto /interval=300   Repair density and minibikes every 5 minutes.
+                    dj-repair p /sim                   Scan for corrupt powerblocks but don't repair anything.
+                    dj-repair pr /auto /interval=300   Repair density and respawn every 5 minutes.
                 ".Unindent();
         }
 
