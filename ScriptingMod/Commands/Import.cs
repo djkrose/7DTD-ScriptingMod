@@ -127,7 +127,7 @@ namespace ScriptingMod.Commands
             }
             else if (parameters.Count == 4 || parameters.Count == 5)
             {
-                pos1 = senderInfo.GetRemoteClientInfo().GetEntityPlayer().GetServerPos().ToVector3i();
+                pos1 = CommandTools.ParseXYZ(parameters, 1);
             }
             else
             {
