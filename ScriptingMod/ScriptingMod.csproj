@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
+    <Compile Include="Commands\Power.cs" />
     <Compile Include="Extensions\ClientInfoExtensions.cs" />
     <Compile Include="Extensions\CommandSenderInfoExtensions.cs" />
     <Compile Include="Extensions\EntityPlayerExtensions.cs" />
