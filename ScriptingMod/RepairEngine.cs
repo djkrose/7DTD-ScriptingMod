@@ -51,7 +51,7 @@ namespace ScriptingMod
         public const string TasksDefault = "dpr";
 
         /// <summary>
-        /// Uppercae letters of tasks to scan for; can be empty but never null
+        /// Case-sensitive letters of tasks to scan for; can be empty but never null
         /// </summary>
         [NotNull]
         public string Tasks;
