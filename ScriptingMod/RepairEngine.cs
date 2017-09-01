@@ -40,17 +40,15 @@ namespace ScriptingMod
         /// </summary>
         public static readonly SortedDictionary<string, string> TasksDict = new SortedDictionary<string, string>
         {
-#if DEBUG
-            { "d", "Repair chunk density causing distorted terrain, falling through the world, and the error message \"Failed setting triangles...\"."},
-#endif
+            { "d", "Repair chunk density causing distorted textures and the error \"Failed setting triangles...\". (can take long)"},
             //{"f", "Remove endlessly falling blocks."},
             //{"l", "Fix death screen loop due to corrupt player files."},
             //{"m", "Bring all stuck minibikes to the surface."},
-            {"p", "Fix corrupt power blocks and error message \"NullReferenceException at TileEntityPoweredTrigger.write ...\"."},
-            {"r", "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen. (EXPERIMENTAL)"},
+            {"p", "Fix corrupt power blocks and error \"NullReferenceException at TileEntityPoweredTrigger.write ...\"."},
+            {"r", "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen."},
         };
 
-        public const string TasksDefault = "pr";
+        public const string TasksDefault = "dpr";
 
         /// <summary>
         /// Uppercae letters of tasks to scan for; can be empty but never null
@@ -59,10 +57,9 @@ namespace ScriptingMod
         public string Tasks;
 
         /// <summary>
-        /// Allows assigning a method that outputs status information to the console, e.g. SdtdConsole.Output
+        /// When set, output can be sent back to the console of the sender; if set to null, no console output is sent
         /// </summary>
-        [CanBeNull]
-        public Action<string> ConsoleOutput;
+        public CommandSenderInfo? SenderInfo;
 
         private int _timerInterval = 60 * 10; // every 10 minutes
 
@@ -661,9 +658,8 @@ namespace ScriptingMod
 
         private void Output(string msg)
         {
-            if (ConsoleOutput == null)
-                return;
-            ConsoleOutput(msg);
+            if (SenderInfo != null)
+                SdtdConsole.Instance.OutputAsync(SenderInfo.Value, msg);
         }
     }
 }

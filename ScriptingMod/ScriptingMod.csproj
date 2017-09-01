@@ -84,7 +84,6 @@
     <Compile Include="Extensions\CommandSenderInfoExtensions.cs" />
     <Compile Include="Extensions\EntityPlayerExtensions.cs" />
     <Compile Include="Extensions\EnumExtensions.cs" />
-    <Compile Include="RepairTaskAttribute.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
     <Compile Include="Vector2xz.cs" />
@@ -169,6 +168,7 @@
     <EmbeddedResource Include="Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

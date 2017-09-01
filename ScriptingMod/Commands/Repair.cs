@@ -41,7 +41,7 @@ namespace ScriptingMod.Commands
                 Examples:
                     dj-repair                          Perform the default repair tasks now.
                     dj-repair p /sim                   Scan for corrupt powerblocks but don't repair anything.
-                    dj-repair pr /auto /interval=300   Repair density and respawn every 5 minutes.
+                    dj-repair dr /auto /interval=300   Repair density and respawn every 5 minutes.
                 ".Unindent();
         }
 
@@ -52,7 +52,7 @@ namespace ScriptingMod.Commands
                 ParseParams(parameters, out var tasks, out bool simulate, out bool auto, out int? timerInterval);
 
                 var repairEngine = new RepairEngine(tasks, simulate);
-                repairEngine.ConsoleOutput = SdtdConsole.Instance.Output;
+                repairEngine.SenderInfo = senderInfo;
                 if (timerInterval != null)
                     repairEngine.TimerInterval = timerInterval.Value;
 
@@ -64,13 +64,26 @@ namespace ScriptingMod.Commands
                         repairEngine.AutoOff();
                 }
                 else
-                { 
-                    repairEngine.Start();
+                {
+                    ThreadManager.AddSingleTask(info => StartEngineAsync(repairEngine, senderInfo));
                 }
             }
             catch (Exception ex)
             {
                 CommandTools.HandleCommandException(ex);
+            }
+        }
+
+        private void StartEngineAsync(RepairEngine repairEngine, CommandSenderInfo senderInfo)
+        {
+            try
+            {
+                repairEngine.Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex);
+                SdtdConsole.Instance.OutputAsync(senderInfo, string.Format(Resources.ErrorDuringCommand, ex.Message));
             }
         }
 
