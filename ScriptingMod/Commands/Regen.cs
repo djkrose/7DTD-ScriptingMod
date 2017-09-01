@@ -28,7 +28,7 @@ namespace ScriptingMod.Commands
 
         public override string GetDescription()
         {
-            return @"Regenerates a chunk or custom area.";
+            return @"Regenerates a chunk or custom area based on the world seed.";
         }
 
         public override string GetHelp()
