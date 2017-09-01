@@ -20,11 +20,11 @@ namespace ScriptingMod.Commands
 
         public override string GetDescription()
         {
-            return "Replaced by command: dj-repair";
+            return "Replaced with command: dj-repair";
         }
 
         private const string Help =
-            "This command got replaced by \"dj-repair\", which now supports multiple different fixes.\r\n"+
+            "This command got replaced with \"dj-repair\", which now supports multiple different fixes.\r\n"+
             "Note that \"/fix\" mode is now default. If you want to report only, use \"/sim\" to simulate.\r\n" +
             "See \"help dj-repair\" for details.";
 
