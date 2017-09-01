@@ -62,19 +62,21 @@ console.log("Hello JavaScript World!");
 
 ## Built-in Commands
 
-* Import/export prefabs <b>with container content, ownership, lock status, sign texts, electricity settings, and wires</b>, and all other metadata.<br>
-  &ndash;&nbsp; Fully restore griefed bases with one command!<br>
-  &ndash;&nbsp; Copy buildings from server to server or between server versions after world reset.<br>
-  &ndash;&nbsp; Create prefabs with complex electricity setups
-* Fully regenerate chunks or large areas including terrain, prefabs, cars, loot, vegetation, and even trader NPCs
-* Fix for broken power blocks causing NullReferenceException [...] at TileEntityPoweredTrigger.write and other errors
-* Command to show position including chunk number, region file, and other position data
-* [more to come shortly]
+<table>
+<tr><td>dj-export</td><td>Exports a prefab including all container content, sign texts, ownership, etc.</td></tr>
+<tr><td>dj-import</td><td>Imports a prefab, optionally including all container content, sign texts, ownership, etc.</td></tr>
+<tr><td>dj-pos</td><td>Shows the current player's position in various units and formats.</td></tr>
+<tr><td>dj-regen</td><td>Regenerates a chunk or custom area based on the world seed.</td></tr>
+<tr><td>dj-repair</td><td>Repairs server problems of various kinds. *NEW!*</td></tr>
+<tr><td>dj-reset-js</td><td>Clears the JavaScript engine from all variables and loaded modules.</td></tr>
+<tr><td>dj-reset-lua</td><td>Clears the Lua engine from all variables and loaded modules.</td></tr>
+<tr><td>dj-version</td><td>Shows djkrose's Scripting Mod version information.</td></tr>
+</table>
 
 ## Compatibility
 
  * **Dedicated Server** of [7 Days to Die](http://store.steampowered.com/app/251570/7_Days_to_Die/). The mod is not meant to be used with the desktop client.
- * Tested with 7DTD **Alpha 16.2 (b7)** but future versions might also work
+ * For specific version compatibility, see release notes.
  * Developed and tested on **Windows**. Linux may or may not work; reports are welcome!
  * **No dependencies**: No other mods or other software is required.
  * Successfully tested together with these great mods:
@@ -95,8 +97,6 @@ The mod is still in early development and I want to add a lot more to it. Here a
 * Many more example scripts in Lua and JavaScript to get you started quicker
 * Event system to execute scripts based on game events like player logged in, player killed, bloodmoon starting,  etc.
 * Option to execute commands through chat messages rather than console commands, for instance /home or !home
-* Command to regenerate a custom area, for example to fix griefed areas and refresh POI's
-* Integration with  https://7daystodie-servers.com/ voting system to execute custom scripts on player's vote
 
 This is just a rough outline; everything is subject to change depending on your feedback, on feasibility, on my real life commitments, and simply on my  pleasure to continue in any direction or at all.
 
