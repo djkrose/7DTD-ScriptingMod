@@ -10,12 +10,12 @@ using ScriptingMod.Tools;
 namespace ScriptingMod.Commands
 {
     [UsedImplicitly]
-    public class Power : ConsoleCmdAbstract
+    public class CheckPower : ConsoleCmdAbstract
     {
 
         public override string[] GetCommands()
         {
-            return new[] { "dj-power" };
+            return new[] { "dj-check-power" };
         }
 
         public override string GetDescription()
