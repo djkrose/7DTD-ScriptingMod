@@ -101,6 +101,9 @@ namespace ScriptingMod.Commands
             // Parse /all parameter
             var all = parameters.Remove("/all");
 
+            if (parameters.Count == 0)
+                throw new FriendlyMessageException(Resources.ErrorParameerCountNotValid);
+
             // Parse prefab name
             var prefabName = parameters[0];
 

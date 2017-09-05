@@ -1,9 +1,14 @@
-﻿Version 0.9 - compatible ONLY with A16.3 (b12)
+﻿Version 0.10
+
+- Fixed error message when dj-import is called without parameter
+
+
+Version 0.9 - compatible ONLY with A16.3 (b12)
 
 - Updated compatibility to 7DTD A16.3 (b12)
 - Replaced dj-power with dj-repair to add other fix tasks in the future.
 - Added repair task to restart stopped saving of power and vehicle data (also fixed in A16.3 b7)
-- Added repair task to reset locked biome respawn.
+- Added repair task to reset locked biome respawn
 - Fixed bug that would trigger automatic fixing of power chunks also on unrelated errors
 - Fixed error message on import of rotated prefab with /all option
 - Fixed occasional error "Could not add newly generated chunk to cache." in dj-regen command
