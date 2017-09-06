@@ -84,6 +84,8 @@ namespace ScriptingMod.ScriptEngines
 
         public abstract void SetValue(string name, object value);
 
+        public abstract void Reset();
+
         public virtual Dictionary<string, string> LoadMetadata(string filePath)
         {
             var script = File.ReadAllText(filePath);

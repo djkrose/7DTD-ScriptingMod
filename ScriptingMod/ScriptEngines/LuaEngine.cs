@@ -76,7 +76,7 @@ namespace ScriptingMod.ScriptEngines
             _lua[name] = value;
         }
 
-        public void Reset()
+        public override void Reset()
         {
             _lua?.Dispose();
             InitLua();

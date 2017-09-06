@@ -69,7 +69,7 @@ namespace ScriptingMod.ScriptEngines
             _jint.SetValue(name, value);
         }
 
-        public void Reset()
+        public override void Reset()
         {
             _jint = null;
             InitJs();

@@ -78,6 +78,8 @@ namespace ScriptingMod.Tools
                 // ReSharper disable once AssignNullToNotNullAttribute
                 Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath));
 
+                // TODO: Simpify the whole engine class construct now that we always reset the engine
+                scriptEngine.Reset();
                 scriptEngine.SetValue("params", paramsList.ToArray());
 
                 try

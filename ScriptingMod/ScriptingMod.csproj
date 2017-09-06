@@ -92,7 +92,6 @@
     <Compile Include="Commands\Test.cs" />
     <Compile Include="Commands\Repair.cs" />
     <Compile Include="Commands\Pos.cs" />
-    <Compile Include="Commands\ResetJs.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Exceptions\ReflectionException.cs" />
     <Compile Include="Extensions\NonPublic.cs" />
@@ -113,7 +112,6 @@
     <Compile Include="Commands\Export.cs" />
     <Compile Include="Commands\Import.cs" />
     <Compile Include="Commands\DynamicCommand.cs" />
-    <Compile Include="Commands\ResetLua.cs" />
     <Compile Include="Commands\Version.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="DumperOptions.cs" />
