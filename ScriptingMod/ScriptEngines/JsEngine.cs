@@ -23,32 +23,10 @@ namespace ScriptingMod.ScriptEngines
 
         private void InitJs()
         {
-            FixTimeZoneInfoLocal();
             _jint = new Engine(cfg => cfg.AllowClr());
             _jint.SetValue("console", new Console());
             _jint.SetValue("require", new Action<object>(Require));
             InitValues();
-        }
-
-        private void FixTimeZoneInfoLocal()
-        {
-            // Mono CLR's implementation of System.TimeZoneInfo.Local has a _bug that throws System.TimeZoneNotFoundException
-            // on Windows: https://bugzilla.xamarin.com/show_bug.cgi?id=11817
-            // This can be circumvented by manually setting the private field "local" to Utc. See source code:
-            // https://github.com/mono/mono/blob/master/mcs/class/corlib/System/TimeZoneInfo.cs
-            if (Type.GetType("Mono.Runtime") != null)
-            {
-                try
-                {
-                    // ReSharper disable once PossibleNullReferenceException
-                    typeof(TimeZoneInfo).GetField("local", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, TimeZoneInfo.Utc);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning("Could not apply workaround for Mono bug in TimeZoneInfo.Local. Jint initialization will probably fail.");
-                    Log.Debug(ex.ToString());
-                }
-            }
         }
 
         public override void ExecuteFile(string filePath)
