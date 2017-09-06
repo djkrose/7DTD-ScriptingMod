@@ -85,6 +85,7 @@ namespace ScriptingMod.Tools
                     scriptEngine.ExecuteFile(filePath);
                 }
                 // LuaScriptException is already handled in LuaEngine
+                // JavaScriptException is already handled in JsEngine
                 catch (Exception ex)
                 {
                     SdtdConsole.Instance.Output($"Script {fileName} failed: " + ex.GetType().FullName + ": " + ex.Message + " [details in server log]");

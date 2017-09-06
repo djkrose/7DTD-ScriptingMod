@@ -47,7 +47,7 @@ namespace ScriptingMod.ScriptEngines
 
         protected void InitValues()
         {
-            SetValue("dump", new Action<object, int>(Dump));
+            SetValue("dump", new Action<object, int?>(Dump));
             SetValue("GameManager", GameManager.Instance);
         }
 
@@ -117,20 +117,25 @@ namespace ScriptingMod.ScriptEngines
 
         #region Methods exposed in scripts
 
-        protected virtual void Dump(object obj, int depth = 4)
+        // TODO: Test and fix the SdtdConsole output for asynchronous/callbacks
+        protected virtual void Dump(object obj, int? depth)
         {
-            var output = Dumper.Dump(obj, depth);
+            // We cannot use optional parameter "int depth = 1" because that doesn't work with Mono's dynamic invocation
+            if (depth == null)
+                depth = 1;
+
+            var output = Dumper.Dump(obj, depth.Value);
 
             if (output.Length > 1024)
             {
                 var truncated = output.Substring(0, 1024);
                 SdtdConsole.Instance.Output(truncated + " [...]\r\n[output truncated; full output in log file]");
-                Log.Debug(output);
             }
             else
             {
                 SdtdConsole.Instance.Output(output);
             }
+            Log.Out(output);
         }
 
         #endregion

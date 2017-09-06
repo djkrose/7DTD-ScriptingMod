@@ -79,5 +79,17 @@ namespace ScriptingMod.Extensions
             while (end >= start && sourceArr[end].All(char.IsWhiteSpace)) end--;
             return sourceArr.Skip(start).Take(end - start + 1);
         }
+
+        /// <summary>
+        /// Adds the given number of space characters in front of every line in the string
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        public static string Indent(this string source, int level)
+        {
+            string prefix = new string(' ', level);
+            return prefix + source.Replace("\n", "\n" + prefix);
+        }
     }
 }

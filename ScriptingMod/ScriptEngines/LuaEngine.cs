@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using NLua;
 using NLua.Exceptions;
+using ScriptingMod.Extensions;
 
 namespace ScriptingMod.ScriptEngines
 {
@@ -45,31 +46,29 @@ namespace ScriptingMod.ScriptEngines
             }
             catch (LuaScriptException ex)
             {
+                SdtdConsole.Instance.Output($"Lua script error in {fileName}: " + GetShortErrorMessage(ex) + " [details in server log]");
+
                 // LuaScriptException.ToString() does not - against convention - print stack trace or inner exceptions
-
-                // Create short message for console
-                var shortMessage = (ex.Source ?? "") + ex.Message;
-                Exception curr = ex;
-                while (curr.InnerException != null)
-                {
-                    curr = curr.InnerException;
-                    shortMessage += " ---> " + curr.GetType().FullName + ": " + curr.Message;
-                }
-                if (ex.InnerException != null)
-                    shortMessage += " [details in server log]";
-                SdtdConsole.Instance.Output($"Lua script {fileName} failed: " + shortMessage);
-
-                // Create long message with stack trace for log file
-                var fullMessage = ex.GetType().FullName + ": " + (ex.Source ?? "") + ex.Message;
-                if (ex.InnerException != null)
-                    fullMessage += " ---> " + ex.InnerException + Environment.NewLine + "   --- End of inner exception stack trace ---";
-                if (ex.StackTrace != null)
-                    fullMessage += Environment.NewLine + ex.StackTrace;
-                Log.Error($"Lua script {fileName} failed: " + fullMessage);
+                Log.Error($"Lua script error in {fileName}: " + (ex.Source ?? "") + ex.ToStringDefault());
 
                 // Dump only for me
-                Log.Dump(ex);
+                Log.Dump(ex, 2);
             }
+        }
+
+        /// <summary>
+        /// Returns type and message of the exception and all inner exceptions, but not the stack trace
+        /// </summary>
+        private string GetShortErrorMessage(LuaScriptException ex)
+        {
+            var shortMessage = (ex.Source ?? "") + ex.Message;
+            Exception curr = ex;
+            while (curr.InnerException != null)
+            {
+                curr = curr.InnerException;
+                shortMessage += " ---> " + curr.GetType().FullName + ": " + curr.Message;
+            }
+            return shortMessage;
         }
 
         public override void SetValue(string name, object value)
@@ -83,7 +82,7 @@ namespace ScriptingMod.ScriptEngines
             InitLua();
         }
 
-        #region Methods exposed in Lua
+        #region Exposed in Lua
 
         private void Print(params object[] values)
         {

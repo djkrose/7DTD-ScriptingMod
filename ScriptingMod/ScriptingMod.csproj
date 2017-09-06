@@ -84,6 +84,7 @@
     <Compile Include="Extensions\CommandSenderInfoExtensions.cs" />
     <Compile Include="Extensions\EntityPlayerExtensions.cs" />
     <Compile Include="Extensions\EnumExtensions.cs" />
+    <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
     <Compile Include="Vector2xz.cs" />
