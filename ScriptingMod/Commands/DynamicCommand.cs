@@ -1,18 +1,22 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
+    internal delegate void DynamicCommandDelegate(List<string> parameters, CommandSenderInfo senderInfo);
+
     /// <summary>
     /// Class used for all script commands; every command file gets one object
     /// </summary>
     public class DynamicCommand : ConsoleCmdAbstract
     {
+
         private string[] _commands;
-        private Action<List<string>, CommandSenderInfo> _action;
+        private DynamicCommandDelegate _action;
         private string _description;
         private string _help;
         private int _defaultPermissionLevel;
@@ -30,12 +34,7 @@ namespace ScriptingMod.Commands
         /// <summary>
         /// Creates a dynamic command with the given parameters
         /// </summary>
-        /// <param name="commands"></param>
-        /// <param name="action"></param>
-        /// <param name="description"></param>
-        /// <param name="help"></param>
-        /// <param name="defaultPermissionLevel"></param>
-        public DynamicCommand(string[] commands, Action<List<string>, CommandSenderInfo> action, string description, string help = null, int defaultPermissionLevel = 0)
+        internal DynamicCommand(string[] commands, string description, string help, int defaultPermissionLevel, DynamicCommandDelegate action)
         {
             _commands = commands;
             _action = action;
@@ -44,6 +43,7 @@ namespace ScriptingMod.Commands
             _defaultPermissionLevel = defaultPermissionLevel;
         }
 
+        [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
         public override int DefaultPermissionLevel
         {
             get

@@ -6,15 +6,55 @@ using ScriptingMod.Extensions;
 
 namespace ScriptingMod.ScriptEngines
 {
-    internal enum ScriptTypeEnum { LUA, JS }
-
     internal abstract class ScriptEngine
     {
-        private readonly Regex _metadataRegex;
-
-        protected ScriptEngine()
+        public static ScriptEngine GetInstance(string fileExtension)
         {
-            var metaDataPattern = string.Format(@"
+            switch (fileExtension.ToLowerInvariant())
+            {
+                case LuaEngine.FileExtension:
+                    return LuaEngine.Instance;
+                case JsEngine.FileExtension:
+                    return JsEngine.Instance;
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public void ExecuteCommand(string filePath, List<string> parameters, CommandSenderInfo senderInfo)
+        {
+            ResetEngine();
+            SetValue("dump", new Action<object, int?>(Dump));
+            SetValue("params", parameters.ToArray());
+            SetValue("sender", senderInfo);
+
+            World world = GameManager.Instance.World;
+            EntityPlayer player = world?.Players.dict.GetValue(senderInfo.RemoteClientInfo?.entityId ?? -1);
+            SetValue("player", world?.Players.dict.GetValue(senderInfo.RemoteClientInfo?.entityId ?? -1));
+
+            var oldDirectory = Directory.GetCurrentDirectory();
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath) ?? Path.PathSeparator.ToString());
+
+            try
+            {
+                ExecuteFile(filePath);
+            }
+            // LuaScriptException is already handled in LuaEngine
+            // JavaScriptException is already handled in JsEngine
+            catch (Exception ex)
+            {
+                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                SdtdConsole.Instance.Output($"Script {fileName} failed: " + ex.GetType().FullName + ": " + ex.Message + " [details in server log]");
+                Log.Error($"Script {fileName} failed: " + ex);
+            }
+
+            Directory.SetCurrentDirectory(oldDirectory);
+        }
+
+        public Dictionary<string, string> LoadMetadata(string filePath)
+        {
+            var commentPrefix = GetCommentPrefix();
+            var metaDataPattern = string.Format(@"(?xmn)
                 # Lookbehind from beginning of file (\A)
                 (?<=\A
                     # File can start with some spaces and newlines
@@ -35,70 +75,19 @@ namespace ScriptingMod.ScriptEngines
                     # ... the file ends (so it only has metadata).
                     \Z
                 ))",
-                // ReSharper disable once VirtualMemberCallInConstructor
-                Regex.Escape(CommentPrefix));
+                Regex.Escape(commentPrefix));
 
-            _metadataRegex = new Regex(metaDataPattern,
-                RegexOptions.Compiled |
-                RegexOptions.ExplicitCapture |
-                RegexOptions.Multiline |
-                RegexOptions.IgnorePatternWhitespace);
-        }
-
-        protected void InitValues()
-        {
-            SetValue("dump", new Action<object, int?>(Dump));
-            SetValue("GameManager", GameManager.Instance);
-        }
-
-        // Used in constructor, so derived class MUST NOT use the object; just assume it's static
-        protected abstract string CommentPrefix { get; }
-
-        public static ScriptEngine GetInstance(ScriptTypeEnum scriptType)
-        {
-            switch (scriptType)
-            {
-                case ScriptTypeEnum.LUA:
-                    return LuaEngine.Instance;
-                case ScriptTypeEnum.JS:
-                    return JsEngine.Instance;
-                default:
-                    throw new NotImplementedException();
-            }
-        }
-
-        public static ScriptEngine GetInstance(string fileExtension)
-        {
-            switch (fileExtension.ToLowerInvariant())
-            {
-                case ".lua":
-                    return LuaEngine.Instance;
-                case ".js":
-                    return JsEngine.Instance;
-                default:
-                    throw new NotImplementedException();
-            }
-        }
-
-        public abstract void ExecuteFile(string filePath);
-
-        public abstract void SetValue(string name, object value);
-
-        public abstract void Reset();
-
-        public virtual Dictionary<string, string> LoadMetadata(string filePath)
-        {
             var script = File.ReadAllText(filePath);
 
             var metadata = new Dictionary<string, string>();
-            var match = _metadataRegex.Match(script);
+            var match = Regex.Match(script, metaDataPattern);
             while (match.Success)
             {
                 var key = match.Groups["key"].Value;
                 var value = match.Value;
 
                 // Remove comment markers from all value lines
-                value = Regex.Replace(value, "^" + Regex.Escape(CommentPrefix), "", RegexOptions.Multiline);
+                value = Regex.Replace(value, "^" + Regex.Escape(commentPrefix), "", RegexOptions.Multiline);
 
                 // Replace @key in match with equal amount of spaces to keep indentation
                 value = new Regex("@" + Regex.Escape(key)).Replace(value, new string(' ', key.Length + 1), 1);
@@ -117,11 +106,22 @@ namespace ScriptingMod.ScriptEngines
             return metadata;
         }
 
-        #region Methods exposed in scripts
+        protected abstract void ResetEngine();
 
-        // TODO: Test and fix the SdtdConsole output for asynchronous/callbacks
-        protected virtual void Dump(object obj, int? depth)
+        protected abstract void ExecuteFile(string filePath);
+
+        protected abstract void SetValue(string name, object value);
+
+        protected abstract object GetValue(string name);
+
+        protected abstract string GetCommentPrefix();
+
+        #region Exposed in scripts
+
+        private void Dump(object obj, int? depth)
         {
+            // TODO: Test and fix the SdtdConsole output for asynchronous/callbacks
+
             // We cannot use optional parameter "int depth = 1" because that doesn't work with Mono's dynamic invocation
             if (depth == null)
                 depth = 1;

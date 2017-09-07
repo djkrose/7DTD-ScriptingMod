@@ -27,7 +27,7 @@ namespace ScriptingMod
             {
                 Log.Out($"Initializing {Constants.ModNameFull} ...");
                 PersistentData.Load();
-                ScriptTools.LoadCommands();
+                CommandTools.LoadCommands();
                 RepairEngine.InitAuto();
                 Log.Out($"Done initializing {Constants.ModNameFull}.");
             }

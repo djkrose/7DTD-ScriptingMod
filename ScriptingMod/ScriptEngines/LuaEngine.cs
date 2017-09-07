@@ -8,28 +8,27 @@ using ScriptingMod.Extensions;
 
 namespace ScriptingMod.ScriptEngines
 {
-    internal class LuaEngine : ScriptEngine
+    internal sealed class LuaEngine : ScriptEngine
     {
+        public const string FileExtension = ".lua";
         private static LuaEngine _instance;
         public static LuaEngine Instance => _instance ?? (_instance = new LuaEngine());
-
+		
         private Lua _lua;
-        protected override string CommentPrefix => "--";
-
+		
         private LuaEngine()
         {
-            InitLua();
+            // intentionally not initializing _lua because that's done before every command execution
         }
 
-        private void InitLua()
+        protected override void ResetEngine()
         {
             _lua = new Lua();
             _lua.LoadCLRPackage();
             _lua["print"] = new Action<object[]>(Print);
-            InitValues();
         }
 
-        public override void ExecuteFile(string filePath)
+        protected override void ExecuteFile(string filePath)
         {
             var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
 
@@ -56,6 +55,21 @@ namespace ScriptingMod.ScriptEngines
             }
         }
 
+        protected override void SetValue(string name, object value)
+        {
+            _lua[name] = value;
+        }
+
+        protected override object GetValue(string name)
+        {
+            return _lua[name];
+        }
+
+        protected override string GetCommentPrefix()
+        {
+            return "--";
+        }
+
         /// <summary>
         /// Returns type and message of the exception and all inner exceptions, but not the stack trace
         /// </summary>
@@ -69,17 +83,6 @@ namespace ScriptingMod.ScriptEngines
                 shortMessage += " ---> " + curr.GetType().FullName + ": " + curr.Message;
             }
             return shortMessage;
-        }
-
-        public override void SetValue(string name, object value)
-        {
-            _lua[name] = value;
-        }
-
-        public override void Reset()
-        {
-            _lua?.Dispose();
-            InitLua();
         }
 
         #region Exposed in Lua

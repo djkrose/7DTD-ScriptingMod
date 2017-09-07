@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
 using Jint;
+using Jint.Native;
 using Jint.Parser;
 using Jint.Runtime;
 using Jint.Runtime.Interop;
@@ -13,30 +14,30 @@ using ScriptingMod.Extensions;
 
 namespace ScriptingMod.ScriptEngines
 {
-    internal class JsEngine : ScriptEngine
+    internal sealed class JsEngine : ScriptEngine
     {
+        public const string FileExtension = ".js";
         private static JsEngine _instance;
         public static JsEngine Instance => _instance ?? (_instance = new JsEngine());
-
+        
         private Engine _jint;
-        protected override string CommentPrefix => "//";
 
         private JsEngine()
         {
-            InitJs();
+            // intentionally not initializing _jint because that's done before every command execution
         }
-
-        private void InitJs()
+        
+        protected override void ResetEngine()
         {
             // Only with "limited recursion" Jint tracks and prints JS callstacks on errors
             _jint = new Engine(cfg => cfg.AllowClr().LimitRecursion(int.MaxValue));
+            _jint.SetValue("global", _jint.Global); // TODO: Fix problem where dump(glo0bal) or dump(this) hangs the server
             _jint.SetValue("console", new Console());
             _jint.SetValue("require", new Action<object>(Require));
             _jint.SetValue("importAssembly", new Action<string>(ImportAssembly));
-            InitValues();
         }
 
-        public override void ExecuteFile(string filePath)
+        protected override void ExecuteFile(string filePath)
         {
             var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
 
@@ -46,7 +47,7 @@ namespace ScriptingMod.ScriptEngines
 
             try
             {
-                _jint.Execute(script, new ParserOptions { Source = fileName });
+                _jint.Execute(script, new ParserOptions {Source = fileName});
             }
             catch (JavaScriptException ex)
             {
@@ -64,15 +65,19 @@ namespace ScriptingMod.ScriptEngines
             Log.Debug($"JavaScript {fileName} ended.");
         }
 
-        public override void SetValue(string name, object value)
+        protected override void SetValue(string name, object value)
         {
             _jint.SetValue(name, value);
         }
 
-        public override void Reset()
+        protected override object GetValue(string name)
         {
-            _jint = null;
-            InitJs();
+            return _jint.GetValue(name).ToObject();
+        }
+
+        protected override string GetCommentPrefix()
+        {
+            return "//";
         }
 
         #region Exposed in JS

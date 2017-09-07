@@ -1,14 +1,15 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
+using ScriptingMod.ScriptEngines;
 using CommandObjectPair = ScriptingMod.Extensions.NonPublic.SdtdConsole.CommandObjectPair;
 
 namespace ScriptingMod.Tools
@@ -19,6 +20,67 @@ namespace ScriptingMod.Tools
 
         private static readonly CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
 
+        public static void LoadCommands()
+        {
+            var scripts = Directory.GetFiles(Constants.ScriptsFolder, "*.*", SearchOption.AllDirectories)
+                .Where(s => s.EndsWith(LuaEngine.FileExtension, StringComparison.OrdinalIgnoreCase) ||
+                            s.EndsWith(JsEngine.FileExtension, StringComparison.OrdinalIgnoreCase));
+
+            foreach (string script in scripts)
+            {
+                var filePath = script; // Needed prior C# 5.0 as closure
+                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+
+                Log.Debug($"Loading script {fileName} ...");
+
+                try
+                {
+                    var commandObject = CreateCommandObject(filePath);
+                    if (commandObject == null)
+                    {
+                        Log.Out($"Script file {fileName} is ignored because it does not contain a command name definition.");
+                        continue;
+                    }
+
+                    AddCommand(commandObject);
+                    var commands = commandObject.GetCommands();
+                    Log.Out($"Registered command{(commands.Length == 1 ? "" : "s")} \"{commands.Join(" ")}\" in script {fileName}.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning($"Could not load command script {fileName}: {ex.Message}");
+                    Log.Debug(ex.ToString());
+                }
+            }
+
+            SaveChanges();
+
+            Log.Debug("All script commands added.");
+        }
+
+        /// <summary>
+        /// Parses the file as command script and tries to create a command object from it.
+        /// </summary>
+        /// <param name="filePath">Full path of the file to parse.</param>
+        /// <returns>The new command object, or null if the script has no command name in metadata and therefore is not a command script.</returns>
+        [CanBeNull]
+        private static DynamicCommand CreateCommandObject(string filePath)
+        {
+            var scriptEngine     = ScriptEngine.GetInstance(Path.GetExtension(filePath));
+            var metadata         = scriptEngine.LoadMetadata(filePath);
+            var commands         = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var description      = metadata.GetValue("description", "");
+            var help             = metadata.GetValue("help", null);
+            int defaultPermision = metadata.GetValue("defaultPermission").ToInt() ?? 0;
+
+            // Skip files that have no command name defined and therefore are not commands but helper scripts.
+            if (commands.Length == 0)
+                return null;
+
+            var action = new DynamicCommandDelegate((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
+            return new DynamicCommand(commands, description, help, defaultPermision, action);
+        }
+
         /// <summary>
         /// Registers the given command object with it's command names into the Console.
         /// The command object or command names must not already exist in the console.
@@ -26,7 +88,7 @@ namespace ScriptingMod.Tools
         /// Adapted from: SdtdConsole.RegisterCommands
         /// </summary>
         /// <param name="commandObject"></param>
-        public static void AddCommand(DynamicCommand commandObject)
+        private static void AddCommand(DynamicCommand commandObject)
         {
             if (commandObject == null)
                 throw new ArgumentNullException(nameof(commandObject));
@@ -47,7 +109,7 @@ namespace ScriptingMod.Tools
                 if (CommandExists(command))
                     throw new ArgumentException($"The command \"{command}\" already exists and cannot be registered twice.");
 
-                var commandObjectPair = new NonPublic.SdtdConsole.CommandObjectPair(command, commandObject);
+                var commandObjectPair = new CommandObjectPair(command, commandObject);
                 AddSortedCommandObjectPair(commandObjectPair);
             }
 

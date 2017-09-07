@@ -19,12 +19,14 @@
 -- 
 -- Global variables:
 --   params       string[]             Array of parameters to the command, e.g params[0], params[1]
---   GameManager  GameManager.Instance The main access point for Unity game data
+--   sender       CommandSenderInfo    Information about the client executed the command
+--   player       EntityPlayer         Player object of the current player execuing the command
 --
 -- Global functions:
---   print(text)                       Prints the text to console and log file
+--   import(assemblyName)              Imports all types of the given .Net assembly name (file name without .dll or .exe extension)
 --   dump(variable[, maxDepth])        Dumps .Net objects in readable form into the log file.
---                                     maxDepth = How deep the structure is traversed; default: 4
+--                                     maxDepth = How deep the structure is traversed; default: 1
+--   print(text)                       Prints the text to console and log file
 
 if params.Length == 2 then
     print("Hello " .. params[0] .. " " .. params[1] .. ", nice to meet you! I am a Lua script.")
@@ -56,6 +58,6 @@ print(content)
 import("Assembly-CSharp")
 
 -- You can use dump(..) to print contents of objects to the console/log
-dump(GameManager, 1)
+dump(GameManager.Instance, 1)
 
 --]]

@@ -12,7 +12,6 @@ namespace ScriptingMod
         public const int    ChunkSize                    = 16;
         public const int    ChunkHeight                  = Byte.MaxValue;
         public const string ModNameFull                  = "djkrose's Scripting Mod";
-        public const string ModInfoFile                  = "ModInfo.xml";
 
         public static readonly string ScriptingModFolder = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Constants)).Location);
         public static readonly string ScriptsFolder      = Path.Combine(ScriptingModFolder, "scripts");

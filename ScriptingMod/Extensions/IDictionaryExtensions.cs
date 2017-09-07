@@ -13,8 +13,7 @@ namespace ScriptingMod.Extensions
         /// If it cannot be found, the default value is returned instead. If no default
         /// value is given, the type's default is returned, e.g. null for objects, 0 for ints, etc.
         /// </summary>
-        /// <returns>The value for the key, or the default value</returns>
-        [CanBeNull]
+        /// <returns>The value for the key, or the default value, which usually is null for reference types and zero/false for primitives</returns>
         public static TV GetValue<TK, TV>(this IDictionary<TK, TV> dict, TK key, TV defaultValue = default(TV))
         {
             TV value;

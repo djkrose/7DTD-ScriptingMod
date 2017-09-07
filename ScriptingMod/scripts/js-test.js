@@ -18,14 +18,18 @@
 // Help text has ended here because the comment block is interrupted by a newline without comment.
 // 
 // Global variables:
+//   global       special object       Global namespace similar to "window" in browsers. Can be omitted.
 //   params       string[]             Array of parameters to the command, e.g params[0], params[1]
-//   GameManager  GameManager.Instance The main access point for Unity game data
+//   sender       CommandSenderInfo    Information about the client executed the command
+//   player       EntityPlayer         Player object of the current player execuing the command
 //
 // Global functions:
-//   console.log                       Prints the text to the user's console
-//   console.info/.warn/.error         Prints the text into the server log file
+//   importAssembly(assemblyName)      Imports all types of the given .Net assembly name (file name without .dll or .exe extension)
+//   console.log(msg)                  Prints the text to the user's console
+//   console.info/.warn/.error(msg)    Prints the text into the server log file
+//   require(fileName)                 Executes the external JavaScript file just as if it were inline right there
 //   dump(variable[, maxDepth])        Dumps .Net objects in readable form into the log file.
-//                                     maxDepth = How deep the structure is traversed; default: 4
+//                                     maxDepth = How deep the structure is traversed; default: 1
 
 if (params.length === 2) {
     console.log("Hello " + params[0] + " " + params[1] + ", nice to meet you! I am a JavaScript.");

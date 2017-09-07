@@ -107,7 +107,6 @@
     <Compile Include="Exceptions\FriendlyMessageException.cs" />
     <Compile Include="Tools\ChunkTools.cs" />
     <Compile Include="Tools\CommandTools.cs" />
-    <Compile Include="Tools\ScriptTools.cs" />
     <Compile Include="Commands\Export.cs" />
     <Compile Include="Commands\Import.cs" />
     <Compile Include="Commands\DynamicCommand.cs" />
@@ -133,6 +132,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="scripts\js-sleepers.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="scripts\js-test.js">
