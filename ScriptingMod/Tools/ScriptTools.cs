@@ -81,6 +81,7 @@ namespace ScriptingMod.Tools
                 // TODO: Simpify the whole engine class construct now that we always reset the engine
                 scriptEngine.Reset();
                 scriptEngine.SetValue("params", paramsList.ToArray());
+                scriptEngine.SetValue("sender", senderInfo);
 
                 try
                 {
