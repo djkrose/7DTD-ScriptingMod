@@ -161,7 +161,7 @@ namespace ScriptingMod
             PersistentData.Instance.Save();
 
             if (Tasks.Contains("p"))
-                Application.logMessageReceived += OnLogMessageReceived;
+                Application.logMessageReceived += LogMessageReceived;
 
             _backgroundTimer = new System.Threading.Timer(delegate
             {
@@ -194,7 +194,7 @@ namespace ScriptingMod
         /// </summary>
         public void AutoOff()
         {
-            Application.logMessageReceived -= OnLogMessageReceived;
+            Application.logMessageReceived -= LogMessageReceived;
             _backgroundTimer?.Dispose();
 
             LogAndOutput($"Automatic background {(PersistentData.Instance.RepairSimulate ? "scan (without repair)" : "repair")} for server problems " +
@@ -209,15 +209,22 @@ namespace ScriptingMod
 
         public static void InitAuto()
         {
-            if (PersistentData.Instance.RepairAuto)
+            try
             {
-                var repairEngine = new RepairEngine(PersistentData.Instance.RepairTasks, PersistentData.Instance.RepairSimulate);
-                repairEngine.TimerInterval = PersistentData.Instance.RepairInterval;
-                repairEngine.AutoOn();
+                if (PersistentData.Instance.RepairAuto)
+                {
+                    var repairEngine = new RepairEngine(PersistentData.Instance.RepairTasks, PersistentData.Instance.RepairSimulate);
+                    repairEngine.TimerInterval = PersistentData.Instance.RepairInterval;
+                    repairEngine.AutoOn();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Could not initialize automatic background repair: " + ex);
             }
         }
 
-        private static void OnLogMessageReceived(string condition, string stackTrace, LogType type)
+        private static void LogMessageReceived(string condition, string stackTrace, LogType type)
         {
             // Scan not more than every 5 seconds while log is spammed with error messages
             if (_lastLogMessageTriggeredScan.AddSeconds(5) > DateTime.Now)
@@ -230,31 +237,36 @@ namespace ScriptingMod
                 && condition == "NullReferenceException: Object reference not set to an instance of an object"
                 && stackTrace != null && stackTrace.StartsWith("TileEntityPoweredTrigger.write"))
             {
-                ThreadManager.AddSingleTaskSafe(delegate
-                {
-                    // Doing it in background task so that NRE appears before our output in log
-                    Log.Out("Detected NRE TileEntityPoweredTrigger.write. Starting integrity scan in background ...");
-                    try
-                    {
-                        var repairEngine = new RepairEngine("p", PersistentData.Instance.RepairSimulate);
-                        repairEngine.Start();
-
-                        if (repairEngine._problemsFound >= 1)
-                        {
-                            PersistentData.Instance.RepairCounter += repairEngine._problemsFound;
-                            PersistentData.Instance.Save();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("Error while running power block repair in background: " + ex);
-                        throw;
-                    }
-                });
+                // Doing it in background task so that NRE appears before our output in log
+                ThreadManager.AddSingleTask(info => RepairPowerBlocks());
             }
             else
             {
                 Log.Debug($"Intercepted unknown log message:\r\ncondition={condition ?? "<null>"}\r\ntype={type}\r\nstackTrace={stackTrace ?? "<null>"}");
+            }
+        }
+
+        /// <summary>
+        /// Starts a new engine to repair all loaded power blocks once based on the settings in PersistentData
+        /// and saves results back into PersistentData. To be called in background thread.
+        /// </summary>
+        private static void RepairPowerBlocks()
+        {
+            try
+            {
+                Log.Out("Detected NRE TileEntityPoweredTrigger.write. Starting integrity scan in background ...");
+                var repairEngine = new RepairEngine("p", PersistentData.Instance.RepairSimulate);
+                repairEngine.Start();
+
+                if (repairEngine._problemsFound >= 1)
+                {
+                    PersistentData.Instance.RepairCounter += repairEngine._problemsFound;
+                    PersistentData.Instance.Save();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error while running power block repair in background: " + ex);
             }
         }
 

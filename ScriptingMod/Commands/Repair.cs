@@ -65,25 +65,23 @@ namespace ScriptingMod.Commands
                 }
                 else
                 {
-                    ThreadManager.AddSingleTask(info => StartEngineAsync(repairEngine, senderInfo));
+                    ThreadManager.AddSingleTask(delegate
+                    {
+                        try
+                        {
+                            repairEngine.Start();
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Exception(ex);
+                            SdtdConsole.Instance.OutputAsync(senderInfo, string.Format(Resources.ErrorDuringCommand, ex.Message));
+                        }
+                    });
                 }
             }
             catch (Exception ex)
             {
                 CommandTools.HandleCommandException(ex);
-            }
-        }
-
-        private void StartEngineAsync(RepairEngine repairEngine, CommandSenderInfo senderInfo)
-        {
-            try
-            {
-                repairEngine.Start();
-            }
-            catch (Exception ex)
-            {
-                Log.Exception(ex);
-                SdtdConsole.Instance.OutputAsync(senderInfo, string.Format(Resources.ErrorDuringCommand, ex.Message));
             }
         }
 

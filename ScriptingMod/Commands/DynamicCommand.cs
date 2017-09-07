@@ -7,7 +7,7 @@ using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
-    internal delegate void DynamicCommandDelegate(List<string> parameters, CommandSenderInfo senderInfo);
+    internal delegate void DynamicCommandHandler(List<string> parameters, CommandSenderInfo senderInfo);
 
     /// <summary>
     /// Class used for all script commands; every command file gets one object
@@ -16,7 +16,7 @@ namespace ScriptingMod.Commands
     {
 
         private string[] _commands;
-        private DynamicCommandDelegate _action;
+        private DynamicCommandHandler _action;
         private string _description;
         private string _help;
         private int _defaultPermissionLevel;
@@ -34,7 +34,7 @@ namespace ScriptingMod.Commands
         /// <summary>
         /// Creates a dynamic command with the given parameters
         /// </summary>
-        internal DynamicCommand(string[] commands, string description, string help, int defaultPermissionLevel, DynamicCommandDelegate action)
+        internal DynamicCommand(string[] commands, string description, string help, int defaultPermissionLevel, DynamicCommandHandler action)
         {
             _commands = commands;
             _action = action;

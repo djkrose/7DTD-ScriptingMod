@@ -62,7 +62,7 @@ namespace ScriptingMod.Commands
                     if (!GameManager.Instance.World.ChunkCache.ContainsChunkSync(chunkKey))
                         throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
 
-                ThreadManager.AddSingleTask(info => RegenerateChunksAsync(pos1, pos2, senderInfo));
+                ThreadManager.AddSingleTask(info => RegenerateChunks(pos1, pos2, senderInfo));
             }
             catch (Exception ex)
             {
@@ -120,7 +120,7 @@ namespace ScriptingMod.Commands
         /// <param name="pos1">South-West corner of area; y is ignored</param>
         /// <param name="pos2">North-East corner of area; y is ignored</param>
         /// <param name="senderInfo">Info about the command sender; must contain valid senderInfo.NetworkConnection object</param>
-        private void RegenerateChunksAsync(Vector3i pos1, Vector3i pos2, CommandSenderInfo senderInfo)
+        private void RegenerateChunks(Vector3i pos1, Vector3i pos2, CommandSenderInfo senderInfo)
         {
             try
             {

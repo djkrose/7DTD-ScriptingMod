@@ -77,7 +77,7 @@ namespace ScriptingMod.Tools
             if (commands.Length == 0)
                 return null;
 
-            var action = new DynamicCommandDelegate((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
+            var action = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
             return new DynamicCommand(commands, description, help, defaultPermision, action);
         }
 
