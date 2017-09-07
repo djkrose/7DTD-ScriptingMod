@@ -107,7 +107,6 @@
     <Compile Include="Exceptions\FriendlyMessageException.cs" />
     <Compile Include="Tools\ChunkTools.cs" />
     <Compile Include="Tools\CommandTools.cs" />
-    <Compile Include="Tools\PlayerTools.cs" />
     <Compile Include="Tools\ScriptTools.cs" />
     <Compile Include="Commands\Export.cs" />
     <Compile Include="Commands\Import.cs" />
