@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using ScriptingMod.Extensions;
 
@@ -8,6 +10,37 @@ namespace ScriptingMod.ScriptEngines
 {
     internal abstract class ScriptEngine
     {
+        private Regex metaDataRegex;
+
+        protected ScriptEngine()
+        {
+            // ReSharper disable once VirtualMemberCallInConstructor
+            var commentPrefix = GetCommentPrefix();
+            var metaDataPattern = string.Format(@"(?xmn)
+                # Lookbehind from beginning of file (\A)
+                (?<=\A
+                    # File can start with some spaces and newlines
+                    \s*
+                    # Then all lines must start with '--'
+                    (^{0}.*(\r\n|\r|\n))*
+                )
+                # Matching line must start like '-- @key ' ...
+                ^{0}[\ \t]*@(?<key>[a-zA-Z0-9_-]+)[\ \t]+
+                # ... followed by a value, which can span multiple lines ([\s\S])
+                [\s\S]+?
+                # Value ends before (look-ahead) either ...
+                (?=(
+                    # ... a new key->value line starts, or
+                    ^{0}[\ \t]*@|
+                    # ... the next line starts with something else than '--', or
+                    ^(?!{0})|
+                    # ... the file ends (so it only has metadata).
+                    \Z
+                ))",
+                Regex.Escape(commentPrefix));
+            metaDataRegex = new Regex(metaDataPattern);
+        }
+
         public static ScriptEngine GetInstance(string fileExtension)
         {
             switch (fileExtension.ToLowerInvariant())
@@ -54,33 +87,10 @@ namespace ScriptingMod.ScriptEngines
         public Dictionary<string, string> LoadMetadata(string filePath)
         {
             var commentPrefix = GetCommentPrefix();
-            var metaDataPattern = string.Format(@"(?xmn)
-                # Lookbehind from beginning of file (\A)
-                (?<=\A
-                    # File can start with some spaces and newlines
-                    \s*
-                    # Then all lines must start with '--'
-                    (^{0}.*(\r\n|\r|\n))*
-                )
-                # Matching line must start like '-- @key ' ...
-                ^{0}[\ \t]*@(?<key>[a-zA-Z0-9_-]+)[\ \t]+
-                # ... followed by a value, which can span multiple lines ([\s\S])
-                [\s\S]+?
-                # Value ends before (look-ahead) either ...
-                (?=(
-                    # ... a new key->value line starts, or
-                    ^{0}[\ \t]*@|
-                    # ... the next line starts with something else than '--', or
-                    ^(?!{0})|
-                    # ... the file ends (so it only has metadata).
-                    \Z
-                ))",
-                Regex.Escape(commentPrefix));
-
             var script = File.ReadAllText(filePath);
-
             var metadata = new Dictionary<string, string>();
-            var match = Regex.Match(script, metaDataPattern);
+
+            var match = metaDataRegex.Match(script);
             while (match.Success)
             {
                 var key = match.Groups["key"].Value;

@@ -74,7 +74,8 @@ namespace ScriptingMod.ScriptEngines
         {
             return _jint.GetValue(name).ToObject();
         }
-
+        
+        // WARNING: Gets called by base before constructor is called! Must behave static!
         protected override string GetCommentPrefix()
         {
             return "//";
