@@ -51,7 +51,8 @@ namespace ScriptingMod
     /// </summary>
     public static class Dumper
     {
-        private const int INDENTATION_SPACE = 2;
+        private const int IndentationSpace = 2;
+        private const int MaxValueLength = 200;
 
         /// <summary>
         /// Dumps the contents of the specified value and returns the dumped contents as a string.
@@ -151,7 +152,7 @@ namespace ScriptingMod
         private static void InternalDump(int indentationLevel, string name, object value, MemberInfo memberInfo,
             TextWriter writer, ObjectIDGenerator idGenerator, bool recursiveDump, DumperOptions options)
         {
-            var indentation = new string(' ', indentationLevel * INDENTATION_SPACE);
+            var indentation = new string(' ', indentationLevel * IndentationSpace);
             //var indentation2 = new string(' ', (indentationLevel + 1) * INDENTATION_SPACE);
 
             string accessModifiers = GetAccessModifiers(memberInfo);
@@ -204,12 +205,12 @@ namespace ScriptingMod
                   value is short || value is uint || value is ulong || value is ushort || value is bool || value is sbyte))
                 formattedValue = "\"" + formattedValue + "\"";
 
-            // chop at 80 characters
+            // chop at MAX_CONTENT characters
             int length = formattedValue.Length;
-            if (length > 80)
-                formattedValue = formattedValue.Substring(0, 80);
-            if (length > 80)
-                formattedValue += " (+" + (length - 80) + " chars)";
+            if (length > MaxValueLength)
+                formattedValue = formattedValue.Substring(0, MaxValueLength);
+            if (length > MaxValueLength)
+                formattedValue += " (+" + (length - MaxValueLength) + " chars)";
 
             var collection = value as ICollection;
             if (collection != null)
@@ -261,7 +262,7 @@ namespace ScriptingMod
                         i++;
                         if (i >= 100)
                         {
-                            writer.WriteLine(new string(' ', (indentationLevel + 2) * INDENTATION_SPACE) + "[ enumeration truncated ]");
+                            writer.WriteLine(new string(' ', (indentationLevel + 2) * IndentationSpace) + "[ enumeration truncated ]");
                             break;
                         }
                     }

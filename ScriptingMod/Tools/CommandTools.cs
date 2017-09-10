@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using JetBrains.Annotations;
 using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
@@ -17,8 +19,11 @@ namespace ScriptingMod.Tools
 
     internal static class CommandTools
     {
-
         private static readonly CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
+        private static CommandObjectComparer _commandObjectComparer = new CommandObjectComparer();
+        private static FileSystemWatcher _scriptsWatcher;
+        private static bool _scriptsChangedRunning;
+        private static object _scriptsChangedLock = new object();
 
         public static void LoadCommands()
         {
@@ -56,6 +61,83 @@ namespace ScriptingMod.Tools
             SaveChanges();
 
             Log.Debug("All script commands added.");
+        }
+
+        /// <summary>
+        /// Unload all our dynamic commands from the game
+        /// </summary>
+        private static void UnloadCommands()
+        {
+            var commandObjects = SdtdConsole.Instance.GetCommandObjects();
+            for (int i = commandObjects.Count - 1; i >= 0; i--)
+            {
+                if (commandObjects.ElementAt(i) is DynamicCommand)
+                    commandObjects.RemoveAt(i);
+            }
+
+            var commandObjectPairs = SdtdConsole.Instance.GetCommandObjectPairs();
+            for (int i = commandObjectPairs.Count - 1; i >= 0; i--)
+            {
+                if (commandObjectPairs.ElementAt(i).CommandObject is DynamicCommand)
+                    commandObjectPairs.RemoveAt(i);
+            }
+
+            //SaveChanges();
+            Log.Out("Unloaded all scripting commands.");
+        }
+
+        public static void InitScriptsMonitoring()
+        {
+            try
+            {
+                _scriptsWatcher = new FileSystemWatcher(Constants.ScriptsFolder);
+                _scriptsWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                _scriptsWatcher.IncludeSubdirectories = true;
+                _scriptsWatcher.Changed += ScriptsChanged;
+                _scriptsWatcher.Created += ScriptsChanged;
+                _scriptsWatcher.Deleted += ScriptsChanged;
+                _scriptsWatcher.Renamed += ScriptsChanged;
+                _scriptsWatcher.EnableRaisingEvents = true;
+                Log.Out("Monitoring of script folder changes activated.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Could not initialize monitoring of scripting folder. Script file changes will not be detected. - " + ex);
+            }
+        }
+
+        private static void ScriptsChanged(object sender, FileSystemEventArgs args)
+        {
+            // Allow only one simultaneous event and skip all others
+            lock (_scriptsChangedLock)
+            {
+                if (_scriptsChangedRunning)
+                    return;
+                _scriptsChangedRunning = true;
+            }
+
+            ThreadManager.AddSingleTask(info =>
+            {
+                try
+                {
+                    Log.Out("Changes in scripts folder detected. Reloading commands ...");
+
+                    // Let all other associated events pass by
+                    Thread.Sleep(500);
+
+                    // Reload commands
+                    UnloadCommands();
+                    LoadCommands();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error occured while changes in script folder were processed: " + ex);
+                }
+                finally
+                {
+                    _scriptsChangedRunning = false;
+                }
+            });
         }
 
         /// <summary>
@@ -116,8 +198,6 @@ namespace ScriptingMod.Tools
             AddCommandObjectSorted(commandObject);
         }
 
-        private static CommandObjectComparer _commandObjectComparer = new CommandObjectComparer();
-
         private class CommandObjectComparer : IComparer<IConsoleCommand>
         {
             [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
@@ -138,7 +218,7 @@ namespace ScriptingMod.Tools
             var index = commandObjects.BinarySearch(item, _commandObjectComparer);
             if (index < 0) index = ~index;
             commandObjects.Insert(index, item);
-            Log.Debug($"Inserted new command object at index {index} of {commandObjects.Count-1}.");
+            //Log.Debug($"Inserted new command object at index {index} of {commandObjects.Count-1}.");
         }
 
         private class CommandObjectPairComparer : IComparer<CommandObjectPair>
@@ -160,11 +240,10 @@ namespace ScriptingMod.Tools
             var index = Array.BinarySearch(commandObjectPairs.ToArray(), item, _commandObjectPairComparer);
             if (index < 0) index = ~index;
             commandObjectPairs.Insert(index, item);
-            Log.Debug($"Inserted new command object pair at index {index} of {commandObjectPairs.Count-1}.");
+            //Log.Debug($"Inserted new command object pair at index {index} of {commandObjectPairs.Count-1}.");
         }
 
-        // TODO: Why is this never called???
-        public static void SaveChanges()
+        private static void SaveChanges()
         {
             Log.Debug("Updating readonly copy of command list ...");
             SdtdConsole.Instance.SetCommandObjectsReadOnly(new ReadOnlyCollection<IConsoleCommand>(SdtdConsole.Instance.GetCommandObjects()));

@@ -1,9 +1,10 @@
 ﻿Version 0.10
 
 - Fixed error message when dj-import is called without parameter
-- Added "importAssembly(assemblyName)" to JavaScript engine to allow importing all types of any .Net assembly
-- Added global variables "sender" and "player" to scripting
+- Added function "importAssembly(assemblyName)" to JavaScript engine to allow importing all types of any .Net assembly
+- Added global variables "sender" and "player" to scripting engines (lua and js)
 - Added example script js-sleepers.js to show import of assemblies and access to objects
+- Added background monitoring of added/removed/changed scripts with automatic reloading of script commands without server restart
 
 
 Version 0.9 - compatible ONLY with A16.3 (b12)

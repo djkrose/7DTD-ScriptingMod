@@ -28,6 +28,9 @@ namespace ScriptingMod.Commands
         {
             try
             {
+                //CommandTools.UnloadCommands();
+                /*
+
                 Application.logMessageReceived += delegate (string condition, string trace, LogType type)
                 {
                     // Called for Unity log messages from MAIN thread
@@ -81,6 +84,7 @@ namespace ScriptingMod.Commands
                 };
 
                 Log.Debug("Various listeners added.");
+                */
             }
             catch (Exception ex)
             {

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
+using ScriptingMod.Extensions;
 using ScriptingMod.Tools;
 
 namespace ScriptingMod
@@ -26,8 +27,10 @@ namespace ScriptingMod
             try
             {
                 Log.Out($"Initializing {Constants.ModNameFull} ...");
+                NonPublic.Init();
                 PersistentData.Load();
                 CommandTools.LoadCommands();
+                CommandTools.InitScriptsMonitoring();
                 RepairEngine.InitAuto();
                 Log.Out($"Done initializing {Constants.ModNameFull}.");
             }
@@ -44,8 +47,8 @@ namespace ScriptingMod
 
         public override void GameUpdate()
         {
-            // Logging makes too much noise
-            // Log.Debug("Api.GameUpdate called.");
+            // Logging makes too much noise!
+            //Log.Debug("Api.GameUpdate called.");
         }
 
         public override void GameShutdown()
@@ -86,7 +89,7 @@ namespace ScriptingMod
 
         public override void CalcChunkColorsDone(Chunk _chunk)
         {
-            // Log.Debug("Api.CalcChunkColorsDone called.");
+            //Log.Debug("Api.CalcChunkColorsDone called.");
         }
 
     }

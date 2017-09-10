@@ -23,57 +23,60 @@ namespace ScriptingMod.Extensions
 
         private const BindingFlags defaultFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
-        private static readonly FieldInfo       fi_PowerTrigger_isTriggered;             // PowerTrigger        -> protected bool isTriggered;
-        private static readonly FieldInfo       fi_PowerTrigger_isActive;                // PowerTrigger        -> protected bool isActive;
-        private static readonly FieldInfo       fi_PowerTrigger_delayStartTime;          // PowerTrigger        -> protected float delayStartTime;
-        private static readonly FieldInfo       fi_PowerTrigger_powerTime;               // PowerTrigger        -> protected float powerTime;
-        private static readonly FieldInfo       fi_PowerConsumerToggle_isToggled;        // PowerConsumerToggle -> protected bool isToggled
-        private static readonly FieldInfo       fi_PowerRangedTrap_isLocked;             // PowerRangedTrap     -> protected bool isLocked;
-        private static readonly FieldInfo       fi_PowerItem_hasChangesLocal;            // PowerItem           -> protected bool hasChangesLocal;
-        private static readonly FieldInfo       fi_TileEntityPowered_wireChildren;       // TileEntityPowered   -> private List<Vector3i> list_1
-        private static readonly FieldInfo       fi_TileEntityPowered_wireParent;         // TileEntityPowered   -> private Vector3i vector3i_1
-        private static readonly FieldInfo       fi_PowerManager_rootPowerItems;          // PowerManager        -> private List<PowerItem> list_0;
-        private static readonly FieldInfo       fi_TileEntity_readVersion;               // TileEntity          -> protected int readVersion;
-        private static readonly FieldInfo       fi_TileEntity_nextHeatMapEvent;          // TileEntity          -> private ulong ulong_0;
-        private static readonly FieldInfo       fi_TileEntityPowered_bool_1;             // TileEntityPowered   -> private bool bool_1;  (unknown purpose)
-        private static readonly FieldInfo       fi_TileEntityPowered_bool_3;             // TileEntityPowered   -> private bool bool_3;  (unknown purpose)
+        private static FieldInfo       fi_PowerTrigger_isTriggered;             // PowerTrigger        -> protected bool isTriggered;
+        private static FieldInfo       fi_PowerTrigger_isActive;                // PowerTrigger        -> protected bool isActive;
+        private static FieldInfo       fi_PowerTrigger_delayStartTime;          // PowerTrigger        -> protected float delayStartTime;
+        private static FieldInfo       fi_PowerTrigger_powerTime;               // PowerTrigger        -> protected float powerTime;
+        private static FieldInfo       fi_PowerConsumerToggle_isToggled;        // PowerConsumerToggle -> protected bool isToggled
+        private static FieldInfo       fi_PowerRangedTrap_isLocked;             // PowerRangedTrap     -> protected bool isLocked;
+        private static FieldInfo       fi_PowerItem_hasChangesLocal;            // PowerItem           -> protected bool hasChangesLocal;
+        private static FieldInfo       fi_TileEntityPowered_wireChildren;       // TileEntityPowered   -> private List<Vector3i> list_1
+        private static FieldInfo       fi_TileEntityPowered_wireParent;         // TileEntityPowered   -> private Vector3i vector3i_1
+        private static FieldInfo       fi_PowerManager_rootPowerItems;          // PowerManager        -> private List<PowerItem> list_0;
+        private static FieldInfo       fi_TileEntity_readVersion;               // TileEntity          -> protected int readVersion;
+        private static FieldInfo       fi_TileEntity_nextHeatMapEvent;          // TileEntity          -> private ulong ulong_0;
+        private static FieldInfo       fi_TileEntityPowered_bool_1;             // TileEntityPowered   -> private bool bool_1;  (unknown purpose)
+        private static FieldInfo       fi_TileEntityPowered_bool_3;             // TileEntityPowered   -> private bool bool_3;  (unknown purpose)
 
-        private static readonly FieldInfo       fi_SdtdConsole_commandObjects;           // SdtdConsole         -> private List<IConsoleCommand> list_0
-        private static readonly FieldInfo       fi_SdtdConsole_commandObjectPairs;       // SdtdConsole         -> private List<SdtdConsole.Struct13> list_1
-        private static readonly FieldInfo       fi_SdtdConsole_commandObjectsReadOnly;   // SdtdConsole         -> private ReadOnlyCollection<IConsoleCommand> readOnlyCollection_0;
-        private static readonly FieldInfo       fi_CommandObjectPair_CommandField;       // SdtdConsole         -> Struct13 -> public string string_0;
-        private static readonly ConstructorInfo ci_CommandObjectPair_Constructor;        // SdtdConsole         -> Struct13 -> public Struct13(string string_1, IConsoleCommand iconsoleCommand_1)
+        private static FieldInfo       fi_SdtdConsole_commandObjects;           // SdtdConsole         -> private List<IConsoleCommand> list_0
+        private static FieldInfo       fi_SdtdConsole_commandObjectPairs;       // SdtdConsole         -> private List<SdtdConsole.Struct13> list_1
+        private static FieldInfo       fi_SdtdConsole_commandObjectsReadOnly;   // SdtdConsole         -> private ReadOnlyCollection<IConsoleCommand> readOnlyCollection_0;
+        private static FieldInfo       fi_CommandObjectPair_CommandField;       // SdtdConsole         -> Struct13 -> public string string_0;
+        private static FieldInfo       fi_CommandObjectPair_CommandObjectField; // SdtdConsole         -> Struct13 -> public IConsoleCommand CC;
 
-        private static readonly MethodInfo      mi_ChunkProviderGenerateWorld_generateTerrain;          // ChunkProviderGenerateWorld -> protected virtual void generateTerrain(World _world, Chunk _chunk, System.Random _random)
-        private static readonly MethodInfo      mi_ChunkProviderGenerateWorld_DecorateChunkOverlapping; // ChunkProviderGenerateWorld -> private void DE(Chunk _param1) { World world = this.world; ...
+        private static ConstructorInfo ci_CommandObjectPair_Constructor;        // SdtdConsole         -> Struct13 -> public Struct13(string string_1, IConsoleCommand iconsoleCommand_1)
 
-        private static readonly FieldInfo       fi_ChunkAreaBiomeSpawnData_dict;         // ChunkAreaBiomeSpawnData -> private Dictionary<string, ChunkAreaBiomeSpawnData.LK> FP
+        private static MethodInfo      mi_ChunkProviderGenerateWorld_generateTerrain;          // ChunkProviderGenerateWorld -> protected virtual void generateTerrain(World _world, Chunk _chunk, System.Random _random)
+        private static MethodInfo      mi_ChunkProviderGenerateWorld_DecorateChunkOverlapping; // ChunkProviderGenerateWorld -> private void DE(Chunk _param1) { World world = this.world; ...
 
-        static NonPublic()
+        private static FieldInfo       fi_ChunkAreaBiomeSpawnData_dict;         // ChunkAreaBiomeSpawnData -> private Dictionary<string, ChunkAreaBiomeSpawnData.LK> FP
+
+        public static void Init()
         {
             try
             {
-                fi_PowerTrigger_isTriggered           = GetField(typeof(PowerTrigger), "isTriggered");
-                fi_PowerTrigger_isActive              = GetField(typeof(PowerTrigger), "isActive");
-                fi_PowerTrigger_delayStartTime        = GetField(typeof(PowerTrigger), "delayStartTime");
-                fi_PowerTrigger_powerTime             = GetField(typeof(PowerTrigger), "powerTime");
-                fi_PowerConsumerToggle_isToggled      = GetField(typeof(PowerConsumerToggle), "isToggled");
-                fi_PowerRangedTrap_isLocked           = GetField(typeof(PowerRangedTrap), "isLocked");
-                fi_PowerItem_hasChangesLocal          = GetField(typeof(PowerItem), "hasChangesLocal");
-                fi_TileEntityPowered_wireChildren     = GetField(typeof(TileEntityPowered), typeof(List<Vector3i>));
-                fi_TileEntityPowered_wireParent       = GetField(typeof(TileEntityPowered), typeof(Vector3i));
-                fi_PowerManager_rootPowerItems        = GetField(typeof(PowerManager), typeof(List<PowerItem>));
-                fi_TileEntity_readVersion             = GetField(typeof(TileEntity), "readVersion");
-                fi_TileEntity_nextHeatMapEvent        = GetField(typeof(TileEntity), typeof(ulong));
-                fi_TileEntityPowered_bool_1 = GetField(typeof(TileEntityPowered), typeof(bool), 2); // WARNING! Relying on member order here!
-                fi_TileEntityPowered_bool_3 = GetField(typeof(TileEntityPowered), typeof(bool), 4); // WARNING! Relying on member order here!
+                fi_PowerTrigger_isTriggered             = GetField(typeof(PowerTrigger), "isTriggered");
+                fi_PowerTrigger_isActive                = GetField(typeof(PowerTrigger), "isActive");
+                fi_PowerTrigger_delayStartTime          = GetField(typeof(PowerTrigger), "delayStartTime");
+                fi_PowerTrigger_powerTime               = GetField(typeof(PowerTrigger), "powerTime");
+                fi_PowerConsumerToggle_isToggled        = GetField(typeof(PowerConsumerToggle), "isToggled");
+                fi_PowerRangedTrap_isLocked             = GetField(typeof(PowerRangedTrap), "isLocked");
+                fi_PowerItem_hasChangesLocal            = GetField(typeof(PowerItem), "hasChangesLocal");
+                fi_TileEntityPowered_wireChildren       = GetField(typeof(TileEntityPowered), typeof(List<Vector3i>));
+                fi_TileEntityPowered_wireParent         = GetField(typeof(TileEntityPowered), typeof(Vector3i));
+                fi_PowerManager_rootPowerItems          = GetField(typeof(PowerManager), typeof(List<PowerItem>));
+                fi_TileEntity_readVersion               = GetField(typeof(TileEntity), "readVersion");
+                fi_TileEntity_nextHeatMapEvent          = GetField(typeof(TileEntity), typeof(ulong));
+                fi_TileEntityPowered_bool_1             = GetField(typeof(TileEntityPowered), typeof(bool), 2); // WARNING! Relying on member order here!
+                fi_TileEntityPowered_bool_3             = GetField(typeof(TileEntityPowered), typeof(bool), 4); // WARNING! Relying on member order here!
+                fi_SdtdConsole_commandObjects           = GetField(typeof(global::SdtdConsole), typeof(List<IConsoleCommand>));
 
-                fi_SdtdConsole_commandObjects         = GetField(typeof(global::SdtdConsole), typeof(List<IConsoleCommand>));
-                var t_StdtConsole_CommandObjectPair   = GetNestedType(typeof(global::SdtdConsole), typeof(IConsoleCommand)); // struct Struct13, last in source, has IConsoleCommand field
-                fi_SdtdConsole_commandObjectPairs     = GetField(typeof(global::SdtdConsole), typeof(List<>).MakeGenericType(t_StdtConsole_CommandObjectPair));
-                fi_SdtdConsole_commandObjectsReadOnly = GetField(typeof(global::SdtdConsole), typeof(ReadOnlyCollection<IConsoleCommand>));
-                ci_CommandObjectPair_Constructor      = GetConstructor(t_StdtConsole_CommandObjectPair, new[] { typeof(string), typeof(IConsoleCommand) });
-                fi_CommandObjectPair_CommandField     = GetField(t_StdtConsole_CommandObjectPair, typeof(string));
+                var t_StdtConsole_CommandObjectPair     = GetNestedType(typeof(global::SdtdConsole), typeof(IConsoleCommand)); // struct Struct13, last in source, has IConsoleCommand field
+                fi_SdtdConsole_commandObjectPairs       = GetField(typeof(global::SdtdConsole), typeof(List<>).MakeGenericType(t_StdtConsole_CommandObjectPair));
+                fi_SdtdConsole_commandObjectsReadOnly   = GetField(typeof(global::SdtdConsole), typeof(ReadOnlyCollection<IConsoleCommand>));
+                ci_CommandObjectPair_Constructor        = GetConstructor(t_StdtConsole_CommandObjectPair, new[] { typeof(string), typeof(IConsoleCommand) });
+                fi_CommandObjectPair_CommandField       = GetField(t_StdtConsole_CommandObjectPair, typeof(string));
+                fi_CommandObjectPair_CommandObjectField = GetField(t_StdtConsole_CommandObjectPair, typeof(IConsoleCommand));
 
                 mi_ChunkProviderGenerateWorld_generateTerrain          = GetMethod(typeof(ChunkProviderGenerateWorld), "generateTerrain");
                 mi_ChunkProviderGenerateWorld_DecorateChunkOverlapping = GetMethod(typeof(ChunkProviderGenerateWorld), typeof(void), new [] {typeof(Chunk)}, 1); // WARNING! Relying on member order here!
@@ -266,6 +269,16 @@ namespace ScriptingMod.Extensions
                 {
                     _baseList.Insert(index, obj.Base);
                 }
+
+                public CommandObjectPair ElementAt(int index)
+                {
+                    return new CommandObjectPair(_baseList[index]);
+                }
+
+                public void RemoveAt(int index)
+                {
+                    _baseList.RemoveAt(index);
+                }
             }
 
             public struct CommandObjectPair
@@ -273,6 +286,7 @@ namespace ScriptingMod.Extensions
                 public object Base { get; }
 
                 public string Command => (string)fi_CommandObjectPair_CommandField.GetValue(Base);
+                public IConsoleCommand CommandObject => (IConsoleCommand)fi_CommandObjectPair_CommandObjectField.GetValue(Base);
 
                 public CommandObjectPair(object baseObject)
                 {
