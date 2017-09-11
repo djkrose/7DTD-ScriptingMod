@@ -4,7 +4,7 @@
     <Name value="djkrose's Scripting Mod"/>
     <Description value="Adds scripting support and other useful functionality to 7 Days To Die dedicated server."/>
     <Author value="djkrose"/>
-    <Version value="0.9"/>
+    <Version value="0.10"/>
     <Website value="https://github.com/djkrose/7DTD-ScriptingMod"/>
   </ModInfo>
 </xml>
