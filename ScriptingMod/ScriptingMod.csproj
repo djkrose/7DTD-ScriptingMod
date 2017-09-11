@@ -125,6 +125,9 @@
     <Compile Include="Tools\WorldTools.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="scripts\js-minibike.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="Assembly-CSharp.ExternalAnnotations.xml">
       <SubType>Designer</SubType>
     </None>
