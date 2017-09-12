@@ -21,7 +21,8 @@ importAssembly('Assembly-CSharp');
     }
     
     var found = false;
-    var steamId = sender.RemoteClientInfo.ownerId;
+    var steamId = sender.RemoteClientInfo.playerId; // .ownerId could be someone else with Steam Family Sharing!
+
     var entities = GameManager.Instance.World.Entities.list;
     
     for (var i=0; i<entities.Count; i++) {
