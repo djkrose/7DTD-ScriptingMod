@@ -1,4 +1,9 @@
-﻿Version 0.10 - compatible ONLY with A16.3 (b12)
+﻿Version 0.11 - compatible ONLY with A16.3 (b12)
+
+- Adjusted js-minibike script to also rotate minibike in direction of player
+
+
+Version 0.10 - compatible ONLY with A16.3 (b12)
 
 - Fixed error message when dj-import is called without parameter
 - Added function "importAssembly(assemblyName)" to JavaScript engine to allow importing all types of any .Net assembly

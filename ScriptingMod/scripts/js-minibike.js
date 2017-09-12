@@ -29,6 +29,7 @@ importAssembly('Assembly-CSharp');
 
         if (entity.GetType().Name == "EntityMinibike" && entity.IsOwner(steamId)) {
             // Found his minibike!
+            entity.SetRotation(player.rotation);
             var pos = player.GetPosition();
             pos.y += 0.5;
             entity.SetPosition(pos);
