@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
 using Jint;
-using Jint.Native;
 using Jint.Parser;
 using Jint.Runtime;
 using Jint.Runtime.Interop;

@@ -401,7 +401,7 @@ namespace ScriptingMod
             if (spawnData == null)
                 return;
 
-            Log.Debug($"Scanning area master {chunk} with spawn data: {spawnData}");
+            //Log.Debug($"Scanning area master {chunk} with spawn data: {spawnData}");
             foreach (var groupName in spawnData.GetEntityGroupNames().ToList())
             {
                 RepairLongRespawnLock(spawnData, groupName);
@@ -451,8 +451,8 @@ namespace ScriptingMod
             // Ignore missing zombies when it could come from surrounding chunks not loaded
             if (!AllChunksLoaded(spawnData.chunk, EntitiySearchRadius))
             {
-                Log.Debug($"Ignoring {lostEntities} lost {groupName} in area master {spawnData.chunk} " +
-                          $"because not all it's 5x5 chunks + {EntitiySearchRadius} chunks around them are loaded.");
+                //Log.Debug($"Ignoring {lostEntities} lost {groupName} in area master {spawnData.chunk} " +
+                //          $"because not all it's 5x5 chunks + {EntitiySearchRadius} chunks around them are loaded.");
                 return;
             }
 
