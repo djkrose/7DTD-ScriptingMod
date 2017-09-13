@@ -87,6 +87,7 @@
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
+    <Compile Include="ScriptEngines\JsConsole.cs" />
     <Compile Include="Vector2xz.cs" />
     <Compile Include="Commands\Regen.cs" />
     <Compile Include="Commands\Test.cs" />
