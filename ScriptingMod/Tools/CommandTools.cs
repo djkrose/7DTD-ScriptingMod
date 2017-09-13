@@ -16,7 +16,6 @@ using CommandObjectPair = ScriptingMod.Extensions.NonPublic.SdtdConsole.CommandO
 
 namespace ScriptingMod.Tools
 {
-
     internal static class CommandTools
     {
         private static readonly CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
@@ -25,7 +24,7 @@ namespace ScriptingMod.Tools
         private static bool _scriptsChangedRunning;
         private static object _scriptsChangedLock = new object();
 
-        public static void LoadCommands()
+        public static void LoadScripts()
         {
             var scripts = Directory.GetFiles(Constants.ScriptsFolder, "*.*", SearchOption.AllDirectories)
                 .Where(s => s.EndsWith(LuaEngine.FileExtension, StringComparison.OrdinalIgnoreCase) ||
@@ -40,27 +39,67 @@ namespace ScriptingMod.Tools
 
                 try
                 {
-                    var commandObject = CreateCommandObject(filePath);
-                    if (commandObject == null)
+                    bool scriptUsed = false;
+                    var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
+                    var metadata = scriptEngine.LoadMetadata(filePath);
+
+                    var commands = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (commands.Length > 0)
                     {
-                        Log.Out($"Script file {fileName} is ignored because it does not contain a command name definition.");
-                        continue;
+                        scriptUsed = true;
+                        var description       = metadata.GetValue("description", "");
+                        var help              = metadata.GetValue("help", null);
+                        var defaultPermission = metadata.GetValue("defaultPermission").ToInt() ?? 0;
+                        var action            = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
+                        var commandObject     = new DynamicCommand(commands, description, help, defaultPermission, action);
+                        AddCommand(commandObject);
+                        Log.Out($"Registered command{(commands.Length == 1 ? "" : "s")} \"{commands.Join(" ")}\" in script {fileName}.");
                     }
 
-                    AddCommand(commandObject);
-                    var commands = commandObject.GetCommands();
-                    Log.Out($"Registered command{(commands.Length == 1 ? "" : "s")} \"{commands.Join(" ")}\" in script {fileName}.");
+                    var events = metadata.GetValue("events", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (events.Length > 0)
+                    {
+                        scriptUsed = true;
+                        AddEvent(events, filePath, engine);
+                        Log.Out($"Registered event{(events.Length == 1 ? "" : "s")} \"{events.Join(" ")}\" in script {fileName}.");
+                    }
+
+                    if (!scriptUsed)
+                    {
+                        Log.Out($"Script file {fileName} is ignored because it defines neither command names nor events.");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning($"Could not load command script {fileName}: {ex.Message}");
-                    Log.Debug(ex.ToString());
+                    Log.Error($"Could not load command script {fileName}: {ex}");
                 }
             }
 
             SaveChanges();
 
             Log.Debug("All script commands added.");
+        }
+
+        private static Dictionary<string, Action> _eventActions = new Dictionary<string, Action>();
+
+        private static void AddEvent(string[] events, string filePath, ScriptEngine engine)
+        {
+            foreach (var evtOrig in events)
+            {
+                var evt = evtOrig.ToLowerInvariant();
+                Action action;
+                switch (evt)
+                {
+                    case "playerspawnedinworld":
+                        action = () => engine.ExecuteEvent(filePath);
+                        break;
+                    default:
+                        var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                        Log.Error($"Event name {evt} in script {fileName} is unknown.");
+                        continue;
+                }
+                _eventActions.Add(evt, action);
+            }
         }
 
         /// <summary>
@@ -127,7 +166,7 @@ namespace ScriptingMod.Tools
 
                     // Reload commands
                     UnloadCommands();
-                    LoadCommands();
+                    LoadScripts();
                 }
                 catch (Exception ex)
                 {
@@ -145,23 +184,23 @@ namespace ScriptingMod.Tools
         /// </summary>
         /// <param name="filePath">Full path of the file to parse.</param>
         /// <returns>The new command object, or null if the script has no command name in metadata and therefore is not a command script.</returns>
-        [CanBeNull]
-        private static DynamicCommand CreateCommandObject(string filePath)
-        {
-            var scriptEngine     = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-            var metadata         = scriptEngine.LoadMetadata(filePath);
-            var commands         = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            var description      = metadata.GetValue("description", "");
-            var help             = metadata.GetValue("help", null);
-            int defaultPermision = metadata.GetValue("defaultPermission").ToInt() ?? 0;
+        //[CanBeNull]
+        //private static DynamicCommand CreateCommandObject(string filePath)
+        //{
+        //    var scriptEngine     = ScriptEngine.GetInstance(Path.GetExtension(filePath));
+        //    var metadata         = scriptEngine.LoadMetadata(filePath);
+        //    var commands         = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        //    var description      = metadata.GetValue("description", "");
+        //    var help             = metadata.GetValue("help", null);
+        //    int defaultPermision = metadata.GetValue("defaultPermission").ToInt() ?? 0;
 
-            // Skip files that have no command name defined and therefore are not commands but helper scripts.
-            if (commands.Length == 0)
-                return null;
+        //    // Skip files that have no command name defined and therefore are not commands but helper scripts.
+        //    if (commands.Length == 0)
+        //        return null;
 
-            var action = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
-            return new DynamicCommand(commands, description, help, defaultPermision, action);
-        }
+        //    var action = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
+        //    return new DynamicCommand(commands, description, help, defaultPermision, action);
+        //}
 
         /// <summary>
         /// Registers the given command object with it's command names into the Console.

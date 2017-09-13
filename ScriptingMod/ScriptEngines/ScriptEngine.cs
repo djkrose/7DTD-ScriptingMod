@@ -54,16 +54,46 @@ namespace ScriptingMod.ScriptEngines
             }
         }
 
+        public void ExecuteEvent(string filePath)
+        {
+            
+        }
+
+        public void ExecuteEvent(string filePath, Dictionary<string, object> eventData)
+        {
+            ResetEngine();
+            InitCommonValues();
+            foreach (var kv in eventData)
+                SetValue(kv.Key, kv.Value);
+
+            var oldDirectory = Directory.GetCurrentDirectory();
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath) ?? Path.PathSeparator.ToString());
+
+            try
+            {
+                ExecuteFile(filePath);
+            }
+            // LuaScriptException is already handled in LuaEngine
+            // JavaScriptException is already handled in JsEngine
+            catch (Exception ex)
+            {
+                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                Log.Error($"Script {fileName} failed: " + ex);
+            }
+
+            Directory.SetCurrentDirectory(oldDirectory);
+        }
+
         public void ExecuteCommand(string filePath, List<string> parameters, CommandSenderInfo senderInfo)
         {
             ResetEngine();
-            SetValue("dump", new Action<object, int?>(Dump));
+            InitCommonValues();
             SetValue("params", parameters.ToArray());
             SetValue("sender", senderInfo);
 
             World world = GameManager.Instance.World;
             EntityPlayer player = world?.Players.dict.GetValue(senderInfo.RemoteClientInfo?.entityId ?? -1);
-            SetValue("player", world?.Players.dict.GetValue(senderInfo.RemoteClientInfo?.entityId ?? -1));
+            SetValue("player", player);
 
             var oldDirectory = Directory.GetCurrentDirectory();
             Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath) ?? Path.PathSeparator.ToString());
@@ -125,6 +155,12 @@ namespace ScriptingMod.ScriptEngines
         protected abstract object GetValue(string name);
 
         protected abstract string GetCommentPrefix();
+
+        private void InitCommonValues()
+        {
+            SetValue("dump", new Action<object, int?>(Dump));
+
+        }
 
         #region Exposed in scripts
 
