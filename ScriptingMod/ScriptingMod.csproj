@@ -152,6 +152,9 @@
     <None Include="Build.targets">
       <SubType>Designer</SubType>
     </None>
+    <Content Include="scripts\js-variables.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="scripts\lua-test.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
