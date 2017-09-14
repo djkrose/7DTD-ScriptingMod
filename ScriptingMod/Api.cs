@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Extensions;
@@ -40,6 +41,15 @@ namespace ScriptingMod
         public override void GameStartDone()
         {
             //Log.Debug("Api.GameStartDone called.");
+            try
+            {
+                if (GamePrefs.GetBool(EnumGamePrefs.EACEnabled))
+                    EacTools.Init();
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex);
+            }
         }
 
         public override void GameUpdate()

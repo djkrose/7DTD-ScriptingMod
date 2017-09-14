@@ -85,6 +85,10 @@ namespace ScriptingMod.Commands
 
                 Log.Debug("Various listeners added.");
                 */
+
+                // Other possible events:
+                // EACServer.kickPlayerDelegate_0
+                // EACServer.authenticationSuccessfulCallbackDelegate_0
             }
             catch (Exception ex)
             {

@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="Api.cs" />
     <Compile Include="Commands\CheckPower.cs" />
+    <Compile Include="Commands\EacWhitelist.cs" />
     <Compile Include="Extensions\ClientInfoExtensions.cs" />
     <Compile Include="Extensions\CommandSenderInfoExtensions.cs" />
     <Compile Include="Extensions\EntityPlayerExtensions.cs" />
@@ -88,6 +89,7 @@
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
     <Compile Include="ScriptEngines\JsConsole.cs" />
+    <Compile Include="Tools\EacTools.cs" />
     <Compile Include="Vector2xz.cs" />
     <Compile Include="Commands\Regen.cs" />
     <Compile Include="Commands\Test.cs" />
