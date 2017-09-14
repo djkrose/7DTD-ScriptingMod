@@ -31,7 +31,7 @@ namespace ScriptingMod.ScriptEngines
             // Only with "limited recursion" Jint tracks and prints JS callstacks on errors
             _jint = new Engine(cfg => cfg.AllowClr().LimitRecursion(int.MaxValue));
             _jint.SetValue("global", _jint.Global); // TODO: Fix problem where dump(glo0bal) or dump(this) hangs the server
-            _jint.SetValue("console", new Console());
+            _jint.SetValue("console", new JsConsole());
             _jint.SetValue("require", new Action<object>(Require));
             _jint.SetValue("importAssembly", new Action<string>(ImportAssembly));
         }
@@ -81,34 +81,6 @@ namespace ScriptingMod.ScriptEngines
         }
 
         #region Exposed in JS
-
-        [UsedImplicitly(ImplicitUseTargetFlags.Members)]
-        // TODO: Could be made a bit more consistent; introduce something else to log?
-        private class Console
-        {
-            public void debug(object v)
-            {
-                Log.Debug(v.ToString());
-            }
-            public void info(object v)
-            {
-                Log.Out(v.ToString());
-            }
-            public void warn(object v)
-            {
-                Log.Warning(v.ToString());
-            }
-            public void error(object v)
-            {
-                Log.Error(v.ToString());
-            }
-            public void log(object v)
-            {
-                // TODO: Test and fix the SdtdConsole output for asynchronous/callbacks in JavaScript or Lua
-                SdtdConsole.Instance.Output(v.ToString());
-                Log.Debug("[CONSOLE] " + v);
-            }
-        }
 
         private void ImportAssembly(string assemblyName)
         {

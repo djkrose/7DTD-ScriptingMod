@@ -1,5 +1,11 @@
-﻿Version 0.11 - compatible ONLY with A16.3 (b12)
+﻿Version 0.12 - compatible ONLY with A16.3 (b12)
 
+- Fixed typo in js-sleepers command help
+
+
+Version 0.11 - compatible ONLY with A16.3 (b12)
+
+- Fixed bug that caused a JS exception when using console.log
 - Improved js-minibike script to also rotate minibike in direction of player for easy take-off
 - Fixed js-minibike script to not work properly when Steam Family Sharing is active
 - Added js-variables script to show how to access and iterate basic game objects

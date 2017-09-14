@@ -1,6 +1,6 @@
 // @commands           js-sleepers
 // @description        Counts and/or removes the sleeper volumes in the current chunk
-// @help               Counts and/or removes all invisible sleeper volumes from chunk of the the current player's position.
+// @help               Counts and/or removes all invisible sleeper volumes from the chunk of the current player's position.
 //                     Usage:
 //                       1. js-sleepers
 //                       2. js-sleepers /remove
