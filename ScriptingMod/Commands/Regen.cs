@@ -9,10 +9,6 @@ using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
-    /*
-     * TODO [P2]: Allow regenerating unloaded chunks
-     */
-
     [UsedImplicitly]
     public class Regen : ConsoleCmdAbstract
     {

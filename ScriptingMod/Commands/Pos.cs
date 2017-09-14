@@ -9,10 +9,6 @@ using UnityEngine;
 
 namespace ScriptingMod.Commands
 {
-    /*
-     *  TODO [P3]: distance below ground
-     */
-     
     [UsedImplicitly]
     public class Pos : ConsoleCmdAbstract
     {

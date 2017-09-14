@@ -35,7 +35,8 @@ namespace ScriptingMod.ScriptEngines
             Log.Debug($"Starting Lua script {fileName} ...");
 
             // We are not using _lua.DoFile(..) because it does not support UTF-8 w/ BOM encoding
-            // TODO [P3]: Fix UTF-8 for require()'d files too, e.g. by adjusting all scripts on start
+            // TODO: Fix UTF-8 for require()'d files too, e.g. by adjusting all scripts on start
+            //       https://github.com/djkrose/7DTD-ScriptingMod/issues/23
             string script = File.ReadAllText(filePath);
 
             try

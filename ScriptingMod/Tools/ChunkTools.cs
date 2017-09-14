@@ -104,7 +104,7 @@ namespace ScriptingMod.Tools
 
                 foreach (var chunkKey in reloadforclients[client])
                 {
-                    // TODO: verify if the above remove chunk takes them out of the EP.ChunkObserver.chunksLoaded dict
+                    // TODO: Verify if the above remove chunk takes them out of the EP.ChunkObserver.chunksLoaded dict
                     if (!allCachedChunks.Contains(chunkKey) || !playersChunks.Contains(chunkKey))
                         continue;
 

@@ -9,9 +9,6 @@ using ScriptingMod.Tools;
 
 namespace ScriptingMod
 {
-    /*
-     * TODO [P3]: Implement dj-reload-scripts to reload all command scripts
-     */
 
     [UsedImplicitly]
     public class Api : ModApiAbstract

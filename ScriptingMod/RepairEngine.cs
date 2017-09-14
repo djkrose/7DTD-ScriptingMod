@@ -11,10 +11,6 @@ using UnityEngine;
 
 namespace ScriptingMod
 {
-    /*
-     * TODO [P2]: Simplify persistency to store entire RepairEngine for background tasks
-     */
-
     internal class RepairEngine
     {
         /// <summary>
