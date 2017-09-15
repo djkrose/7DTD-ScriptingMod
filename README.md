@@ -67,9 +67,8 @@ console.log("Hello JavaScript World!");
 <tr><td>dj-import</td><td>Imports a prefab, optionally including all container content, sign texts, ownership, etc.</td></tr>
 <tr><td>dj-pos</td><td>Shows the current player's position in various units and formats.</td></tr>
 <tr><td>dj-regen</td><td>Regenerates a chunk or custom area based on the world seed.</td></tr>
-<tr><td>dj-repair</td><td>Repairs server problems of various kinds. *NEW!*</td></tr>
-<tr><td>dj-reset-js</td><td>Clears the JavaScript engine from all variables and loaded modules.</td></tr>
-<tr><td>dj-reset-lua</td><td>Clears the Lua engine from all variables and loaded modules.</td></tr>
+<tr><td>dj-repair</td><td>Repairs server problems of various kinds.</td></tr>
+<tr><td>dj-eac-whitelist</td><td>Allows players to be exempt from EAC checks on an EAC-enabled server</td></tr>
 <tr><td>dj-version</td><td>Shows djkrose's Scripting Mod version information.</td></tr>
 </table>
 
