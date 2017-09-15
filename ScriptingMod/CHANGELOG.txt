@@ -1,6 +1,11 @@
-﻿Version 0.12 - compatible ONLY with A16.3 (b12)
+﻿Version 0.13 - compatible ONLY with A16.3 (b12)
 
-- Added dj-eac-whitelist command, which allows to exempt selected players from EAC checks and use modded clients
+
+
+
+Version 0.12 - compatible ONLY with A16.3 (b12)
+
+- Added dj-eac-whitelist command, which allows to exempt selected players from EAC checks and use modded clients on EAC-enabled servers
 - Fixed typo in js-sleepers command help
 
 
