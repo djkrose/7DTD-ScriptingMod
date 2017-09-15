@@ -84,6 +84,12 @@ namespace ScriptingMod.Commands
                 };
 
                 Log.Debug("Various listeners added.");
+
+                GameManager.Instance.World.ChunkCache.OnChunksFinishedLoadingDelegates += delegate
+                {
+                    Log.Debug($"GameManager.Instance.World.ChunkCache.OnChunksFinishedLoadingDelegates called.");
+                };
+
                 */
 
                 // Other possible events:
