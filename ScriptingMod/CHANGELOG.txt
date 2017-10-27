@@ -1,9 +1,10 @@
-﻿Version 0.13 - compatible ONLY with A16.3 (b12)
+﻿Version 0.13 - compatible ONLY with A16.4 (b8)
+
+- Updated compatibility to A16.4
+- Removed command aliases "js" and "lua" to leave only the "-test" ones.
 
 
-
-
-Version 0.12 - compatible ONLY with A16.3 (b12)
+Version 0.12 - compatible with A16.3 (b12) and A16.4 (b8)
 
 - Added dj-eac-whitelist command, which allows to exempt selected players from EAC checks and use modded clients on EAC-enabled servers
 - Fixed typo in js-sleepers command help

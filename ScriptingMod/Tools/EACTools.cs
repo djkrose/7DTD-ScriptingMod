@@ -70,7 +70,7 @@ namespace ScriptingMod.Tools
             EACServer.Instance.SetSuccessDelegate(successDelegateNew);
 
             _isInitialized = true;
-            Log.Out("EAC monitoring activated.");
+            Log.Debug("EAC monitoring activated.");
         }
     }
 }
