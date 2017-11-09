@@ -381,7 +381,7 @@ namespace ScriptingMod.Extensions
         /// <summary>
         /// Use reflection to get method by its name.
         /// </summary>
-        private static MethodInfo GetMethod(Type target, string name, BindingFlags flags = defaultFlags)
+        public static MethodInfo GetMethod(Type target, string name, BindingFlags flags = defaultFlags)
         {
             try
             {

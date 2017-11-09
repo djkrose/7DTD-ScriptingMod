@@ -27,6 +27,9 @@ namespace ScriptingMod
                 Log.Out($"Initializing {Constants.ModNameFull} ...");
                 NonPublic.Init();
                 PersistentData.Load();
+                //HarmonyInstance.Create("com.github.djkrose.7DTD-ScriptingMod")
+                //    .PatchAll(Assembly.GetExecutingAssembly());
+                MethodUtil.InitPatches();
                 CommandTools.LoadCommands();
                 CommandTools.InitScriptsMonitoring();
                 RepairEngine.InitAuto();

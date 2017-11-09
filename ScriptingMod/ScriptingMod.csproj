@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -30,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Test|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -86,10 +88,13 @@
     <Compile Include="Extensions\EntityPlayerExtensions.cs" />
     <Compile Include="Extensions\EnumExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
+    <Compile Include="Patches\EntityZombie.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
     <Compile Include="ScriptEngines\JsConsole.cs" />
     <Compile Include="Tools\EacTools.cs" />
+    <Compile Include="Tools\MethodUtil.cs" />
+    <Compile Include="Tools\PatchTools.cs" />
     <Compile Include="Vector2xz.cs" />
     <Compile Include="Commands\Regen.cs" />
     <Compile Include="Commands\Test.cs" />
