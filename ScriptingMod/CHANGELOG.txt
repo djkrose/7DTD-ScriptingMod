@@ -1,6 +1,7 @@
-﻿Version 0.13 - compatible ONLY with A16.4 (b8)
+﻿Version 0.13 - compatible with A16.4 (b8)
 
-- Updated compatibility to A16.4
+- Add runtime patching system and command "dj-patch"
+- Added patch for zombie corpse item dupe exploit; activate with: dj-patch corpse-dupe on
 - Removed command aliases "js" and "lua" to leave only the "-test" ones.
 
 

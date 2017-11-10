@@ -54,6 +54,8 @@ namespace ScriptingMod.Extensions
         private static FieldInfo       fi_EACServer_successDelegateField;       // EACServer ->   private AuthenticationSuccessfulCallbackDelegate authenticationSuccessfulCallbackDelegate_0;
         private static FieldInfo       fi_EACServer_kickDelegateField;          // EACServer ->   private KickPlayerDelegate kickPlayerDelegate_0;
 
+        private static FieldInfo       fi_EntityAlive_damageResponse;           // EntityAlive -> private DamageResponse damageResponse_0;
+
         public static void Init()
         {
             try
@@ -89,6 +91,8 @@ namespace ScriptingMod.Extensions
 
                 fi_EACServer_successDelegateField       = GetField(typeof(EACServer), typeof(AuthenticationSuccessfulCallbackDelegate));
                 fi_EACServer_kickDelegateField          = GetField(typeof(EACServer), typeof(KickPlayerDelegate));
+
+                fi_EntityAlive_damageResponse           = GetField(typeof(EntityAlive), typeof(DamageResponse));
 
                 Log.Debug("Successfilly established reflection references.");
             }
@@ -270,6 +274,15 @@ namespace ScriptingMod.Extensions
 
         #endregion
 
+        #region Reflected extensions for entity-related types
+
+        public static DamageResponse GetDamageResponse(this EntityAlive target)
+        {
+            return (DamageResponse) fi_EntityAlive_damageResponse.GetValue(target);
+        }
+
+        #endregion
+
         #region Accessors for static members and types
 
         public static class SdtdConsole
@@ -381,7 +394,7 @@ namespace ScriptingMod.Extensions
         /// <summary>
         /// Use reflection to get method by its name.
         /// </summary>
-        public static MethodInfo GetMethod(Type target, string name, BindingFlags flags = defaultFlags)
+        private static MethodInfo GetMethod(Type target, string name, BindingFlags flags = defaultFlags)
         {
             try
             {

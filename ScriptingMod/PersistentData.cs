@@ -26,6 +26,7 @@ namespace ScriptingMod
         public bool RepairSimulate;
         public int RepairInterval; // seconds
         public int RepairCounter;
+        public bool PatchCorpseItemDupeExploit;
         [NotNull]
         public List<string> EacWhitelist = new List<string>();
 
