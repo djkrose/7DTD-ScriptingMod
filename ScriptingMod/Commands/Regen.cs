@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using JetBrains.Annotations;
+using Microsoft.Scripting.Utils;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.Tools;
@@ -50,15 +52,28 @@ namespace ScriptingMod.Commands
         {
             try
             {
+                var world = GameManager.Instance.World ?? throw new FriendlyMessageException(Resources.ErrorWorldNotReady);
+                var chunkCache = world.ChunkCache ?? throw new FriendlyMessageException(Resources.ErrorChunkCacheNotReady);
+
                 (var pos1, var pos2) = ParseParams(parameters, senderInfo);
                 WorldTools.OrderAreaBounds(ref pos1, ref pos2);
 
                 // Check if all needed chunks are in cache
-                foreach (var chunkKey in GetChunksForArea(pos1, pos2, +1))
-                    if (!GameManager.Instance.World.ChunkCache.ContainsChunkSync(chunkKey))
-                        throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
+                LockTools.TryLockHarder(chunkCache.GetSyncRoot(), delegate
+                {
+                    foreach (var chunkKey in GetChunksForArea(pos1, pos2, +1))
+                        if (!chunkCache.ContainsChunkSync(chunkKey))
+                            throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
+                });
 
-                ThreadManager.AddSingleTask(info => RegenerateChunks(pos1, pos2, senderInfo));
+                //ThreadManager.AddSingleTask(info => RegenerateChunks(pos1, pos2, senderInfo));
+
+                var monitoredThread = new MonitoredThread(mt => RegenerateChunks(pos1, pos2, senderInfo), "dj-regen", 50000, 6000);
+                monitoredThread.Progressed += (sender, args) => Log.Debug("dj-regen progressed to " + args.Progress + " %");
+                monitoredThread.Completed += (sender, args) => Log.Debug("dj-regen completed");
+                monitoredThread.Aborted += (sender, args) => Log.Debug("dj-regen aborted" + Environment.NewLine + args.Exception);
+                monitoredThread.Crashed += (sender, args) => Log.Debug("dj-regen crashed" + Environment.NewLine + args.Exception);
+                monitoredThread.Start();
             }
             catch (Exception ex)
             {
@@ -149,8 +164,8 @@ namespace ScriptingMod.Commands
 
         private static void RegenerateChunk(long chunkKey)
         {
-            var world = GameManager.Instance.World;
-            var chunkCache = world.ChunkCache;
+            var world      = GameManager.Instance.World ?? throw new ApplicationException(Resources.ErrorWorldNotReady);
+            var chunkCache = world.ChunkCache ?? throw new ApplicationException(Resources.ErrorChunkCacheNotReady);
             var chunkXZ    = ChunkTools.ChunkKeyToChunkXZ(chunkKey);
 
             Log.Debug($"Starting regeneration of chunk {chunkXZ.x}, {chunkXZ.z} ...");
@@ -161,7 +176,8 @@ namespace ScriptingMod.Commands
 
             // See: ChunkProviderGenerateWorld.DoGenerateChunks()
 
-            System.Random random = Utils.RandomFromSeedOnPos(chunkXZ.x, chunkXZ.z, world.Seed);
+            var random = Utils.RandomFromSeedOnPos(chunkXZ.x, chunkXZ.z, world.Seed);
+            // TODO: replace with TryLockHarder
             Chunk newChunk = MemoryPools.PoolChunks.AllocSync(true);
             if (newChunk == null)
                 throw new ApplicationException("Could not allocate new chunk from MemoryPool.");
@@ -201,13 +217,13 @@ namespace ScriptingMod.Commands
             
             // Replace old chunk with new chunk
             Log.Debug("Replacing current chunk with new chunk ...");
-            lock (chunkCache.GetSyncRoot())
+            LockTools.TryLockHarder(chunkCache.GetSyncRoot(), delegate
             {
                 if (chunkCache.ContainsChunkSync(chunkKey))
                     chunkCache.RemoveChunkSync(chunkKey);
                 if (!chunkCache.AddChunkSync(newChunk))
-                    throw new ApplicationException("Could not add newly generated chunk to cache."); 
-            }
+                    throw new ApplicationException("Could not add newly generated chunk to cache.");
+            });
 
             // Add overlapping decorations and smoothen out terrain borders; needs this and all 8 neighbouring chunks in cache
             Log.Debug("Placing overlapping decorations and smoothing transitions to other chunks ...");
@@ -240,5 +256,6 @@ namespace ScriptingMod.Commands
             }
             return chunkKeys;
         }
+
     }
 }

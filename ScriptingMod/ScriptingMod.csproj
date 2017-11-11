@@ -87,6 +87,7 @@
     <Compile Include="Commands\CheckPower.cs" />
     <Compile Include="Commands\EacWhitelist.cs" />
     <Compile Include="Commands\Patch.cs" />
+    <Compile Include="Exceptions\LockTimeoutException.cs" />
     <Compile Include="Extensions\ClientInfoExtensions.cs" />
     <Compile Include="Extensions\CommandSenderInfoExtensions.cs" />
     <Compile Include="Extensions\EntityPlayerExtensions.cs" />
@@ -97,7 +98,9 @@
     <Compile Include="RepairEngine.cs" />
     <Compile Include="ScriptEngines\JsConsole.cs" />
     <Compile Include="Tools\EacTools.cs" />
+    <Compile Include="Tools\LockTools.cs" />
     <Compile Include="Tools\PatchTools.cs" />
+    <Compile Include="MonitoredThread.cs" />
     <Compile Include="Vector2xz.cs" />
     <Compile Include="Commands\Regen.cs" />
     <Compile Include="Commands\Test.cs" />

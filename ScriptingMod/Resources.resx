@@ -139,4 +139,10 @@
   <data name="ErrorCoordinateNotInteger" xml:space="preserve">
     <value>At least one of the given coordinates is not a valid integer.</value>
   </data>
+  <data name="ErrorWorldNotReady" xml:space="preserve">
+    <value>World not yet ready.</value>
+  </data>
+  <data name="ErrorChunkCacheNotReady" xml:space="preserve">
+    <value>Chunk cache not yet ready.</value>
+  </data>
 </root>
