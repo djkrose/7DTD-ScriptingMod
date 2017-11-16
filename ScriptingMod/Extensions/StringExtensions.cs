@@ -91,5 +91,10 @@ namespace ScriptingMod.Extensions
             string prefix = new string(' ', level);
             return prefix + source.Replace("\n", "\n" + prefix);
         }
+
+        public static bool ContainsAnyChar(this string source, string chars)
+        {
+            return source.IndexOfAny(chars.ToCharArray()) != -1;
+        }
     }
 }

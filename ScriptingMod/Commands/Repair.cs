@@ -50,18 +50,26 @@ namespace ScriptingMod.Commands
             try
             {
                 ParseParams(parameters, out var tasks, out bool simulate, out bool auto, out int? timerInterval);
-
-                var repairEngine = new RepairEngine(tasks, simulate);
-                repairEngine.SenderInfo = senderInfo;
-                if (timerInterval != null)
-                    repairEngine.TimerInterval = timerInterval.Value;
+                timerInterval = timerInterval ?? 60 * 10; // every 10 minutes by default
 
                 if (auto)
                 {
                     if (!PersistentData.Instance.RepairAuto)
-                        repairEngine.AutoOn();
+                    {
+                        PersistentData.Instance.RepairAuto = true;
+                        PersistentData.Instance.RepairTasks = tasks;
+                        PersistentData.Instance.RepairSimulate = simulate;
+                        PersistentData.Instance.RepairInterval = timerInterval.Value; // every 10 minutes by default;
+                        PersistentData.Instance.Save();
+                        RepairEngine.AutoOn();
+                    }
                     else
-                        repairEngine.AutoOff();
+                    {
+                        RepairEngine.AutoOff();
+                        PersistentData.Instance.RepairAuto = false;
+                        PersistentData.Instance.RepairCounter = 0;
+                        PersistentData.Instance.Save();
+                    }
                 }
                 else
                 {
@@ -69,6 +77,7 @@ namespace ScriptingMod.Commands
                     {
                         try
                         {
+                            var repairEngine = new RepairEngine(tasks, simulate, senderInfo);
                             repairEngine.Start();
                         }
                         catch (Exception ex)
