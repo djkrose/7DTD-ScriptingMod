@@ -322,9 +322,6 @@ namespace ScriptingMod
             // Scan blocks
             if (_tasks.ContainsAnyChar("dt"))
             {
-                // Performance improvement: Only task 't' requires block value with damage info
-                var needsDamageValue = _tasks.Contains("t");
-
                 var problemsDensity = 0;
                 var problemsTree = 0;
                 for (int x = 0; x < Constants.ChunkSize; ++x)
@@ -333,11 +330,12 @@ namespace ScriptingMod
                     {
                         for (int y = 0; y < Constants.ChunkHeight; ++y)
                         {
-                            var blockValue = needsDamageValue ? chunk.GetBlock(x, y, z) : chunk.GetBlockNoDamage(x, y, z);
+                            // Getting block with damage is expensive, so we'll only do that if absolutely necessary
+                            var blockValue = chunk.GetBlockNoDamage(x, y, z);
                             var pos = new Vector3i(x, y, z);
 
                             if (_tasks.Contains("d"))
-                                problemsDensity += RepairBlockDensity(blockValue.Block, chunk, pos);
+                                problemsDensity += RepairBlockDensity(blockValue, chunk, pos);
 
                             if (_tasks.Contains("t"))
                                 problemsTree += RepairBlockTree(blockValue, chunk, pos);
@@ -361,8 +359,9 @@ namespace ScriptingMod
             _scannedChunks++;
         }
 
-        private int RepairBlockDensity(Block block, Chunk chunk, Vector3i posInChunk)
+        private int RepairBlockDensity(BlockValue blockValue, Chunk chunk, Vector3i posInChunk)
         {
+            Block block = blockValue.Block;
             sbyte density = chunk.GetDensity(posInChunk.x, posInChunk.y, posInChunk.z);
             if (block.shape.IsTerrain())
             {
@@ -384,23 +383,40 @@ namespace ScriptingMod
             return 0;
         }
 
+        /// <summary>
+        /// Repairs a broken tree if at the given block that is at the given position in the given chunk is one.
+        /// Bugged trees are characterized by having more damage than MxDamage, causing them never to fall but
+        /// instead giving lots of wood on every hit.
+        /// </summary>
+        /// <param name="blockValue">The block value without damage value, as returned by Chunk.GetBlockNoDamage()</param>
+        /// <param name="chunk"></param>
+        /// <param name="posInChunk"></param>
+        /// <returns></returns>
         private int RepairBlockTree(BlockValue blockValue, Chunk chunk, Vector3i posInChunk)
         {
             var block = blockValue.Block;
+
+            // No tree? nothing to do!
+            if (!(block is BlockModelTree))
+                return 0;
+
+            // Getting the damage is expensive
+            blockValue.damage = chunk.GetDamage(posInChunk.x, posInChunk.y, posInChunk.z);
+
             // Bugged trees have more damage than max damage
-            if (block is BlockModelTree && blockValue.damage >= block.MaxDamage)
+            if (blockValue.damage < block.MaxDamage)
+                return 0;
+
+            Log.Debug($"Found tree with {blockValue.damage}/{block.MaxDamage} damage at {chunk.ToWorldPos(posInChunk)}.");
+
+            if (!_simulate)
             {
-                Log.Debug($"Found tree with {blockValue.damage}/{block.MaxDamage} damage at {chunk.ToWorldPos(posInChunk)}.");
-                if (!_simulate)
-                {
-                    // Remove all damage to tree and distribute changes to clients
-                    blockValue.damage = 0;
-                    _blockChangeInfos.Add(new BlockChangeInfo(chunk.ToWorldPos(posInChunk), blockValue, false, true));
-                    //_world.SetBlockRPC(_clrIdx, _blockPos, BlockValue.Air);
-                }
-                return 1;
+                // Remove all damage to tree and distribute changes to clients
+                blockValue.damage = 0;
+                _blockChangeInfos.Add(new BlockChangeInfo(chunk.ToWorldPos(posInChunk), blockValue, false, true));
             }
-            return 0;
+
+            return 1;
         }
 
         private void RepairChunkRespawn([NotNull] Chunk chunk)
