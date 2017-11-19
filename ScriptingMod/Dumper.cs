@@ -49,7 +49,7 @@ namespace ScriptingMod
     /// Class is based on ObjectDumper 1.0.0.12 but adjusted for ScriptingMod by djkrose.
     /// See: https://www.nuget.org/packages/ObjectDumper/
     /// </summary>
-    public static class Dumper
+    internal static class Dumper
     {
         private const int IndentationSpace = 2;
         private const int MaxValueLength = 200;

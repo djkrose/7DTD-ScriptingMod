@@ -11,12 +11,24 @@ using UnityEngine;
 
 namespace ScriptingMod
 {
-    /*
-     * TODO [P2]: Simplify persistency to store entire RepairEngine for background tasks
-     */
-
     internal class RepairEngine
     {
+        /// <summary>
+        /// List of available repair tasks with a unique key and their description.
+        /// </summary>
+        public static readonly SortedDictionary<string, string> TasksDict = new SortedDictionary<string, string>
+        {
+            { "d", "Repair chunk density causing distorted textures and the error \"Failed setting triangles...\". (can take long)"},
+            //{"f", "Remove endlessly falling blocks."},
+            //{"l", "Fix death screen loop due to corrupt player files."},
+            //{"m", "Bring all stuck minibikes to the surface."},
+            {"p", "Fix corrupt power blocks and error \"NullReferenceException at TileEntityPoweredTrigger.write ...\"."},
+            {"r", "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen."},
+            {"t", "Fix bugged trees that have zero HP without falling and give endless wood."},
+        };
+
+        public const string TasksDefault = "dprt";
+
         /// <summary>
         /// Entities are allowed to wander this many chunks away from their initial 5x5 chunk area
         /// </summary>
@@ -30,53 +42,18 @@ namespace ScriptingMod
         /// <summary>
         /// If set to true, problems will only be reported without fixing them
         /// </summary>
-        // Will later probably used in PersistentData, therefore:
-        // ReSharper disable once FieldCanBeMadeReadOnly.Global
-        // ReSharper disable once MemberCanBePrivate.Global
-        public bool Simulate;
-
-        /// <summary>
-        /// List of available repair tasks with a unique key and their description.
-        /// </summary>
-        public static readonly SortedDictionary<string, string> TasksDict = new SortedDictionary<string, string>
-        {
-            { "d", "Repair chunk density causing distorted textures and the error \"Failed setting triangles...\". (can take long)"},
-            //{"f", "Remove endlessly falling blocks."},
-            //{"l", "Fix death screen loop due to corrupt player files."},
-            //{"m", "Bring all stuck minibikes to the surface."},
-            {"p", "Fix corrupt power blocks and error \"NullReferenceException at TileEntityPoweredTrigger.write ...\"."},
-            {"r", "Reset locked respawn of biome zombies and animals, especially after using settime, bc-remove, or dj-regen."},
-        };
-
-        public const string TasksDefault = "dpr";
+        private readonly bool _simulate;
 
         /// <summary>
         /// Case-sensitive letters of tasks to scan for; can be empty but never null
         /// </summary>
         [NotNull]
-        public string Tasks;
+        private readonly string _tasks;
 
         /// <summary>
         /// When set, output can be sent back to the console of the sender; if set to null, no console output is sent
         /// </summary>
-        public CommandSenderInfo? SenderInfo;
-
-        private int _timerInterval = 60 * 10; // every 10 minutes
-
-        /// <summary>
-        /// Interval of background timer execution, in seconds
-        /// </summary>
-        public int TimerInterval
-        {
-            // ReSharper disable once MemberCanBePrivate.Global // more constistent interface
-            get { return _timerInterval; }
-            set
-            {
-                if (value < 60)
-                    throw new FriendlyMessageException("The timer interval cannot be shorter than 60 seconds.");
-                _timerInterval = value;
-            }
-        }
+        private readonly CommandSenderInfo? _senderInfo;
 
         private Stopwatch _stopwatch;
 
@@ -101,16 +78,20 @@ namespace ScriptingMod
                 { PowerTrigger.TriggerTypes.TripWire,      typeof(PowerTripWireRelay) }
             };
 
-        private readonly World World = GameManager.Instance.World;
+        private readonly World World = GameManager.Instance.World ?? throw new ApplicationException(Resources.ErrorWorldNotReady);
+
+        private List<BlockChangeInfo> _blockChangeInfos = new List<BlockChangeInfo>();
+
         private static ulong _maxAllowedRespawnDelayCache;
         private static DateTime _lastLogMessageTriggeredScan = default(DateTime);
         private static System.Threading.Timer _backgroundTimer;
         private static object _syncLock = new object();
 
-        public RepairEngine(string tasks, bool simulate)
+        public RepairEngine(string tasks, bool simulate, CommandSenderInfo? senderInfo = null)
         {
-            Tasks = tasks;
-            Simulate = simulate;
+            _tasks = tasks;
+            _simulate = simulate;
+            _senderInfo = senderInfo;
         }
 
         /// <summary>
@@ -124,9 +105,6 @@ namespace ScriptingMod
                 if (_maxAllowedRespawnDelayCache == 0UL)
                 {
                     _maxAllowedRespawnDelayCache = (ulong)(GamePrefs.GetInt(EnumGamePrefs.PlayerSafeZoneHours) * 1000);
-
-                    if (World == null)
-                        throw new ApplicationException("World not yet loaded.");
 
                     foreach (var biome in World.Biomes.GetBiomeMap().Values)
                     {
@@ -149,18 +127,16 @@ namespace ScriptingMod
         }
 
         /// <summary>
-        /// Activates automatic background repairs.
+        /// Activates automatic background repairs based on the settings in PersistentData.Instance.Repair*.
         /// Will NOT reset the counters so that it can be also used to continue background checks after restart.
         /// </summary>
-        public void AutoOn()
+        public static void AutoOn()
         {
-            PersistentData.Instance.RepairAuto = true;
-            PersistentData.Instance.RepairTasks = Tasks;
-            PersistentData.Instance.RepairSimulate = Simulate;
-            PersistentData.Instance.RepairInterval = TimerInterval;
-            PersistentData.Instance.Save();
+            string tasks         = PersistentData.Instance.RepairTasks;
+            bool   simulate      = PersistentData.Instance.RepairSimulate;
+            int    timerInterval = PersistentData.Instance.RepairInterval; // seconds
 
-            if (Tasks.Contains("p"))
+            if (tasks.Contains("p"))
                 Application.logMessageReceived += LogMessageReceived;
 
             _backgroundTimer = new System.Threading.Timer(delegate
@@ -183,28 +159,25 @@ namespace ScriptingMod
                     Log.Error("Error while running repair in background: " + ex);
                     throw;
                 }
-            }, null, TimerDelay, TimerInterval * 1000);
+            }, null, TimerDelay, timerInterval * 1000);
 
-            LogAndOutput($"Automatic background {(Simulate ? "scan (without repair)" : "repair")} for server problem{(Tasks.Length == 1 ? "" : "s")} {Tasks} every {TimerInterval} seconds turned ON.");
-            Output("To turn off, enter \"dj-repair /auto\" again.");
+            SdtdConsole.Instance.LogAndOutput($"Automatic background {(simulate ? "scan (without repair)" : "repair")} for server problem{(tasks.Length == 1 ? "" : "s")} '{tasks}' every {timerInterval} seconds turned ON.");
+            SdtdConsole.Instance.Output("To turn off, enter \"dj-repair /auto\" again.");
         }
 
         /// <summary>
-        /// Turn automatic background repairs off, log the results, and reset the counters
+        /// Turn automatic background repairs off and log the results.
+        /// No counters are reset.
         /// </summary>
-        public void AutoOff()
+        public static void AutoOff()
         {
             Application.logMessageReceived -= LogMessageReceived;
             _backgroundTimer?.Dispose();
 
-            LogAndOutput($"Automatic background {(PersistentData.Instance.RepairSimulate ? "scan (without repair)" : "repair")} for server problems " +
-                         $"{PersistentData.Instance.RepairTasks} turned OFF.");
-            Output($"Report: {PersistentData.Instance.RepairCounter} problem{(PersistentData.Instance.RepairCounter == 1 ? " was" : "s were")} " +
+            SdtdConsole.Instance.LogAndOutput($"Automatic background {(PersistentData.Instance.RepairSimulate ? "scan (without repair)" : "repair")}" +
+                   $" for server problems {PersistentData.Instance.RepairTasks} turned OFF.");
+            SdtdConsole.Instance.Output($"Report: {PersistentData.Instance.RepairCounter} problem{(PersistentData.Instance.RepairCounter == 1 ? " was" : "s were")} " +
                    $"{(PersistentData.Instance.RepairSimulate ? "identified" : "repaired")} since it was turned on.");
-
-            PersistentData.Instance.RepairCounter = 0;
-            PersistentData.Instance.RepairAuto = false;
-            PersistentData.Instance.Save();
         }
 
         public static void InitAuto()
@@ -212,11 +185,7 @@ namespace ScriptingMod
             try
             {
                 if (PersistentData.Instance.RepairAuto)
-                {
-                    var repairEngine = new RepairEngine(PersistentData.Instance.RepairTasks, PersistentData.Instance.RepairSimulate);
-                    repairEngine.TimerInterval = PersistentData.Instance.RepairInterval;
-                    repairEngine.AutoOn();
-                }
+                    AutoOn();
             }
             catch (Exception ex)
             {
@@ -273,7 +242,7 @@ namespace ScriptingMod
         public void Start()
         {
             // Should not happen when parameters are parsed correctly
-            if (Tasks == string.Empty)
+            if (_tasks == string.Empty)
                 throw new ApplicationException("No repair tasks set.");
 
             if (!Monitor.TryEnter(_syncLock))
@@ -294,10 +263,10 @@ namespace ScriptingMod
         private void StartUnsynchronized()
         {
             _stopwatch = new MicroStopwatch(true);
-            LogAndOutput($"{(Simulate ? "Scan (without repair)" : "Repair")} for server problem(s) {Tasks} started.");
+            LogAndOutput($"{(_simulate ? "Scan (without repair)" : "Repair")} for server problem(s) '{_tasks}' started.");
 
-            // Scan chunks -> tile entities
-            if (Tasks.Contains("p") || Tasks.Contains("r") || Tasks.Contains("d"))
+            // Scan/repair chunks
+            if (_tasks.ContainsAnyChar("dprt"))
             {
                 if (World.ChunkCache == null || World.ChunkCache.Count() == 0)
                 {
@@ -312,13 +281,22 @@ namespace ScriptingMod
             }
 
             // Scan players
-            //if (Tasks.HasFlag(RepairTasks.DeathScreenLoop))
+            //if (_tasks.HasFlag(RepairTasks.DeathScreenLoop))
             //{
             //    Output("Scanning all players ...");
             //    
             //}
 
-            var msg = $"{(Simulate ? "Identified" : "Repaired")} {_problemsFound} problem{(_problemsFound != 1 ? "s" : "")}";
+            // Execute collected change info objects and distribute to clients in one go
+            if (_blockChangeInfos.Count > 0)
+            {
+                Log.Debug($"Executing and distributing {_blockChangeInfos.Count} BlockChangeInfo objects ...");
+                World.SetBlocksRPC(_blockChangeInfos);
+                // Don't clear but replace list because list is used asynchronically in SetBlocksRPC(_blockChangeInfos) later
+                _blockChangeInfos = new List<BlockChangeInfo>();
+            }
+
+            var msg = $"{(_simulate ? "Identified" : "Repaired")} {_problemsFound} problem{(_problemsFound != 1 ? "s" : "")}";
             if (_scannedChunks > 0)
                 msg += $" in {_scannedChunks} chunk{(_scannedChunks != 1 ? "s" : "")}";
             msg += ".";
@@ -328,66 +306,117 @@ namespace ScriptingMod
         }
 
         /// <summary>
-        /// Scans the given chunk object for corrupt power blocks and optionally fixes them
+        /// Scans the given chunk object and optionally fixes problems in it
         /// </summary>
         /// <param name="chunk">The chunk object; must be loaded and ready</param>
         private void RepairChunk([NotNull] Chunk chunk)
         {
-            if (Tasks.Contains("r"))
+            if (_tasks.Contains("r"))
                 RepairChunkRespawn(chunk);
 
-            if (Tasks.Contains("d"))
-                RepairChunkDensity(chunk);
+            // Scan tile entities
+            if (_tasks.Contains("p"))
+                foreach (var tileEntity in chunk.GetTileEntities().list.ToList())
+                    RepairTileEntity(tileEntity);
 
-            foreach (var tileEntity in chunk.GetTileEntities().list.ToList())
-                RepairTileEntity(tileEntity);
+            // Scan blocks
+            if (_tasks.ContainsAnyChar("dt"))
+            {
+                var problemsDensity = 0;
+                var problemsTree = 0;
+                for (int x = 0; x < Constants.ChunkSize; ++x)
+                {
+                    for (int z = 0; z < Constants.ChunkSize; ++z)
+                    {
+                        for (int y = 0; y < Constants.ChunkHeight; ++y)
+                        {
+                            // Getting block with damage is expensive, so we'll only do that if absolutely necessary
+                            var blockValue = chunk.GetBlockNoDamage(x, y, z);
+                            var pos = new Vector3i(x, y, z);
+
+                            if (_tasks.Contains("d"))
+                                problemsDensity += RepairBlockDensity(blockValue, chunk, pos);
+
+                            if (_tasks.Contains("t"))
+                                problemsTree += RepairBlockTree(blockValue, chunk, pos);
+                        }
+                    }
+                }
+
+                if (problemsDensity > 0)
+                {
+                    WarningAndOutput($"{(_simulate ? "Found" : "Repaired")} {problemsDensity} density problem{(problemsDensity == 1 ? "" : "s")} in {chunk}.");
+                    _problemsFound += problemsDensity;
+                }
+
+                if (problemsTree > 0)
+                {
+                    WarningAndOutput($"{(_simulate ? "Found" : "Repaired")} {problemsTree} buggged tree{(problemsTree == 1 ? "" : "s")} in {chunk}.");
+                    _problemsFound += problemsTree;
+                }
+            }
 
             _scannedChunks++;
         }
 
-        private void RepairChunkDensity([NotNull] Chunk chunk)
+        private int RepairBlockDensity(BlockValue blockValue, Chunk chunk, Vector3i posInChunk)
         {
-            //Log.Debug($"Scanning for chunk density errors in {chunk} ...");
-            int problems = 0;
-
-            // Mostly taken from Chunk.RepairDensity(), improved performance, and added counting+simulation
-            Vector3i vector3i1 = new Vector3i(0, 0, 0);
-            Vector3i vector3i2 = new Vector3i(16, 256, 16);
-            for (int x = vector3i1.x; x < vector3i2.x; ++x)
+            Block block = blockValue.Block;
+            sbyte density = chunk.GetDensity(posInChunk.x, posInChunk.y, posInChunk.z);
+            if (block.shape.IsTerrain())
             {
-                for (int z = vector3i1.z; z < vector3i2.z; ++z)
+                if (density >= 0)
                 {
-                    for (int y = vector3i1.y; y < vector3i2.y; ++y)
-                    {
-                        //BlockValue block1 = chunk.GetBlock(x, y, z);
-                        Block block = Block.list[chunk.GetBlockNoDamage(x, y, z).type];
-                        sbyte density = chunk.GetDensity(x, y, z);
-                        if (block.shape.IsTerrain())
-                        {
-                            if (density >= 0)
-                            {
-                                Log.Debug($"Density is {density} but should be < 0.");
-                                if (!Simulate)
-                                    chunk.SetDensity(x, y, z, -1);
-                                problems++;
-                            }
-                        }
-                        else if (density < 0)
-                        {
-                            Log.Debug($"Density is {density} but should be >= 0.");
-                            if (!Simulate)
-                                chunk.SetDensity(x, y, z, 1);
-                            problems++;
-                        }
-                    }
+                    Log.Debug($"Density is {density} but should be < 0 at {chunk.ToWorldPos(posInChunk)}.");
+                    if (!_simulate)
+                        chunk.SetDensity(posInChunk.x, posInChunk.y, posInChunk.z, -1);
+                    return 1;
                 }
             }
-
-            if (problems > 0)
+            else if (density < 0)
             {
-                WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} {problems} density problem{(problems == 1 ? "" : "s")} in {chunk}.");
-                _problemsFound += problems;
+                Log.Debug($"Density is {density} but should be >= 0 at {chunk.ToWorldPos(posInChunk)}.");
+                if (!_simulate)
+                    chunk.SetDensity(posInChunk.x, posInChunk.y, posInChunk.z, 1);
+                return 1;
             }
+            return 0;
+        }
+
+        /// <summary>
+        /// Repairs a broken tree if at the given block that is at the given position in the given chunk is one.
+        /// Bugged trees are characterized by having more damage than MxDamage, causing them never to fall but
+        /// instead giving lots of wood on every hit.
+        /// </summary>
+        /// <param name="blockValue">The block value without damage value, as returned by Chunk.GetBlockNoDamage()</param>
+        /// <param name="chunk"></param>
+        /// <param name="posInChunk"></param>
+        /// <returns></returns>
+        private int RepairBlockTree(BlockValue blockValue, Chunk chunk, Vector3i posInChunk)
+        {
+            var block = blockValue.Block;
+
+            // No tree? nothing to do!
+            if (!(block is BlockModelTree))
+                return 0;
+
+            // Getting the damage is expensive
+            blockValue.damage = chunk.GetDamage(posInChunk.x, posInChunk.y, posInChunk.z);
+
+            // Bugged trees have more damage than max damage
+            if (blockValue.damage < block.MaxDamage)
+                return 0;
+
+            Log.Debug($"Found tree with {blockValue.damage}/{block.MaxDamage} damage at {chunk.ToWorldPos(posInChunk)}.");
+
+            if (!_simulate)
+            {
+                // Remove all damage to tree and distribute changes to clients
+                blockValue.damage = 0;
+                _blockChangeInfos.Add(new BlockChangeInfo(chunk.ToWorldPos(posInChunk), blockValue, false, true));
+            }
+
+            return 1;
         }
 
         private void RepairChunkRespawn([NotNull] Chunk chunk)
@@ -419,12 +448,12 @@ namespace ScriptingMod
             // Problem: Respawn locked is too long; possibly due to modified worldtime with "settime"
 
             _problemsFound++;
-            if (!Simulate)
+            if (!_simulate)
             {
                 spawnData.ClearRespawnLocked(groupName);
                 spawnData.chunk.isModified = true;
             }
-            WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} " +
+            WarningAndOutput($"{(_simulate ? "Found" : "Repaired")} respawn of {groupName} locked for {respawnLockedUntil / 1000 / 24} " +
                              $"game days in area master {spawnData.chunk}.");
         }
 
@@ -459,11 +488,11 @@ namespace ScriptingMod
             // Problem: Zombies are registered in the chunk that cannot be found alive anywhere; they might have disappeared or wandered too far off
 
             _problemsFound++;
-            if (!Simulate)
+            if (!_simulate)
             {
                 SetEntitiesSpawned(spawnData, groupName, spawnedEntities);
             }
-            WarningAndOutput($"{(Simulate ? "Found" : "Repaired")} respawn of {groupName} locked because of {lostEntities} lost " +
+            WarningAndOutput($"{(_simulate ? "Found" : "Repaired")} respawn of {groupName} locked because of {lostEntities} lost " +
                              $"{(lostEntities == 1 ? "entity" : "entities")} in area master {spawnData.chunk}.");
         }
 
@@ -474,15 +503,14 @@ namespace ScriptingMod
         /// <param name="tileEntity">Tile entity to repair; currently only TileEntityPowered type is scanned/repaired</param>
         private void RepairTileEntity([NotNull] TileEntity tileEntity)
         {
-            var powered = tileEntity as TileEntityPowered;
-            if (powered != null && !IsValidTileEntityPowered(powered))
+            if (tileEntity is TileEntityPowered powered && !IsValidTileEntityPowered(powered))
             {
                 _problemsFound++;
 
-                if (!Simulate)
+                if (!_simulate)
                     RecreateTileEntity(tileEntity);
 
-                LogAndOutput($"{(Simulate ? "Found" : "Repaired")} corrupt power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.");
+                LogAndOutput($"{(_simulate ? "Found" : "Repaired")} corrupt power block at {tileEntity.ToWorldPos()} in {tileEntity.GetChunk()}.");
             }
         }
 
@@ -554,15 +582,13 @@ namespace ScriptingMod
 
             var piType = pi.GetType();
 
-            var teTrigger = te as TileEntityPoweredTrigger;
-            if (teTrigger != null)
+            if (te is TileEntityPoweredTrigger teTrigger)
             {
                 // Trigger must be handled differently, because there are multiple possible power items for one TileEntityPoweredTriger,
                 // and the PowerItemType is sometimes just (incorrectly) "PowerSource" when the TriggerType determines the *real* power type.
 
                 // CHECK 1: Power item should be of type PowerTrigger if this is a TileEntityPoweredTrigger
-                var piTrigger = pi as PowerTrigger;
-                if (piTrigger == null)
+                if (!(pi is PowerTrigger piTrigger))
                 {
                     Log.Debug($"[{te.ToWorldPos()}] {teType} should have power item \"PowerTrigger\" or some descendant of it, but has power item \"{piType}\".");
                     return false;
@@ -670,8 +696,8 @@ namespace ScriptingMod
 
         private void Output(string msg)
         {
-            if (SenderInfo != null)
-                SdtdConsole.Instance.OutputAsync(SenderInfo.Value, msg);
+            if (_senderInfo != null)
+                SdtdConsole.Instance.OutputAsync(_senderInfo.Value, msg);
         }
     }
 }

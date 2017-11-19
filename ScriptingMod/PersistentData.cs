@@ -17,13 +17,20 @@ namespace ScriptingMod
         private static PersistentData instance;
         public  static PersistentData Instance => instance ?? (instance = new PersistentData());
 
+        #region Persistent values to be saved
+
         [UsedImplicitly]
-        public const int FileVersion = 3;
+        public const int FileVersion = 4;
         public bool RepairAuto;
         public string RepairTasks;
         public bool RepairSimulate;
         public int RepairInterval; // seconds
         public int RepairCounter;
+        public bool PatchCorpseItemDupeExploit;
+        [NotNull]
+        public List<string> EacWhitelist = new List<string>();
+
+        #endregion
 
         public void Save()
         {

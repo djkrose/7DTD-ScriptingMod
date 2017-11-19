@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using JetBrains.Annotations;
 using ScriptingMod.Extensions;
@@ -9,9 +10,6 @@ using ScriptingMod.Tools;
 
 namespace ScriptingMod
 {
-    /*
-     * TODO [P3]: Implement dj-reload-scripts to reload all command scripts
-     */
 
     [UsedImplicitly]
     public class Api : ModApiAbstract
@@ -29,6 +27,7 @@ namespace ScriptingMod
                 Log.Out($"Initializing {Constants.ModNameFull} ...");
                 NonPublic.Init();
                 PersistentData.Load();
+                PatchTools.ApplyPatches();
                 CommandTools.LoadScripts();
                 CommandTools.InitScriptsMonitoring();
                 RepairEngine.InitAuto();
@@ -43,6 +42,15 @@ namespace ScriptingMod
         public override void GameStartDone()
         {
             //Log.Debug("Api.GameStartDone called.");
+            try
+            {
+                if (GamePrefs.GetBool(EnumGamePrefs.EACEnabled))
+                    EacTools.Init();
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex);
+            }
         }
 
         public override void GameUpdate()

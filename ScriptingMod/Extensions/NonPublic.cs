@@ -51,6 +51,11 @@ namespace ScriptingMod.Extensions
 
         private static FieldInfo       fi_ChunkAreaBiomeSpawnData_dict;         // ChunkAreaBiomeSpawnData -> private Dictionary<string, ChunkAreaBiomeSpawnData.LK> FP
 
+        private static FieldInfo       fi_EACServer_successDelegateField;       // EACServer ->   private AuthenticationSuccessfulCallbackDelegate authenticationSuccessfulCallbackDelegate_0;
+        private static FieldInfo       fi_EACServer_kickDelegateField;          // EACServer ->   private KickPlayerDelegate kickPlayerDelegate_0;
+
+        private static FieldInfo       fi_EntityAlive_damageResponse;           // EntityAlive -> private DamageResponse damageResponse_0;
+
         public static void Init()
         {
             try
@@ -83,6 +88,11 @@ namespace ScriptingMod.Extensions
 
                 var t_ChunkAreaBiomeSpawnData_SpawnData = GetNestedType(typeof(ChunkAreaBiomeSpawnData), typeof(ulong)); // private struct LK, has public ulong PP;
                 fi_ChunkAreaBiomeSpawnData_dict         = GetField(typeof(ChunkAreaBiomeSpawnData), typeof(Dictionary<,>).MakeGenericType(typeof(string), t_ChunkAreaBiomeSpawnData_SpawnData));
+
+                fi_EACServer_successDelegateField       = GetField(typeof(EACServer), typeof(AuthenticationSuccessfulCallbackDelegate));
+                fi_EACServer_kickDelegateField          = GetField(typeof(EACServer), typeof(KickPlayerDelegate));
+
+                fi_EntityAlive_damageResponse           = GetField(typeof(EntityAlive), typeof(DamageResponse));
 
                 Log.Debug("Successfilly established reflection references.");
             }
@@ -236,6 +246,39 @@ namespace ScriptingMod.Extensions
         public static IEnumerable<string> GetEntityGroupNames(this ChunkAreaBiomeSpawnData target)
         {
             return ((IDictionary)fi_ChunkAreaBiomeSpawnData_dict.GetValue(target)).Keys.Cast<string>();
+        }
+
+        #endregion
+
+        #region Reflected extensions to EAC functionality
+
+        public static AuthenticationSuccessfulCallbackDelegate GetSuccessDelegate(this EACServer target)
+        {
+            return (AuthenticationSuccessfulCallbackDelegate)fi_EACServer_successDelegateField.GetValue(target);
+        }
+
+        public static KickPlayerDelegate GetKickDelegate(this EACServer target)
+        {
+            return (KickPlayerDelegate) fi_EACServer_kickDelegateField.GetValue(target);
+        }
+
+        public static void SetSuccessDelegate(this EACServer target, AuthenticationSuccessfulCallbackDelegate successDelegate)
+        {
+            fi_EACServer_successDelegateField.SetValue(target, successDelegate);
+        }
+
+        public static void SetKickDelegate(this EACServer target, KickPlayerDelegate kickDelegate)
+        {
+            fi_EACServer_kickDelegateField.SetValue(target, kickDelegate);
+        }
+
+        #endregion
+
+        #region Reflected extensions for entity-related types
+
+        public static DamageResponse GetDamageResponse(this EntityAlive target)
+        {
+            return (DamageResponse) fi_EntityAlive_damageResponse.GetValue(target);
         }
 
         #endregion

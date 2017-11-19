@@ -84,7 +84,40 @@ namespace ScriptingMod.Commands
                 };
 
                 Log.Debug("Various listeners added.");
+
+                GameManager.Instance.World.ChunkCache.OnChunksFinishedLoadingDelegates += delegate
+                {
+                    Log.Debug($"GameManager.Instance.World.ChunkCache.OnChunksFinishedLoadingDelegates called.");
+                };
+
                 */
+
+                // Other possible events:
+                // EACServer.kickPlayerDelegate_0
+                // EACServer.authenticationSuccessfulCallbackDelegate_0
+
+                // Some more events in the Steam class:
+                //public event Steam.UpdateDelegate UpdateEv;
+
+                //public event Steam.LateUpdateDelegate LateUpdateEv;
+
+                //public event Steam.ApplicationQuitDelegate ApplicationQuitEv;
+
+                //public event Steam.DestroyDelegate DestroyEv;
+
+                //public event Steam.DisconnectedFromServerDelegate DisconnectedFromServerEv;
+
+                //public event Steam.ConnectedToServerDelegate ConnectedToServerEv;
+
+                //public event Steam.FailedToConnectDelegate FailedToConnectEv;
+
+                //public event Steam.ServerInitializedDelegate ServerInitializedEv;
+
+                //public event Steam.PlayerConnectedDelegate PlayerConnectedEv;
+
+                //public event Steam.PlayerDisconnectedDelegate PlayerDisconnectedEv;
+
+                //public static Steam.AuthenticationSC Authentication
             }
             catch (Exception ex)
             {

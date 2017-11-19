@@ -1,5 +1,21 @@
-﻿Version 0.12 - compatible ONLY with A16.3 (b12)
+﻿Version 0.15 - compatible with A16.4 (b8)
 
+
+Version 0.14 - compatible with A16.4 (b8)
+
+- Added repair task 't' to fix bugged trees that have zero HP without falling and give endless wood
+
+
+Version 0.13 - compatible with A16.4 (b8)
+
+- Add runtime patching system and command "dj-patch"
+- Added patch for zombie corpse item dupe exploit; activate with: dj-patch corpse-dupe on
+- Removed command aliases "js" and "lua" to leave only the "-test" ones.
+
+
+Version 0.12 - compatible with A16.3 (b12) and A16.4 (b8)
+
+- Added dj-eac-whitelist command, which allows to exempt selected players from EAC checks and use modded clients on EAC-enabled servers
 - Fixed typo in js-sleepers command help
 
 
@@ -9,6 +25,7 @@ Version 0.11 - compatible ONLY with A16.3 (b12)
 - Improved js-minibike script to also rotate minibike in direction of player for easy take-off
 - Fixed js-minibike script to not work properly when Steam Family Sharing is active
 - Added js-variables script to show how to access and iterate basic game objects
+
 
 Version 0.10 - compatible ONLY with A16.3 (b12)
 

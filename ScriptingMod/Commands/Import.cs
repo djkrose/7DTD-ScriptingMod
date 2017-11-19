@@ -11,17 +11,6 @@ using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
-    /*
-     * TODO [P3]: Save prefabs in a subdirectory, but somehow allow also to load standard prefabs. (or use default file name prefix)
-     * TODO [P3]: If a bed is overwritten during import, remove the player's home point
-     * TODO [P3]: Also reload adjacent chunks to fix terrain height gaps
-     * TODO [P3]: Enable/fix importing of spawners
-     * TODO [P2]: Replace loot placeholder blocks according to loot.xml
-     * TODO [P2]: Allow changing the directon into which the prefab is loaded (other north/east/up)
-     * TODO [P2]: Allow importing vending machines and other things that have TraderData in the TileEntity. This requires that an entry is made into TraderInfo.traderInfoList[this.TraderID]
-     * TODO [P2]: Register Land Claim Blocks correctly
-     */
-
     [UsedImplicitly]
     public class Import : ConsoleCmdAbstract
     {

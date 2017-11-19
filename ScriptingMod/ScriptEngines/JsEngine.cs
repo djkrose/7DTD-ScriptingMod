@@ -30,7 +30,9 @@ namespace ScriptingMod.ScriptEngines
         {
             // Only with "limited recursion" Jint tracks and prints JS callstacks on errors
             _jint = new Engine(cfg => cfg.AllowClr().LimitRecursion(int.MaxValue));
-            _jint.SetValue("global", _jint.Global); // TODO: Fix problem where dump(glo0bal) or dump(this) hangs the server
+            // TODO: Fix problem where dump(glo0bal) or dump(this) hangs the server
+            //       https://github.com/djkrose/7DTD-ScriptingMod/issues/22
+            _jint.SetValue("global", _jint.Global);
             _jint.SetValue("console", new JsConsole());
             _jint.SetValue("require", new Action<object>(Require));
             _jint.SetValue("importAssembly", new Action<string>(ImportAssembly));
@@ -123,8 +125,7 @@ namespace ScriptingMod.ScriptEngines
             }
             catch (Exception ex)
             {
-                // TODO: Throw JavaScriptException when file could not be loaded...
-                Log.Exception(ex);
+                throw new JavaScriptException(_jint.ReferenceError, ex.Message, ex);
             }
         }
 

@@ -10,10 +10,6 @@ using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
-    /*
-     * TODO [P3]: Copy trader entity and protected area correctly
-     */
-
     [UsedImplicitly]
     public class Export : ConsoleCmdAbstract
     {

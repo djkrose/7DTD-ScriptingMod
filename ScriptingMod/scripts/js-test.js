@@ -3,7 +3,7 @@
 // must use single-line comment (//) and must appear before the first Lua statement at the
 // beginning. The tags @commands and @description are mandatory, all others are optional.
 // 
-// @commands           js-test js
+// @commands           js-test
 // @defaultPermission  0
 // @description        Example command to demonstrate Lua scripting
 // @help               This command demonstrates scripting capabilities of djkrose's Scripting Mod.

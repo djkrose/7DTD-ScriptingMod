@@ -9,10 +9,6 @@ using ScriptingMod.Tools;
 
 namespace ScriptingMod.Commands
 {
-    /*
-     * TODO [P2]: Allow regenerating unloaded chunks
-     */
-
     [UsedImplicitly]
     public class Regen : ConsoleCmdAbstract
     {
@@ -54,12 +50,15 @@ namespace ScriptingMod.Commands
         {
             try
             {
+                var world = GameManager.Instance.World ?? throw new FriendlyMessageException(Resources.ErrorWorldNotReady);
+                var chunkCache = world.ChunkCache ?? throw new FriendlyMessageException(Resources.ErrorChunkCacheNotReady);
+
                 (var pos1, var pos2) = ParseParams(parameters, senderInfo);
                 WorldTools.OrderAreaBounds(ref pos1, ref pos2);
 
                 // Check if all needed chunks are in cache
                 foreach (var chunkKey in GetChunksForArea(pos1, pos2, +1))
-                    if (!GameManager.Instance.World.ChunkCache.ContainsChunkSync(chunkKey))
+                    if (!chunkCache.ContainsChunkSync(chunkKey))
                         throw new FriendlyMessageException(Resources.ErrorAreaTooFarAway);
 
                 ThreadManager.AddSingleTask(info => RegenerateChunks(pos1, pos2, senderInfo));
@@ -153,8 +152,8 @@ namespace ScriptingMod.Commands
 
         private static void RegenerateChunk(long chunkKey)
         {
-            var world = GameManager.Instance.World;
-            var chunkCache = world.ChunkCache;
+            var world      = GameManager.Instance.World ?? throw new ApplicationException(Resources.ErrorWorldNotReady);
+            var chunkCache = world.ChunkCache ?? throw new ApplicationException(Resources.ErrorChunkCacheNotReady);
             var chunkXZ    = ChunkTools.ChunkKeyToChunkXZ(chunkKey);
 
             Log.Debug($"Starting regeneration of chunk {chunkXZ.x}, {chunkXZ.z} ...");
@@ -165,7 +164,7 @@ namespace ScriptingMod.Commands
 
             // See: ChunkProviderGenerateWorld.DoGenerateChunks()
 
-            System.Random random = Utils.RandomFromSeedOnPos(chunkXZ.x, chunkXZ.z, world.Seed);
+            var random = Utils.RandomFromSeedOnPos(chunkXZ.x, chunkXZ.z, world.Seed);
             Chunk newChunk = MemoryPools.PoolChunks.AllocSync(true);
             if (newChunk == null)
                 throw new ApplicationException("Could not allocate new chunk from MemoryPool.");

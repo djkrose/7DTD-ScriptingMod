@@ -13,4 +13,15 @@
     <attribute ctor="M:JetBrains.Annotations.CanBeNullAttribute.#ctor" />
   </member>
 
+  <member name="P:ConnectionManager.Instance">
+    <attribute ctor="M:JetBrains.Annotations.CanBeNullAttribute.#ctor" />
+  </member>
+
+  <member name="M:World.GetEntity(System.Int32)">
+    <attribute ctor="M:JetBrains.Annotations.CanBeNullAttribute.#ctor" />
+  </member>
+
+  <member name="M:ConnectionManager.GetClientInfoForEntityId(System.Int32)">
+    <attribute ctor="M:JetBrains.Annotations.CanBeNullAttribute.#ctor" />
+  </member>
 </assembly>

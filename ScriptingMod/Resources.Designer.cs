@@ -70,6 +70,15 @@ namespace ScriptingMod {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Chunk cache not ready..
+        /// </summary>
+        internal static string ErrorChunkCacheNotReady {
+            get {
+                return ResourceManager.GetString("ErrorChunkCacheNotReady", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to At least one of the given coordinates is not a valid integer..
         /// </summary>
         internal static string ErrorCoordinateNotInteger {
@@ -102,6 +111,15 @@ namespace ScriptingMod {
         internal static string ErrorParameerCountNotValid {
             get {
                 return ResourceManager.GetString("ErrorParameerCountNotValid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to World not ready..
+        /// </summary>
+        internal static string ErrorWorldNotReady {
+            get {
+                return ResourceManager.GetString("ErrorWorldNotReady", resourceCulture);
             }
         }
         

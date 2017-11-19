@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace ScriptingMod
 {
-    public class DumperOptions
+    internal class DumperOptions
     {
         public static DumperOptions Default = new DumperOptions();
 
