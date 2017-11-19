@@ -70,7 +70,7 @@ namespace ScriptingMod {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Chunk cache not yet ready..
+        ///   Looks up a localized string similar to Chunk cache not ready..
         /// </summary>
         internal static string ErrorChunkCacheNotReady {
             get {
@@ -115,7 +115,7 @@ namespace ScriptingMod {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to World not yet ready..
+        ///   Looks up a localized string similar to World not ready..
         /// </summary>
         internal static string ErrorWorldNotReady {
             get {
