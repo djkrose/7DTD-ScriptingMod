@@ -94,6 +94,7 @@ namespace ScriptingMod.ScriptEngines
             if (values == null || values.Length == 0)
                 return;
             string output = values.Select(v => v.ToString()).Aggregate((s, s1) => s + s1);
+            // TODO: Test and fix the Print output for asynchronous/callbacks/events in Lua
             SdtdConsole.Instance.Output(output);
             Log.Debug("[CONSOLE] " + output);
         }

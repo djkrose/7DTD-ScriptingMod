@@ -139,6 +139,9 @@
     <Content Include="scripts\js-minibike.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="scripts\player-spawned.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="Assembly-CSharp.ExternalAnnotations.xml">
       <SubType>Designer</SubType>
     </None>

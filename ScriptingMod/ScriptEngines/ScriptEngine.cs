@@ -4,10 +4,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using JetBrains.Annotations;
 using ScriptingMod.Extensions;
 
 namespace ScriptingMod.ScriptEngines
 {
+
     internal abstract class ScriptEngine
     {
         private Regex metaDataRegex;
@@ -54,17 +56,11 @@ namespace ScriptingMod.ScriptEngines
             }
         }
 
-        public void ExecuteEvent(string filePath)
-        {
-            
-        }
-
-        public void ExecuteEvent(string filePath, Dictionary<string, object> eventData)
+        public void ExecuteEvent(string filePath, [CanBeNull] object eventArgs)
         {
             ResetEngine();
             InitCommonValues();
-            foreach (var kv in eventData)
-                SetValue(kv.Key, kv.Value);
+            SetValue("event", eventArgs);
 
             var oldDirectory = Directory.GetCurrentDirectory();
             Directory.SetCurrentDirectory(Path.GetDirectoryName(filePath) ?? Path.PathSeparator.ToString());

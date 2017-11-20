@@ -28,7 +28,7 @@ namespace ScriptingMod.ScriptEngines
         }
         public void log(object v)
         {
-            // TODO: Test and fix the SdtdConsole output for asynchronous/callbacks in JavaScript or Lua
+            // TODO: Test and fix the SdtdConsole output for asynchronous/callbacks/events in JavaScript
             SdtdConsole.Instance.Output(v.ToString());
             Log.Debug("[CONSOLE] " + v);
         }

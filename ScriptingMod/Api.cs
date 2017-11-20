@@ -28,7 +28,8 @@ namespace ScriptingMod
                 NonPublic.Init();
                 PersistentData.Load();
                 PatchTools.ApplyPatches();
-                CommandTools.LoadScripts();
+                CommandTools.InitEvents();
+                CommandTools.InitScripts();
                 CommandTools.InitScriptsMonitoring();
                 RepairEngine.InitAuto();
                 Log.Out($"Done initializing {Constants.ModNameFull}.");
@@ -74,7 +75,7 @@ namespace ScriptingMod
             //Log.Debug("Api.PlayerSpawning called.");
         }
 
-        public event Action<ClientInfo, RespawnType, Vector3i> OnPlayerSpawnedInWorld;
+        public static event Action<ClientInfo, RespawnType, Vector3i> OnPlayerSpawnedInWorld;
 
         public override void PlayerSpawnedInWorld(ClientInfo cInfo, RespawnType respawnReason, Vector3i pos)
         {

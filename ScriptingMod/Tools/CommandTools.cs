@@ -12,10 +12,11 @@ using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.ScriptEngines;
-using CommandObjectPair = ScriptingMod.Extensions.NonPublic.SdtdConsole.CommandObjectPair;
 
 namespace ScriptingMod.Tools
 {
+    using CommandObjectPair = NonPublic.SdtdConsole.CommandObjectPair;
+
     internal static class CommandTools
     {
         private static readonly CommandObjectPairComparer _commandObjectPairComparer = new CommandObjectPairComparer();
@@ -24,7 +25,24 @@ namespace ScriptingMod.Tools
         private static bool _scriptsChangedRunning;
         private static object _scriptsChangedLock = new object();
 
-        public static void LoadScripts()
+        /// <summary>
+        /// Dictionary of eventName => List of script filePaths.
+        /// Value must NOT be null, instead always empty List.
+        /// </summary>
+        private static Dictionary<string, List<string>> _events = new Dictionary<string, List<string>>();
+
+        public static void InitEvents()
+        {
+            _events["playerSpawnedInWorld"] = new List<string>();
+            Api.OnPlayerSpawnedInWorld += (clientInfo, respawnType, pos)
+                => InvokeScriptEvents("playerSpawnedInWorld", new { clientInfo, respawnType, pos });
+           
+            // TODO: Add all other events
+            // TODO: Solve problem with events that support return values
+            // TODO: Do something about console.log in event mode which can't work but still exists at the moment
+        }
+
+        public static void InitScripts()
         {
             var scripts = Directory.GetFiles(Constants.ScriptsFolder, "*.*", SearchOption.AllDirectories)
                 .Where(s => s.EndsWith(LuaEngine.FileExtension, StringComparison.OrdinalIgnoreCase) ||
@@ -43,25 +61,39 @@ namespace ScriptingMod.Tools
                     var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
                     var metadata = scriptEngine.LoadMetadata(filePath);
 
-                    var commands = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (commands.Length > 0)
+                    // Register commands
+                    var commandNames = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (commandNames.Length > 0)
                     {
                         scriptUsed = true;
                         var description       = metadata.GetValue("description", "");
                         var help              = metadata.GetValue("help", null);
                         var defaultPermission = metadata.GetValue("defaultPermission").ToInt() ?? 0;
                         var action            = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
-                        var commandObject     = new DynamicCommand(commands, description, help, defaultPermission, action);
+                        var commandObject     = new DynamicCommand(commandNames, description, help, defaultPermission, action);
                         AddCommand(commandObject);
-                        Log.Out($"Registered command{(commands.Length == 1 ? "" : "s")} \"{commands.Join(" ")}\" in script {fileName}.");
+                        Log.Out($"Registered command{(commandNames.Length == 1 ? "" : "s")} \"{commandNames.Join(" ")}\" in script {fileName}.");
                     }
 
-                    var events = metadata.GetValue("events", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (events.Length > 0)
+                    // Register events
+                    var eventNames = metadata.GetValue("events", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (eventNames.Length > 0)
                     {
                         scriptUsed = true;
-                        AddEvent(events, filePath, engine);
-                        Log.Out($"Registered event{(events.Length == 1 ? "" : "s")} \"{events.Join(" ")}\" in script {fileName}.");
+                        foreach (var eventName in eventNames)
+                        {
+                            if (_events.ContainsKey(eventName))
+                            {
+                                if (_events[eventName] == null)
+                                    _events[eventName] = new List<string>();
+                                _events[eventName].Add(filePath);
+                            }
+                            else
+                            {
+                                Log.Warning($"Event \"{eventName}\" in script {fileName} is unknown and will be ignored.");
+                            }
+                        }
+                        Log.Out($"Registered event{(eventNames.Length == 1 ? "" : "s")} \"{eventNames.Join(" ")}\" in script {fileName}.");
                     }
 
                     if (!scriptUsed)
@@ -80,25 +112,78 @@ namespace ScriptingMod.Tools
             Log.Debug("All script commands added.");
         }
 
-        private static Dictionary<string, Action> _eventActions = new Dictionary<string, Action>();
+        //private static void AddEvent(string[] events, string filePath, ScriptEngine engine)
+        //{
+        //    foreach (var eventName in events)
+        //    {
 
-        private static void AddEvent(string[] events, string filePath, ScriptEngine engine)
+        //        Action action;
+        //        switch (eventName)
+        //        {
+        //            case "playerSpawnedInWorld":
+
+        //                //action = () => engine.ExecuteEvent(filePath, evt);
+        //                //Api.OnPlayerSpawnedInWorld += (clientInfo, respawnReason, pos) =>
+        //                //{
+        //                //    engine.ExecuteEvent(filePath, new Dictionary<string, object>
+        //                //    {
+        //                //        { "name", evtName },
+        //                //        { "clientInfo", clientInfo },
+        //                //        { "respawnReason", respawnReason },
+        //                //        { "pos", pos }
+        //                //    });
+        //                //};
+        //                //Api.OnPlayerSpawnedInWorld += (clientInfo, respawnReason, pos) =>
+        //                //{
+        //                //    engine.ExecuteEvent(filePath, new {name = evtName, clientInfo, respawnReason, pos});
+        //                //};
+
+        //                break;
+        //            default:
+        //                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+        //                Log.Error($"Event name {eventName} in script {fileName} is unknown.");
+        //                continue;
+        //        }
+        //        _eventActions.Add((eventName, filePath), action);
+        //    }
+        //}
+
+        public static void InitScriptsMonitoring()
         {
-            foreach (var evtOrig in events)
+            try
             {
-                var evt = evtOrig.ToLowerInvariant();
-                Action action;
-                switch (evt)
-                {
-                    case "playerspawnedinworld":
-                        action = () => engine.ExecuteEvent(filePath);
-                        break;
-                    default:
-                        var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
-                        Log.Error($"Event name {evt} in script {fileName} is unknown.");
-                        continue;
-                }
-                _eventActions.Add(evt, action);
+                _scriptsWatcher = new FileSystemWatcher(Constants.ScriptsFolder);
+                _scriptsWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                _scriptsWatcher.IncludeSubdirectories = true;
+                _scriptsWatcher.Changed += ScriptsChanged;
+                _scriptsWatcher.Created += ScriptsChanged;
+                _scriptsWatcher.Deleted += ScriptsChanged;
+                _scriptsWatcher.Renamed += ScriptsChanged;
+                _scriptsWatcher.EnableRaisingEvents = true;
+                Log.Out("Monitoring of script folder changes activated.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Could not initialize monitoring of scripting folder. Script file changes will not be detected. - " + ex);
+            }
+        }
+
+        private static void InvokeScriptEvents([NotNull] string eventName, [CanBeNull] object eventArgs)
+        {
+            if (!_events.ContainsKey(eventName))
+                throw new ApplicationException($"Event \"{eventName}\" was invoked but was not properly registered in {typeof(CommandTools)}.{nameof(InitEvents)}()!");
+
+            List<string> filePaths = _events[eventName];
+
+            if (filePaths == null || filePaths.Count == 0)
+                return;
+
+            Log.Debug($"Invoking event \"{eventName}\" ...");
+
+            foreach (var filePath in filePaths)
+            {
+                var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
+                scriptEngine.ExecuteEvent(filePath, eventArgs);
             }
         }
 
@@ -121,28 +206,14 @@ namespace ScriptingMod.Tools
                     commandObjectPairs.RemoveAt(i);
             }
 
-            //SaveChanges();
-            Log.Out("Unloaded all scripting commands.");
-        }
+            // Clear out attached scripts but leave the eventName keys intact for reference of available events
+            foreach (var eventName in _events.Keys)
+            {
+                _events[eventName] = new List<string>();
+            }
 
-        public static void InitScriptsMonitoring()
-        {
-            try
-            {
-                _scriptsWatcher = new FileSystemWatcher(Constants.ScriptsFolder);
-                _scriptsWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName;
-                _scriptsWatcher.IncludeSubdirectories = true;
-                _scriptsWatcher.Changed += ScriptsChanged;
-                _scriptsWatcher.Created += ScriptsChanged;
-                _scriptsWatcher.Deleted += ScriptsChanged;
-                _scriptsWatcher.Renamed += ScriptsChanged;
-                _scriptsWatcher.EnableRaisingEvents = true;
-                Log.Out("Monitoring of script folder changes activated.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Could not initialize monitoring of scripting folder. Script file changes will not be detected. - " + ex);
-            }
+            SaveChanges();
+            Log.Out("Unloaded all scripting commands.");
         }
 
         private static void ScriptsChanged(object sender, FileSystemEventArgs args)
@@ -166,7 +237,7 @@ namespace ScriptingMod.Tools
 
                     // Reload commands
                     UnloadCommands();
-                    LoadScripts();
+                    InitScripts();
                 }
                 catch (Exception ex)
                 {
@@ -179,11 +250,11 @@ namespace ScriptingMod.Tools
             });
         }
 
-        /// <summary>
-        /// Parses the file as command script and tries to create a command object from it.
-        /// </summary>
-        /// <param name="filePath">Full path of the file to parse.</param>
-        /// <returns>The new command object, or null if the script has no command name in metadata and therefore is not a command script.</returns>
+        ///// <summary>
+        ///// Parses the file as command script and tries to create a command object from it.
+        ///// </summary>
+        ///// <param name="filePath">Full path of the file to parse.</param>
+        ///// <returns>The new command object, or null if the script has no command name in metadata and therefore is not a command script.</returns>
         //[CanBeNull]
         //private static DynamicCommand CreateCommandObject(string filePath)
         //{
