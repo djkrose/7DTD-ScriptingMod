@@ -17,7 +17,7 @@ namespace ScriptingMod.Extensions
         [NotNull]
         public static EntityPlayer GetEntityPlayer(this ClientInfo ci)
         {
-            return GameManager.Instance.World.Players.dict.GetValue(ci.entityId)
+            return GameManager.Instance.World?.Players.dict.GetValue(ci.entityId)
                    ?? throw new ApplicationException($"Unable to get player with entityId {ci.entityId}.");
         }
     }

@@ -95,6 +95,8 @@
     <Compile Include="Patches\CorpseDupePatch.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
+    <Compile Include="ScriptEngines\ChatMessageEventArgs.cs" />
+    <Compile Include="ScriptEvents.cs" />
     <Compile Include="ScriptEngines\JsConsole.cs" />
     <Compile Include="Tools\EacTools.cs" />
     <Compile Include="Tools\PatchTools.cs" />
@@ -136,10 +138,16 @@
     <Compile Include="Tools\WorldTools.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="scripts\event-savePlayerData.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="scripts\event-gameStartDone.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="scripts\js-minibike.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\player-spawned.js">
+    <Content Include="scripts\event-chatMessage.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="Assembly-CSharp.ExternalAnnotations.xml">

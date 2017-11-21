@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -87,8 +86,7 @@ namespace ScriptingMod.ScriptEngines
             SetValue("params", parameters.ToArray());
             SetValue("sender", senderInfo);
 
-            World world = GameManager.Instance.World;
-            EntityPlayer player = world?.Players.dict.GetValue(senderInfo.RemoteClientInfo?.entityId ?? -1);
+            EntityPlayer player = GameManager.Instance.World?.Players.dict.GetValue(senderInfo.RemoteClientInfo?.entityId ?? -1);
             SetValue("player", player);
 
             var oldDirectory = Directory.GetCurrentDirectory();

@@ -12,6 +12,7 @@ using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.ScriptEngines;
+using UnityEngine;
 
 namespace ScriptingMod.Tools
 {
@@ -26,19 +27,20 @@ namespace ScriptingMod.Tools
         private static object _scriptsChangedLock = new object();
 
         /// <summary>
-        /// Dictionary of eventName => List of script filePaths.
-        /// Value must NOT be null, instead always empty List.
+        /// Dictionary of event name => [NotNull] List of script filePaths
         /// </summary>
         private static Dictionary<string, List<string>> _events = new Dictionary<string, List<string>>();
 
         public static void InitEvents()
         {
-            _events["playerSpawnedInWorld"] = new List<string>();
-            Api.OnPlayerSpawnedInWorld += (clientInfo, respawnType, pos)
-                => InvokeScriptEvents("playerSpawnedInWorld", new { clientInfo, respawnType, pos });
-           
+            // A lot of other methods are already calling InvokeScriptEvents(..) directly.
+            // Here are just the ones that need to be attached to actual events.
+            // See enum ScriptEvents and it's usages for a full list of supported scripting events.
+
+            Application.logMessageReceived += (condition, trace, logType)
+                => InvokeScriptEvents(new { type = ScriptEvents.logMessageReceived.ToString(), condition, trace, logType});
+
             // TODO: Add all other events
-            // TODO: Solve problem with events that support return values
             // TODO: Do something about console.log in event mode which can't work but still exists at the moment
         }
 
@@ -72,7 +74,7 @@ namespace ScriptingMod.Tools
                         var action            = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
                         var commandObject     = new DynamicCommand(commandNames, description, help, defaultPermission, action);
                         AddCommand(commandObject);
-                        Log.Out($"Registered command{(commandNames.Length == 1 ? "" : "s")} \"{commandNames.Join(" ")}\" in script {fileName}.");
+                        Log.Out($"Registered command{(commandNames.Length == 1 ? "" : "s")} \"{commandNames.Join(" ")}\" from script {fileName}.");
                     }
 
                     // Register events
@@ -82,18 +84,17 @@ namespace ScriptingMod.Tools
                         scriptUsed = true;
                         foreach (var eventName in eventNames)
                         {
-                            if (_events.ContainsKey(eventName))
-                            {
-                                if (_events[eventName] == null)
-                                    _events[eventName] = new List<string>();
-                                _events[eventName].Add(filePath);
-                            }
-                            else
+                            if (!EventExists(eventName))
                             {
                                 Log.Warning($"Event \"{eventName}\" in script {fileName} is unknown and will be ignored.");
+                                continue;
                             }
+
+                            if (!_events.ContainsKey(eventName))
+                                _events[eventName] = new List<string>();
+                            _events[eventName].Add(filePath);
                         }
-                        Log.Out($"Registered event{(eventNames.Length == 1 ? "" : "s")} \"{eventNames.Join(" ")}\" in script {fileName}.");
+                        Log.Out($"Registered event{(eventNames.Length == 1 ? "" : "s")} \"{eventNames.Join(" ")}\" from script {fileName}.");
                     }
 
                     if (!scriptUsed)
@@ -112,41 +113,19 @@ namespace ScriptingMod.Tools
             Log.Debug("All script commands added.");
         }
 
-        //private static void AddEvent(string[] events, string filePath, ScriptEngine engine)
-        //{
-        //    foreach (var eventName in events)
-        //    {
-
-        //        Action action;
-        //        switch (eventName)
-        //        {
-        //            case "playerSpawnedInWorld":
-
-        //                //action = () => engine.ExecuteEvent(filePath, evt);
-        //                //Api.OnPlayerSpawnedInWorld += (clientInfo, respawnReason, pos) =>
-        //                //{
-        //                //    engine.ExecuteEvent(filePath, new Dictionary<string, object>
-        //                //    {
-        //                //        { "name", evtName },
-        //                //        { "clientInfo", clientInfo },
-        //                //        { "respawnReason", respawnReason },
-        //                //        { "pos", pos }
-        //                //    });
-        //                //};
-        //                //Api.OnPlayerSpawnedInWorld += (clientInfo, respawnReason, pos) =>
-        //                //{
-        //                //    engine.ExecuteEvent(filePath, new {name = evtName, clientInfo, respawnReason, pos});
-        //                //};
-
-        //                break;
-        //            default:
-        //                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
-        //                Log.Error($"Event name {eventName} in script {fileName} is unknown.");
-        //                continue;
-        //        }
-        //        _eventActions.Add((eventName, filePath), action);
-        //    }
-        //}
+        private static bool EventExists(string eventName)
+        {
+            try
+            {
+                // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
+                Enum.Parse(typeof(ScriptEvents), eventName);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            return true;
+        }
 
         public static void InitScriptsMonitoring()
         {
@@ -168,23 +147,46 @@ namespace ScriptingMod.Tools
             }
         }
 
-        private static void InvokeScriptEvents([NotNull] string eventName, [CanBeNull] object eventArgs)
+        public static void InvokeScriptEvents([NotNull] object eventArgs)
         {
+            var eventName = GetEventNameFromEventArgs(eventArgs);
+
             if (!_events.ContainsKey(eventName))
-                throw new ApplicationException($"Event \"{eventName}\" was invoked but was not properly registered in {typeof(CommandTools)}.{nameof(InitEvents)}()!");
-
-            List<string> filePaths = _events[eventName];
-
-            if (filePaths == null || filePaths.Count == 0)
                 return;
 
             Log.Debug($"Invoking event \"{eventName}\" ...");
 
-            foreach (var filePath in filePaths)
+            foreach (var filePath in _events[eventName])
             {
                 var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
                 scriptEngine.ExecuteEvent(filePath, eventArgs);
             }
+        }
+
+        /// <summary>
+        /// Extracts the event name from the type property of the given event args object using reflection.
+        /// If the property doesn't exist or the eventName is null or empty, an ArgumentException is thrown.
+        /// </summary>
+        /// <param name="eventArgs">An event args object that contains the event name in the property "type"</param>
+        /// <returns>The event name; never null or empty</returns>
+        /// <exception cref="ArgumentException">If the property doesn't exist or the event name is null or empty</exception>
+        private static string GetEventNameFromEventArgs(object eventArgs)
+        {
+            const string eventNameProperty = "type";
+
+            var eventNameGetter = eventArgs.GetType().GetProperty(eventNameProperty)?.GetGetMethod();
+
+            if (eventNameGetter == null)
+                throw new ArgumentException($"Event object {eventArgs.GetType()} is missing the mandatory \"{eventNameProperty}\" property.");
+
+            if (eventNameGetter.ReturnType != typeof(string))
+                throw new ArgumentException($"Property \"{eventNameProperty}\" in event object {eventArgs.GetType()} is of type {eventNameGetter.ReturnType} but should be {typeof(string)}.");
+
+            var eventName = (string) eventNameGetter.Invoke(eventArgs, null);
+            if (string.IsNullOrEmpty(eventName))
+                throw new ArgumentException($"Property \"{eventNameProperty}\" in event object {eventArgs.GetType()} is null or empty.");
+
+            return eventName;
         }
 
         /// <summary>
