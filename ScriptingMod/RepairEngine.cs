@@ -78,7 +78,7 @@ namespace ScriptingMod
                 { PowerTrigger.TriggerTypes.TripWire,      typeof(PowerTripWireRelay) }
             };
 
-        private readonly World World = GameManager.Instance.World ?? throw new ApplicationException(Resources.ErrorWorldNotReady);
+        private readonly World World = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
 
         private List<BlockChangeInfo> _blockChangeInfos = new List<BlockChangeInfo>();
 

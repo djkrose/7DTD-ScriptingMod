@@ -37,11 +37,298 @@ namespace ScriptingMod.Tools
             // Here are just the ones that need to be attached to actual events.
             // See enum ScriptEvents and it's usages for a full list of supported scripting events.
 
-            Application.logMessageReceived += (condition, trace, logType)
-                => InvokeScriptEvents(new { type = ScriptEvents.logMessageReceived.ToString(), condition, trace, logType});
+            #region ScriptingMod events
 
-            // TODO: Add all other events
+            // Called when a player got kicked due to failed EAC check
+            EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
+            {
+                Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.PlayerKicked)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.eacPlayerKicked.ToString(), clientInfo, kickPlayerData });
+            };
+
+            // Called when a player successfully passed the EAC check
+            EacTools.AuthenticationSuccessful += delegate (ClientInfo clientInfo)
+            {
+                Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.AuthenticationSuccessful)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.eacPlayerAuthenticated.ToString(), clientInfo });
+            };
+
+            #endregion
+
+            #region Steam events
+
+            var steam = Steam.Instance ?? throw new NullReferenceException("Steam not ready.");
+
+            // Called first when a player is connecting before any authentication
+            steam.PlayerConnectedEv += delegate(NetworkPlayer networkPlayer)
+            {
+                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerConnectedEv)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.steamPlayerConnected.ToString(), networkPlayer });
+            };
+
+            // Called first when the server is about to shut down
+            // TODO: Maybe remove, doesn't add much value
+            steam.ApplicationQuitEv += delegate()
+            {
+                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ApplicationQuitEv)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.steamApplicationQuit.ToString() });
+            };
+
+            steam.ConnectedToServerEv += delegate()
+            {
+                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ConnectedToServerEv)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.steamConnectedToServer.ToString() });
+            };
+
+            // Called right before the game process ends as last event of shutdown.
+            // TODO: maybe remove; not really useful
+            steam.DestroyEv += delegate()
+            {
+                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DestroyEv)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.steamDestroy.ToString() });
+            };
+
+            // Called after the game has disconnected from Steam servers
+            steam.DisconnectedFromServerEv += delegate(NetworkDisconnection reason)
+            {
+                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DisconnectedFromServerEv)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.steamDisconnectedFromServer.ToString(), reason });
+            };
+
+            steam.FailedToConnectEv += delegate(NetworkConnectionError error)
+            {
+                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.FailedToConnectEv)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.steamFailedToConnect.ToString(), error });
+            };
+
+            // Invoked on every tick (too big performance impact for scripting event)
+            //steam.UpdateEv += delegate ()
+            //{
+            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.UpdateEv)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.steamUpdate.ToString() });
+            //};
+
+            // Invoked on every tick (too big performance impact for scripting event)
+            //steam.LateUpdateEv += delegate ()
+            //{
+            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.LateUpdateEv)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.steamLateUpdate.ToString() });
+            //};
+
+            // Called after a player disconnected, a chat message was distributed, and all associated game data has been unloaded
+            // TODO: Maybe remove; it's similar to "playerDisconnected" and the passed networkPlayer cannot be used on a disconnected client anyway.
+            steam.PlayerDisconnectedEv += delegate (NetworkPlayer networkPlayer)
+            {
+                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerDisconnectedEv)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.steamPlayerDisconnected.ToString(), networkPlayer });
+            };
+
+            steam.ServerInitializedEv += delegate ()
+            {
+                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ServerInitializedEv)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.steamServerInitialized.ToString() });
+            };
+
+            #endregion
+
+            #region UnityEngine.Application events
+
+            // Called when main Unity thread logs an error message
+            Application.logMessageReceived += delegate (string condition, string trace, LogType logType)
+            {
+                Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceived)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.logMessageReceived.ToString(), condition, trace, logType });
+            };
+
+            // Called when ANY Unity thread logs an error message
+            Application.logMessageReceivedThreaded += delegate (string condition, string trace, LogType logType)
+            {
+                Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceivedThreaded)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.logMessageReceived.ToString(), condition, trace, logType });
+            };
+
+            #endregion
+
+            #region GameManager events
+
+            // Only called client-side // TODO: check
+            GameManager.Instance.OnLocalPlayerChanged += delegate (EntityPlayerLocal player)
+            {
+                Log.Debug($"Event \"{typeof(GameManager)}.{nameof(GameManager.OnLocalPlayerChanged)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.localPlayerChanged.ToString(), player });
+            };
+
+            // Called on shutdown when the world becomes null. Not called on startup apparently.
+            // TODO: remove because not useful
+            GameManager.Instance.OnWorldChanged += delegate (World world_)
+            {
+                Log.Debug($"Event \"{typeof(GameManager)}.{nameof(GameManager.OnWorldChanged)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.gameManagerWorldChanged.ToString(), world = world_ });
+            }; 
+
+            #endregion
+
+            #region World events
+
+            var world = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
+
+            // Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
+            // TODO: remove because not useful
+            world.ChunkClusters.ChunkClusterChangedDelegates += delegate (int chunkClusterIndex)
+            {
+                Log.Debug($"Event \"{typeof(ChunkClusterList)}.{nameof(ChunkClusterList.ChunkClusterChangedDelegates)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.chunkClusterChanged.ToString(), chunkClusterIndex });
+            };
+
+            var chunkCluster = world.ChunkCache ?? throw new NullReferenceException(Resources.ErrorChunkCacheNotReady);
+
+            // Called when chunks change display status, i.e. either get displayed or stop being displayed.
+            // chunkLoaded   -> Called when a chunk is loaded into the game engine because a player needs it. Called frequently - use with care!
+            // chunkUnloaded -> Called when a chunk is unloaded from the game engine because it is not used by any player anymore. Called frequently - use with care!
+            chunkCluster.OnChunkVisibleDelegates += delegate (long chunkKey, bool displayed)
+            {
+                Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunkVisibleDelegates)}\" invoked. (displayed={displayed}).");
+                InvokeScriptEvents(new { type = displayed ? ScriptEvents.chunkLoaded.ToString() : ScriptEvents.chunkUnloaded.ToString(), chunkKey });
+            };
+
+            // Called after a chunk was loaded into memory
+            chunkCluster.OnChunksFinishedLoadingDelegates += delegate ()
+            {
+                Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunksFinishedLoadingDelegates)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.chunksFinishedLoading.ToString() });
+            };
+
+            // Called when chunks are removed from Unity engine // TODO local only ???
+            chunkCluster.OnChunksFinishedDisplayingDelegates += delegate ()
+            {
+                Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunksFinishedDisplayingDelegates)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.chunksFinishedDisplaying.ToString() });
+            };
+
+            // Called when world is loaded
+            world.OnWorldChanged += delegate (string worldName)
+            {
+                Log.Debug($"Event \"{typeof(World)}.{nameof(World.OnWorldChanged)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.worldChanged.ToString(), worldName });
+            };
+
+            // Called when any entity (zombie, item, air drop, player, ...) is spawned in the world, both loaded and newly created
+            world.EntityLoadedDelegates += delegate (Entity entity)
+            {
+                Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityLoadedDelegates)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.entityLoaded.ToString(), entity });
+            };
+
+            // Called when any entity (zombie, item, air drop, player, ...) disappears from the world, e.g. it got killed, picked up, despawned, logged off, ...
+            world.EntityUnloadedDelegates += delegate (Entity entity, EnumRemoveEntityReason reason)
+            {
+                Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityUnloadedDelegates)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.entityUnloaded.ToString(), entity, reason });
+            };
+
+            #endregion
+
+            #region QuestEventManager events
+
+            var questEventManager = QuestEventManager.Current ?? throw new NullReferenceException("QuestEventManager not ready.");
+
+            questEventManager.AddItem += delegate (ItemStack stack)
+            {
+                Log.Debug($"Event \"{typeof(QuestEventManager)}.{nameof(QuestEventManager.AddItem)}\" invoked.");
+                // TODO: verify
+            };
+
+            questEventManager.ZombieKill += delegate (string zombieName)
+            {
+                Log.Debug($"Event \"{typeof(QuestEventManager)}.{nameof(QuestEventManager.ZombieKill)}\" invoked.");
+                // TODO: verify
+            };
+
+            // TODO: Add other quest manager events if necessary
+
+            #endregion
+
+            #region UserProfileManager events
+
+            UserProfileManager userProfileManager = Platform.UserProfiles ?? throw new NullReferenceException("UserProfileManager not ready.");
+
+            userProfileManager.OnUserCancelledSignIn += delegate (UserProfile userProfile)
+            {
+                Log.Debug($"Event \"{typeof(UserProfileManager)}.{nameof(UserProfileManager.OnUserCancelledSignIn)}\" invoked.");
+                // TODO: verify
+            };
+
+            userProfileManager.OnUserJoinedGame += delegate (UserProfile userProfile)
+            {
+                Log.Debug($"Event \"{typeof(UserProfileManager)}.{nameof(UserProfileManager.OnUserJoinedGame)}\" invoked.");
+                // TODO: verify
+            };
+
+            userProfileManager.OnUserLeftGame += delegate (UserProfile userProfile)
+            {
+                Log.Debug($"Event \"{typeof(UserProfileManager)}.{nameof(UserProfileManager.OnUserLeftGame)}\" invoked.");
+                // TODO: verify
+            };
+
+            userProfileManager.OnUserSignInError += delegate (UserProfileManager.ProfileLoginErrorCode errorCode)
+            {
+                Log.Debug($"Event \"{typeof(UserProfileManager)}.{nameof(UserProfileManager.OnUserSignInError)}\" invoked.");
+                // TODO: verify
+            };
+
+            #endregion
+
+            // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
+            GameStats.OnChangedDelegates += delegate(EnumGameStats gameState, object newValue)
+            {
+                Log.Debug($"Event \"{typeof(GameStats)}.{nameof(GameStats.OnChangedDelegates)}\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.gameStatsChanged.ToString(), gameState, newValue});
+            };
+
+            //UserProfile primaryUser = userProfileManager.PrimaryUser;
+
+            //primaryUser.OnUserJoinedGame += delegate(UserProfile userProfile)
+            //{
+            //    Log.Debug($"Event \"{typeof(UserProfile)}.{nameof(UserProfile.OnUserJoinedGame)}\" invoked.");
+            //    // TODO: verify
+            //};
+
+            //primaryUser.OnUserLeftGame += delegate (UserProfile userProfile)
+            //{
+            //    Log.Debug($"Event \"{typeof(UserProfile)}.{nameof(UserProfile.OnUserLeftGame)}\" invoked.");
+            //    // TODO: verify
+            //};
+
+            //primaryUser.OnDeviceDetached += delegate (UserProfile userProfile)
+            //{
+            //    Log.Debug($"Event \"{typeof(UserProfile)}.{nameof(UserProfile.OnDeviceDetached)}\" invoked.");
+            //    // TODO: verify
+            //};
+
+            CraftingManager.RecipeUnlocked += delegate(string recipeName)
+            {
+                Log.Debug($"Event \"{typeof(CraftingManager)}.{nameof(CraftingManager.RecipeUnlocked)}\" invoked.");
+                // TODO: verify
+            };
+
+            // TODO: Test out:
+            // - LocalPlayerManager
+            // - MapVisitor
+            // - QuestJournal (EntityPlayer.QuestJournl)
+
+            // ------- Events not suitable: --------
+
+            // MapObjectManager.ChangedDelegates // only used client-side
+            // MasterServerAnnouncer.action_0 // too difficult and not useful to provide
+            // ServerListManager.GameServerDetailsEvent // only used client-side
+            // MenuItemEntry.ItemClicked // only used client-side
+            // LocalPlayerManager.* // only used client-side
+            // Inventory.OnToolbeltItemsChangedInternal // only used client-side
+            // BaseObjective.ValueChanged // only used client-side
+
             // TODO: Do something about console.log in event mode which can't work but still exists at the moment
+
+            Log.Out("Subscribed to all relevant game events.");
         }
 
         public static void InitScripts()
@@ -151,6 +438,8 @@ namespace ScriptingMod.Tools
         {
             var eventName = GetEventNameFromEventArgs(eventArgs);
 
+            TrackInvocation(eventName, eventArgs);
+
             if (!_events.ContainsKey(eventName))
                 return;
 
@@ -161,6 +450,42 @@ namespace ScriptingMod.Tools
                 var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
                 scriptEngine.ExecuteEvent(filePath, eventArgs);
             }
+        }
+
+        /// <summary>
+        /// Track when and how this event was invoked first time
+        /// </summary>
+        /// <param name="eventName"></param>
+        /// <param name="eventArgs"></param>
+        [Conditional("DEBUG")]
+        private static void TrackInvocation(string eventName, object eventArgs)
+        {
+#if DEBUG
+            var invocationLog = Environment.NewLine +
+                                DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + Environment.NewLine +
+                                Environment.StackTrace + Environment.NewLine +
+                                Dumper.Dump(eventArgs, 1).TrimEnd();
+
+            var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventName);
+
+            if (invokedEvent == null)
+            {
+                invokedEvent = new PersistentData.InvokedEvent()
+                {
+                    EventName = eventName,
+                    FirstCall = invocationLog.Indent(8) + Environment.NewLine + new string(' ', 6),
+                    LastCalls = new List<string>()
+                };
+                PersistentData.Instance.InvokedEvents.Add(invokedEvent);
+            }
+
+            // Rotate last 10 call logs with newest on top
+            if (invokedEvent.LastCalls.Count == 10)
+                invokedEvent.LastCalls.RemoveAt(invokedEvent.LastCalls.Count - 1);
+            invokedEvent.LastCalls.Insert(0, invocationLog.Indent(10) + Environment.NewLine + new string(' ', 8));
+
+            PersistentData.Instance.SaveOnShutdown();
+#endif
         }
 
         /// <summary>

@@ -152,8 +152,8 @@ namespace ScriptingMod.Commands
 
         private static void RegenerateChunk(long chunkKey)
         {
-            var world      = GameManager.Instance.World ?? throw new ApplicationException(Resources.ErrorWorldNotReady);
-            var chunkCache = world.ChunkCache ?? throw new ApplicationException(Resources.ErrorChunkCacheNotReady);
+            var world      = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
+            var chunkCache = world.ChunkCache ?? throw new NullReferenceException(Resources.ErrorChunkCacheNotReady);
             var chunkXZ    = ChunkTools.ChunkKeyToChunkXZ(chunkKey);
 
             Log.Debug($"Starting regeneration of chunk {chunkXZ.x}, {chunkXZ.z} ...");

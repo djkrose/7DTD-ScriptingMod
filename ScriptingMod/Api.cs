@@ -22,14 +22,16 @@ namespace ScriptingMod
             Log.Debug("Api constructor called.");
         }
 
+        /// <summary>
+        /// Called during game start on every mod, before the World is ready (GameManager.Instance.World == null)
+        /// </summary>
         public override void GameAwake()
         {
-            //Log.Debug("Api.GameAwake called.");
+            Log.Debug("Api.GameAwake called.");
             Log.Out($"Initializing {Constants.ModNameFull} ...");
             NonPublic.Init();
             PersistentData.Load();
             PatchTools.ApplyPatches();
-            CommandTools.InitEvents();
             CommandTools.InitScripts();
             CommandTools.InitScriptsMonitoring();
             RepairEngine.InitAuto();
@@ -38,59 +40,108 @@ namespace ScriptingMod
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.gameAwake.ToString() });
         }
 
+        /// <summary>
+        /// Called when the game started and all objects are ready (e.g. GameManager.Instance.World)
+        /// </summary>
         public override void GameStartDone()
         {
-            //Log.Debug("Api.GameStartDone called.");
-            if (GamePrefs.GetBool(EnumGamePrefs.EACEnabled))
-                EacTools.Init();
+            Log.Debug("Api.GameStartDone called.");
+            EacTools.Init();
+            CommandTools.InitEvents();
+
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.gameStartDone.ToString() });
         }
 
+        /// <summary>
+        /// Called on every game tick. Doing ANYTHING here has a big performance impact!
+        /// </summary>
         public override void GameUpdate()
         {
-            // Doing ANYTHING here has a big performance impact!
             //Log.Debug("Api.GameUpdate called.");
         }
 
+        /// <summary>
+        /// Called when the game is in the process of shutting down, after connections were closed and resources were unloaded.
+        /// </summary>
         public override void GameShutdown()
         {
-            //Log.Debug("Api.GameShutdown called.");
+            Log.Debug("Api.GameShutdown called.");
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.gameShutdown.ToString() });
         }
 
+        /// <summary>
+        /// Called when a player has connected but before he was authenticated with Steam. Do not trust the clientInfo data!
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <param name="compatibilityVersion"></param>
         public override void PlayerLogin(ClientInfo clientInfo, string compatibilityVersion)
         {
-            //Log.Debug("Api.PlayerLogin called.");
+            Log.Debug("Api.PlayerLogin called.");
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.playerLogin.ToString(), clientInfo, compatibilityVersion });
         }
 
+        /// <summary>
+        /// Called when the player was authenticated and its entity was created ("entityLoaded" event) but before the player
+        /// becomes visible and the loading screen disappears. During spawning all required chunks and entites are loaded.
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <param name="chunkViewDim"></param>
+        /// <param name="playerProfile"></param>
         public override void PlayerSpawning(ClientInfo clientInfo, int chunkViewDim, PlayerProfile playerProfile)
         {
-            //Log.Debug("Api.PlayerSpawning called.");
+            Log.Debug("Api.PlayerSpawning called.");
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.playerSpawning.ToString(), clientInfo, chunkViewDim, playerProfile });
         }
 
+        /// <summary>
+        /// Called when the player was made visible and the loading screen disappeared.
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <param name="respawnReason"></param>
+        /// <param name="pos"></param>
         public override void PlayerSpawnedInWorld(ClientInfo clientInfo, RespawnType respawnReason, Vector3i pos)
         {
-            //Log.Debug("Api.PlayerSpawnedInWorld called.");
+            Log.Debug("Api.PlayerSpawnedInWorld called.");
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.playerSpawnedInWorld.ToString(), clientInfo, respawnReason, pos });
         }
 
+        /// <summary>
+        /// Called when a player has disconnected from the game and all associated game data is about to be unloaded.
+        /// A chat message has not yet been distributed and "steamPlayerDisconnected" was not yet invoked.
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <param name="shutdown"></param>
         public override void PlayerDisconnected(ClientInfo clientInfo, bool shutdown)
         {
-            //Log.Debug("Api.PlayerDisconnected called.");
+            Log.Debug("Api.PlayerDisconnected called.");
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.playerDisconnected.ToString(), clientInfo, shutdown });
         }
 
+        /// <summary>
+        /// Called in regular intervalls for players to save their player file to disk
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <param name="playerDataFile"></param>
         public override void SavePlayerData(ClientInfo clientInfo, PlayerDataFile playerDataFile)
         {
-            //Log.Debug("Api.SavePlayerData called.");
+            Log.Debug("Api.SavePlayerData called.");
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.savePlayerData.ToString(), clientInfo, playerDataFile });
         }
 
+        /// <summary>
+        /// Called for every chat message, including messages about Joins, Leaves, Died, Killed, etc.
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <param name="messageType"></param>
+        /// <param name="message"></param>
+        /// <param name="mainName"></param>
+        /// <param name="localizeMain"></param>
+        /// <param name="secondaryName"></param>
+        /// <param name="localizeSecondary"></param>
+        /// <returns></returns>
         public override bool ChatMessage(ClientInfo clientInfo, EnumGameMessages messageType, string message, string mainName, bool localizeMain, string secondaryName, bool localizeSecondary)
         {
-            //Log.Debug("Api.ChatMessage called.");
+            Log.Debug("Api.ChatMessage called.");
             var args = new ChatMessageEventArgs
             {
                 type = ScriptEvents.chatMessage.ToString(),
@@ -108,10 +159,15 @@ namespace ScriptingMod
             return !args.isPropagationStopped;
         }
 
+        /// <summary>
+        /// Called when the map for the chunk was calculated by generating a pixel color for each of the 16x16 blocks.
+        /// The map can be retrieved with chunk.GetMapColors().
+        /// </summary>
+        /// <param name="chunk"></param>
         public override void CalcChunkColorsDone(Chunk chunk)
         {
-            //Log.Debug("Api.CalcChunkColorsDone called.");
-            CommandTools.InvokeScriptEvents(new { type = ScriptEvents.calcChunkColorsDone.ToString(), chunk });
+            Log.Debug("Api.CalcChunkColorsDone called.");
+            CommandTools.InvokeScriptEvents(new { type = ScriptEvents.chunkMapCalculated.ToString(), chunk });
         }
 
     }

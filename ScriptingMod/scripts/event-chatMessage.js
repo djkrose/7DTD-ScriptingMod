@@ -1,6 +1,6 @@
 ﻿// Example script to show how the chatMessage event works
 // 
-// @events chatMessage
+// -@events chatMessage
 
 dump(event);
 

@@ -9,7 +9,7 @@ namespace ScriptingMod.Tools
 {
     internal static class EacTools
     {
-        private static bool _isInitialized = false;
+        //private static bool _isInitialized = false;
 
         /// <summary>
         /// Event is fired whenever a player was kicked because of EAC violations, e.g. when EAC is not activated on an EAC-ebaled server.
@@ -25,8 +25,8 @@ namespace ScriptingMod.Tools
 
         public static void Init()
         {
-            if (_isInitialized)
-                throw new InvalidOperationException(nameof(EacTools) + "." + nameof(Init) + " may only be called once.");
+            //if (_isInitialized)
+            //    throw new InvalidOperationException(nameof(EacTools) + "." + nameof(Init) + " may only be called once.");
 
             Log.Debug("Hooking into the EAC response callbacks ...");
 
@@ -38,7 +38,6 @@ namespace ScriptingMod.Tools
 
             if (successDelegate == null || kickDelegate == null)
                 throw new ApplicationException("Cannot activate EAC monitoring because success and kick delegates are not (yet) set.");
-
 
             var kickDelegateNew = new KickPlayerDelegate(delegate (ClientInfo info, GameUtils.KickPlayerData data)
             {
@@ -69,7 +68,7 @@ namespace ScriptingMod.Tools
             // Replace original success delegate with our new modified one
             EACServer.Instance.SetSuccessDelegate(successDelegateNew);
 
-            _isInitialized = true;
+            //_isInitialized = true;
             Log.Debug("EAC monitoring activated.");
         }
     }
