@@ -67,48 +67,52 @@ namespace ScriptingMod.Tools
             };
 
             // Called first when the server is about to shut down
-            // TODO: Maybe remove, doesn't add much value
-            steam.ApplicationQuitEv += delegate()
-            {
-                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ApplicationQuitEv)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.steamApplicationQuit.ToString() });
-            };
+            // Removed because it doesn't add much value
+            //steam.ApplicationQuitEv += delegate()
+            //{
+            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ApplicationQuitEv)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.steamApplicationQuit.ToString() });
+            //};
 
+            // TODO: test
             steam.ConnectedToServerEv += delegate()
             {
                 Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ConnectedToServerEv)}\" invoked.");
                 InvokeScriptEvents(new { type = ScriptEvents.steamConnectedToServer.ToString() });
             };
 
-            // Called right before the game process ends as last event of shutdown.
-            // TODO: maybe remove; not really useful
-            steam.DestroyEv += delegate()
-            {
-                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DestroyEv)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.steamDestroy.ToString() });
-            };
+            // Called right before the game process ends as last event of shutdown
+            // Removed because it doesn't add much value
+            //steam.DestroyEv += delegate()
+            //{
+            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DestroyEv)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.steamDestroy.ToString() });
+            //};
 
-            // Called after the game has disconnected from Steam servers
+            // Called after the game has disconnected from Steam servers.
             steam.DisconnectedFromServerEv += delegate(NetworkDisconnection reason)
             {
                 Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DisconnectedFromServerEv)}\" invoked.");
                 InvokeScriptEvents(new { type = ScriptEvents.steamDisconnectedFromServer.ToString(), reason });
             };
 
+            // TODO: test
             steam.FailedToConnectEv += delegate(NetworkConnectionError error)
             {
                 Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.FailedToConnectEv)}\" invoked.");
                 InvokeScriptEvents(new { type = ScriptEvents.steamFailedToConnect.ToString(), error });
             };
 
-            // Invoked on every tick (too big performance impact for scripting event)
+            // Invoked on every tick
+            // Removed because too big performance impact for scripting event
             //steam.UpdateEv += delegate ()
             //{
             //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.UpdateEv)}\" invoked.");
             //    InvokeScriptEvents(new { type = ScriptEvents.steamUpdate.ToString() });
             //};
 
-            // Invoked on every tick (too big performance impact for scripting event)
+            // Invoked on every tick
+            // Removed because too big performance impact for scripting event
             //steam.LateUpdateEv += delegate ()
             //{
             //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.LateUpdateEv)}\" invoked.");
@@ -116,13 +120,14 @@ namespace ScriptingMod.Tools
             //};
 
             // Called after a player disconnected, a chat message was distributed, and all associated game data has been unloaded
-            // TODO: Maybe remove; it's similar to "playerDisconnected" and the passed networkPlayer cannot be used on a disconnected client anyway.
-            steam.PlayerDisconnectedEv += delegate (NetworkPlayer networkPlayer)
-            {
-                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerDisconnectedEv)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.steamPlayerDisconnected.ToString(), networkPlayer });
-            };
+            // Removed because it's similar to "playerDisconnected" and the passed networkPlayer cannot be used on a disconnected client anyway
+            //steam.PlayerDisconnectedEv += delegate (NetworkPlayer networkPlayer)
+            //{
+            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerDisconnectedEv)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.steamPlayerDisconnected.ToString(), networkPlayer });
+            //};
 
+            // TODO: test
             steam.ServerInitializedEv += delegate ()
             {
                 Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ServerInitializedEv)}\" invoked.");
@@ -151,66 +156,19 @@ namespace ScriptingMod.Tools
 
             #region GameManager events
 
-            // Only called client-side // TODO: check
-            GameManager.Instance.OnLocalPlayerChanged += delegate (EntityPlayerLocal player)
-            {
-                Log.Debug($"Event \"{typeof(GameManager)}.{nameof(GameManager.OnLocalPlayerChanged)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.localPlayerChanged.ToString(), player });
-            };
-
             // Called on shutdown when the world becomes null. Not called on startup apparently.
-            // TODO: remove because not useful
-            GameManager.Instance.OnWorldChanged += delegate (World world_)
-            {
-                Log.Debug($"Event \"{typeof(GameManager)}.{nameof(GameManager.OnWorldChanged)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.gameManagerWorldChanged.ToString(), world = world_ });
-            }; 
+            // Removed because not useful
+            //GameManager.Instance.OnWorldChanged += delegate (World world_)
+            //{
+            //    Log.Debug($"Event \"{typeof(GameManager)}.{nameof(GameManager.OnWorldChanged)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.gameManagerWorldChanged.ToString(), world = world_ });
+            //}; 
 
             #endregion
 
             #region World events
 
             var world = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
-
-            // Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
-            // TODO: remove because not useful
-            world.ChunkClusters.ChunkClusterChangedDelegates += delegate (int chunkClusterIndex)
-            {
-                Log.Debug($"Event \"{typeof(ChunkClusterList)}.{nameof(ChunkClusterList.ChunkClusterChangedDelegates)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.chunkClusterChanged.ToString(), chunkClusterIndex });
-            };
-
-            var chunkCluster = world.ChunkCache ?? throw new NullReferenceException(Resources.ErrorChunkCacheNotReady);
-
-            // Called when chunks change display status, i.e. either get displayed or stop being displayed.
-            // chunkLoaded   -> Called when a chunk is loaded into the game engine because a player needs it. Called frequently - use with care!
-            // chunkUnloaded -> Called when a chunk is unloaded from the game engine because it is not used by any player anymore. Called frequently - use with care!
-            chunkCluster.OnChunkVisibleDelegates += delegate (long chunkKey, bool displayed)
-            {
-                Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunkVisibleDelegates)}\" invoked. (displayed={displayed}).");
-                InvokeScriptEvents(new { type = displayed ? ScriptEvents.chunkLoaded.ToString() : ScriptEvents.chunkUnloaded.ToString(), chunkKey });
-            };
-
-            // Called after a chunk was loaded into memory
-            chunkCluster.OnChunksFinishedLoadingDelegates += delegate ()
-            {
-                Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunksFinishedLoadingDelegates)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.chunksFinishedLoading.ToString() });
-            };
-
-            // Called when chunks are removed from Unity engine // TODO local only ???
-            chunkCluster.OnChunksFinishedDisplayingDelegates += delegate ()
-            {
-                Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunksFinishedDisplayingDelegates)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.chunksFinishedDisplaying.ToString() });
-            };
-
-            // Called when world is loaded
-            world.OnWorldChanged += delegate (string worldName)
-            {
-                Log.Debug($"Event \"{typeof(World)}.{nameof(World.OnWorldChanged)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.worldChanged.ToString(), worldName });
-            };
 
             // Called when any entity (zombie, item, air drop, player, ...) is spawned in the world, both loaded and newly created
             world.EntityLoadedDelegates += delegate (Entity entity)
@@ -226,107 +184,57 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(new { type = ScriptEvents.entityUnloaded.ToString(), entity, reason });
             };
 
+            // Called when chunks change display status, i.e. either get displayed or stop being displayed.
+            // chunkLoaded   -> Called when a chunk is loaded into the game engine because a player needs it. Called frequently - use with care!
+            // chunkUnloaded -> Called when a chunk is unloaded from the game engine because it is not used by any player anymore. Called frequently - use with care!
+            world.ChunkCache.OnChunkVisibleDelegates += delegate (long chunkKey, bool displayed)
+            {
+                // No logging to avoid spam
+                //Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunkVisibleDelegates)}\" invoked. (displayed={displayed}).");
+                InvokeScriptEvents(new { type = displayed ? ScriptEvents.chunkLoaded.ToString() : ScriptEvents.chunkUnloaded.ToString(), chunkKey });
+            };
+
+            // Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
+            // Removed because not useful
+            //world.ChunkClusters.ChunkClusterChangedDelegates += delegate (int chunkClusterIndex)
+            //{
+            //    Log.Debug($"Event \"{typeof(ChunkClusterList)}.{nameof(ChunkClusterList.ChunkClusterChangedDelegates)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.chunkClusterChanged.ToString(), chunkClusterIndex });
+            //};
+
             #endregion
 
-            #region QuestEventManager events
-
-            var questEventManager = QuestEventManager.Current ?? throw new NullReferenceException("QuestEventManager not ready.");
-
-            questEventManager.AddItem += delegate (ItemStack stack)
-            {
-                Log.Debug($"Event \"{typeof(QuestEventManager)}.{nameof(QuestEventManager.AddItem)}\" invoked.");
-                // TODO: verify
-            };
-
-            questEventManager.ZombieKill += delegate (string zombieName)
-            {
-                Log.Debug($"Event \"{typeof(QuestEventManager)}.{nameof(QuestEventManager.ZombieKill)}\" invoked.");
-                // TODO: verify
-            };
-
-            // TODO: Add other quest manager events if necessary
-
-            #endregion
-
-            #region UserProfileManager events
-
-            UserProfileManager userProfileManager = Platform.UserProfiles ?? throw new NullReferenceException("UserProfileManager not ready.");
-
-            userProfileManager.OnUserCancelledSignIn += delegate (UserProfile userProfile)
-            {
-                Log.Debug($"Event \"{typeof(UserProfileManager)}.{nameof(UserProfileManager.OnUserCancelledSignIn)}\" invoked.");
-                // TODO: verify
-            };
-
-            userProfileManager.OnUserJoinedGame += delegate (UserProfile userProfile)
-            {
-                Log.Debug($"Event \"{typeof(UserProfileManager)}.{nameof(UserProfileManager.OnUserJoinedGame)}\" invoked.");
-                // TODO: verify
-            };
-
-            userProfileManager.OnUserLeftGame += delegate (UserProfile userProfile)
-            {
-                Log.Debug($"Event \"{typeof(UserProfileManager)}.{nameof(UserProfileManager.OnUserLeftGame)}\" invoked.");
-                // TODO: verify
-            };
-
-            userProfileManager.OnUserSignInError += delegate (UserProfileManager.ProfileLoginErrorCode errorCode)
-            {
-                Log.Debug($"Event \"{typeof(UserProfileManager)}.{nameof(UserProfileManager.OnUserSignInError)}\" invoked.");
-                // TODO: verify
-            };
-
-            #endregion
+            #region Other events
 
             // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
             GameStats.OnChangedDelegates += delegate(EnumGameStats gameState, object newValue)
             {
-                Log.Debug($"Event \"{typeof(GameStats)}.{nameof(GameStats.OnChangedDelegates)}\" invoked.");
+                // No logging to avoid spam
+                // Log.Debug($"Event \"{typeof(GameStats)}.{nameof(GameStats.OnChangedDelegates)}\" invoked.");
                 InvokeScriptEvents(new { type = ScriptEvents.gameStatsChanged.ToString(), gameState, newValue});
             };
 
-            //UserProfile primaryUser = userProfileManager.PrimaryUser;
+            #endregion
 
-            //primaryUser.OnUserJoinedGame += delegate(UserProfile userProfile)
-            //{
-            //    Log.Debug($"Event \"{typeof(UserProfile)}.{nameof(UserProfile.OnUserJoinedGame)}\" invoked.");
-            //    // TODO: verify
-            //};
+            // -------- TODO: Events to explore further --------
+            // - MapVisitor - needs patching to attach to always newly created object; use-case questionable
 
-            //primaryUser.OnUserLeftGame += delegate (UserProfile userProfile)
-            //{
-            //    Log.Debug($"Event \"{typeof(UserProfile)}.{nameof(UserProfile.OnUserLeftGame)}\" invoked.");
-            //    // TODO: verify
-            //};
-
-            //primaryUser.OnDeviceDetached += delegate (UserProfile userProfile)
-            //{
-            //    Log.Debug($"Event \"{typeof(UserProfile)}.{nameof(UserProfile.OnDeviceDetached)}\" invoked.");
-            //    // TODO: verify
-            //};
-
-            CraftingManager.RecipeUnlocked += delegate(string recipeName)
-            {
-                Log.Debug($"Event \"{typeof(CraftingManager)}.{nameof(CraftingManager.RecipeUnlocked)}\" invoked.");
-                // TODO: verify
-            };
-
-            // TODO: Test out:
-            // - LocalPlayerManager
-            // - MapVisitor
-            // - QuestJournal (EntityPlayer.QuestJournl)
-
-            // ------- Events not suitable: --------
-
-            // MapObjectManager.ChangedDelegates // only used client-side
-            // MasterServerAnnouncer.action_0 // too difficult and not useful to provide
-            // ServerListManager.GameServerDetailsEvent // only used client-side
-            // MenuItemEntry.ItemClicked // only used client-side
-            // LocalPlayerManager.* // only used client-side
-            // Inventory.OnToolbeltItemsChangedInternal // only used client-side
-            // BaseObjective.ValueChanged // only used client-side
-
-            // TODO: Do something about console.log in event mode which can't work but still exists at the moment
+            // --------- Events only used client-side ----------
+            // - GameManager.Instance.OnLocalPlayerChanged
+            // - World.OnWorldChanged
+            // - ChunkCluster.OnChunksFinishedDisplayingDelegates
+            // - ChunkCluster.OnChunksFinishedLoadingDelegates
+            // - MapObjectManager.ChangedDelegates
+            // - ServerListManager.GameServerDetailsEvent
+            // - MenuItemEntry.ItemClicked
+            // - LocalPlayerManager.*
+            // - Inventory.OnToolbeltItemsChangedInternal
+            // - BaseObjective.ValueChanged
+            // - UserProfile.*
+            // - CraftingManager.RecipeUnlocked
+            // - QuestJournal.* (from EntityPlayer.QuestJournal)
+            // - QuestEventManager.*
+            // - UserProfileManager.*
 
             Log.Out("Subscribed to all relevant game events.");
         }

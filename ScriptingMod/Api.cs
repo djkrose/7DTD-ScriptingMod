@@ -125,7 +125,7 @@ namespace ScriptingMod
         public override void SavePlayerData(ClientInfo clientInfo, PlayerDataFile playerDataFile)
         {
             Log.Debug("Api.SavePlayerData called.");
-            CommandTools.InvokeScriptEvents(new { type = ScriptEvents.savePlayerData.ToString(), clientInfo, playerDataFile });
+            CommandTools.InvokeScriptEvents(new { type = ScriptEvents.playerSaveData.ToString(), clientInfo, playerDataFile });
         }
 
         /// <summary>
@@ -166,7 +166,8 @@ namespace ScriptingMod
         /// <param name="chunk"></param>
         public override void CalcChunkColorsDone(Chunk chunk)
         {
-            Log.Debug("Api.CalcChunkColorsDone called.");
+            // No logging to avoid spam
+            // Log.Debug("Api.CalcChunkColorsDone called.");
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.chunkMapCalculated.ToString(), chunk });
         }
 
