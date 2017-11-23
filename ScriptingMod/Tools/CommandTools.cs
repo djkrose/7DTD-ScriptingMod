@@ -57,14 +57,15 @@ namespace ScriptingMod.Tools
 
             #region Steam events
 
-            var steam = Steam.Instance ?? throw new NullReferenceException("Steam not ready.");
+            //var steam = Steam.Instance ?? throw new NullReferenceException("Steam not ready.");
 
             // Called first when a player is connecting before any authentication
-            steam.PlayerConnectedEv += delegate(NetworkPlayer networkPlayer)
-            {
-                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerConnectedEv)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.steamPlayerConnected.ToString(), networkPlayer });
-            };
+            // Removed because Api.PlayerLogin is also called before authentication and also contains clientInfo.networkPlayer
+            //steam.PlayerConnectedEv += delegate(NetworkPlayer networkPlayer)
+            //{
+            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerConnectedEv)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.steamPlayerConnected.ToString(), networkPlayer });
+            //};
 
             // Called first when the server is about to shut down
             // Removed because it doesn't add much value
@@ -74,13 +75,6 @@ namespace ScriptingMod.Tools
             //    InvokeScriptEvents(new { type = ScriptEvents.steamApplicationQuit.ToString() });
             //};
 
-            // TODO: test
-            steam.ConnectedToServerEv += delegate()
-            {
-                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ConnectedToServerEv)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.steamConnectedToServer.ToString() });
-            };
-
             // Called right before the game process ends as last event of shutdown
             // Removed because it doesn't add much value
             //steam.DestroyEv += delegate()
@@ -89,19 +83,13 @@ namespace ScriptingMod.Tools
             //    InvokeScriptEvents(new { type = ScriptEvents.steamDestroy.ToString() });
             //};
 
-            // Called after the game has disconnected from Steam servers.
-            steam.DisconnectedFromServerEv += delegate(NetworkDisconnection reason)
-            {
-                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DisconnectedFromServerEv)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.steamDisconnectedFromServer.ToString(), reason });
-            };
-
-            // TODO: test
-            steam.FailedToConnectEv += delegate(NetworkConnectionError error)
-            {
-                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.FailedToConnectEv)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.steamFailedToConnect.ToString(), error });
-            };
+            // Called after the game has disconnected from Steam servers and shuts down
+            // Removed because it doesn't add much value
+            //steam.DisconnectedFromServerEv += delegate(NetworkDisconnection reason)
+            //{
+            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DisconnectedFromServerEv)}\" invoked.");
+            //    InvokeScriptEvents(new { type = ScriptEvents.steamDisconnectedFromServer.ToString(), reason });
+            //};
 
             // Invoked on every tick
             // Removed because too big performance impact for scripting event
@@ -126,13 +114,6 @@ namespace ScriptingMod.Tools
             //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerDisconnectedEv)}\" invoked.");
             //    InvokeScriptEvents(new { type = ScriptEvents.steamPlayerDisconnected.ToString(), networkPlayer });
             //};
-
-            // TODO: test
-            steam.ServerInitializedEv += delegate ()
-            {
-                Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ServerInitializedEv)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.steamServerInitialized.ToString() });
-            };
 
             #endregion
 
@@ -218,8 +199,37 @@ namespace ScriptingMod.Tools
 
             // -------- TODO: Events to explore further --------
             // - MapVisitor - needs patching to attach to always newly created object; use-case questionable
+            // - AIWanderingHordeSpawner.HordeArrivedDelegate hordeArrivedDelegate_0
 
-            // --------- Events only used client-side ----------
+            // ----------- TODO: More event ideas --------------
+            // - Geofencing...trigger event when a player or zombie gets into a predefined area.
+            // - Trigger server events on quest progress/completion. - So server admins could award questing further, or even unlock account features like forum access on quest completions.
+            // - Event for Level-up
+            // - Event for Explosions (TNT, dynamite, fuel barrel)
+            // - Event for large collapses (say more than 50 blocks)
+            // - Event for destruction of a car(e.g.to spawn a new car somewhere else)
+            // - Event for idling more than X minutes
+            // - Event for blacing bed
+            // - Event for placing LCB
+            // - Event on zombie/entity proximity (triggered when a player gets withing reach of X meters of a zombie)
+            // - Exploring of new land
+            // - Bloodmoon starting/ending
+            // - EntityAlive was attacked
+            // - Item was dropped
+            // - Item durability hits zero
+            // - Screamer spawned for a chunk/player/xyz
+            // - AirDrop spawned
+            // - Player banned
+            // - Player unbanned
+            // - Player died
+            // - New Player connected for first time
+            // - Events for ScriptingMode things
+            // - Player got hit by weapon type
+
+            // --------- Events never used on dedicated server ----------
+            // - Steam.ConnectedToServerEv
+            // - Steam.FailedToConnectEv
+            // - Steam.ServerInitializedEv
             // - GameManager.Instance.OnLocalPlayerChanged
             // - World.OnWorldChanged
             // - ChunkCluster.OnChunksFinishedDisplayingDelegates
@@ -392,7 +402,7 @@ namespace ScriptingMod.Tools
                 invokedEvent.LastCalls.RemoveAt(invokedEvent.LastCalls.Count - 1);
             invokedEvent.LastCalls.Insert(0, invocationLog.Indent(10) + Environment.NewLine + new string(' ', 8));
 
-            PersistentData.Instance.SaveOnShutdown();
+            PersistentData.Instance.SaveLater();
 #endif
         }
 
@@ -484,29 +494,6 @@ namespace ScriptingMod.Tools
                 }
             });
         }
-
-        ///// <summary>
-        ///// Parses the file as command script and tries to create a command object from it.
-        ///// </summary>
-        ///// <param name="filePath">Full path of the file to parse.</param>
-        ///// <returns>The new command object, or null if the script has no command name in metadata and therefore is not a command script.</returns>
-        //[CanBeNull]
-        //private static DynamicCommand CreateCommandObject(string filePath)
-        //{
-        //    var scriptEngine     = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-        //    var metadata         = scriptEngine.LoadMetadata(filePath);
-        //    var commands         = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        //    var description      = metadata.GetValue("description", "");
-        //    var help             = metadata.GetValue("help", null);
-        //    int defaultPermision = metadata.GetValue("defaultPermission").ToInt() ?? 0;
-
-        //    // Skip files that have no command name defined and therefore are not commands but helper scripts.
-        //    if (commands.Length == 0)
-        //        return null;
-
-        //    var action = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
-        //    return new DynamicCommand(commands, description, help, defaultPermision, action);
-        //}
 
         /// <summary>
         /// Registers the given command object with it's command names into the Console.
@@ -666,7 +653,6 @@ namespace ScriptingMod.Tools
                 parameters.RemoveAt(index);
             return value;
         }
-
 
         /// <summary>
         /// Looks for an option with int value of the format "/paramName=123" in the list of parameters

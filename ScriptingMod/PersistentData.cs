@@ -13,11 +13,14 @@ namespace ScriptingMod
     [UsedImplicitly(ImplicitUseTargetFlags.Members)]
     public class PersistentData
     {
-        private static PersistentData instance;
-        public  static PersistentData Instance => instance ?? (instance = new PersistentData());
+        private static PersistentData _instance;
+        public  static PersistentData Instance => _instance ?? (_instance = new PersistentData());
 
         private const string SaveFileName = "ScriptingModPeristentData.xml";
-        private bool isSaveOnShutdown = false;
+        private const int SaveLaterDelay  = 1000 * 60; // ms
+
+        private object _saveLaterLock = new object();
+        private System.Threading.Timer _saveLaterTimer;
 
         #region Persistent values to be saved
 
@@ -53,8 +56,14 @@ namespace ScriptingMod
 
         ~PersistentData()
         {
-            if (isSaveOnShutdown)
-                Save();
+            lock (_saveLaterLock)
+            {
+                // If save late is still pending, save now
+                if (_saveLaterTimer != null)
+                {
+                    SaveLaterCallback(null);
+                } 
+            }
         }
 
         public void Save()
@@ -80,9 +89,25 @@ namespace ScriptingMod
             }
         }
 
-        public void SaveOnShutdown()
+        public void SaveLater()
         {
-            isSaveOnShutdown = true;
+            lock (_saveLaterLock)
+            {
+                if (_saveLaterTimer == null)
+                {
+                    _saveLaterTimer = new System.Threading.Timer(SaveLaterCallback, null, SaveLaterDelay, System.Threading.Timeout.Infinite);
+                } 
+            }
+        }
+
+        private void SaveLaterCallback(object state)
+        {
+            lock (_saveLaterLock)
+            {
+                _saveLaterTimer.Dispose();
+                _saveLaterTimer = null;
+                Save();
+            }
         }
 
         public static void Load()
@@ -102,7 +127,7 @@ namespace ScriptingMod
                     using (var reader = new StreamReader(saveFilePath))
                     {
                         var serializer = new XmlSerializer(typeof(PersistentData));
-                        instance = serializer.Deserialize(reader) as PersistentData;
+                        _instance = serializer.Deserialize(reader) as PersistentData;
                     }
                     Log.Out($"Persistent data loaded from {SaveFileName}.");
                 }

@@ -150,7 +150,7 @@ namespace ScriptingMod
                     if (repairEngine._problemsFound >= 1)
                     {
                         PersistentData.Instance.RepairCounter += repairEngine._problemsFound;
-                        PersistentData.Instance.Save();
+                        PersistentData.Instance.SaveLater();
                     }
                     Log.Debug("Automatic background repair timer ended.");
                 }
@@ -230,7 +230,7 @@ namespace ScriptingMod
                 if (repairEngine._problemsFound >= 1)
                 {
                     PersistentData.Instance.RepairCounter += repairEngine._problemsFound;
-                    PersistentData.Instance.Save();
+                    PersistentData.Instance.SaveLater();
                 }
             }
             catch (Exception ex)

@@ -22,10 +22,5 @@
         playerSaveData,
         playerSpawnedInWorld,
         playerSpawning,
-        steamConnectedToServer,
-        steamDisconnectedFromServer,
-        steamFailedToConnect,
-        steamPlayerConnected,
-        steamServerInitialized,
     }
 }
