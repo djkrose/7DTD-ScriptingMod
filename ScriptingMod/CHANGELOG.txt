@@ -1,5 +1,8 @@
 ﻿Version 0.15 - compatible with A16.4 (b8)
 
+- Script files can be disabled by prefixing them with underscore (_). Non-trivial example scrips are disabled by default.
+- Changed script commands js-test, js-minibike, js-sleepers, and lua-test to all use "dj-" prefix instead.
+
 
 Version 0.14 - compatible with A16.4 (b8)
 

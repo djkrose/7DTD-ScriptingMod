@@ -139,16 +139,13 @@
     <Compile Include="Tools\WorldTools.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="scripts\event-savePlayerData.js">
+    <Content Include="scripts\_event-gameStartDone.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\event-gameStartDone.js">
+    <Content Include="scripts\dj-minibike.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\js-minibike.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="scripts\event-chatMessage.js">
+    <Content Include="scripts\_event-chatMessage.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="Assembly-CSharp.ExternalAnnotations.xml">
@@ -160,10 +157,10 @@
     <Content Include="LICENSE.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\js-sleepers.js">
+    <Content Include="scripts\dj-sleepers.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\js-test.js">
+    <Content Include="scripts\dj-test-js.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="ILMergeOrder.txt" />
@@ -175,13 +172,13 @@
     <None Include="Build.targets">
       <SubType>Designer</SubType>
     </None>
-    <Content Include="scripts\js-variables.js">
+    <Content Include="scripts\_dj-variables.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\lua-test.lua">
+    <Content Include="scripts\dj-test-lua.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\inspect.lua">
+    <Content Include="scripts\_inspect.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="Confuser.crproj">

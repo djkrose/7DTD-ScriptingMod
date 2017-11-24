@@ -37,7 +37,7 @@ namespace ScriptingMod.Tools
             // Here are just the ones that need to be attached to actual events.
             // See enum ScriptEvents and it's usages for a full list of supported scripting events.
 
-            #region ScriptingMod events
+#region ScriptingMod events
 
             // Called when a player got kicked due to failed EAC check
             EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
@@ -53,9 +53,9 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(new { type = ScriptEvents.eacPlayerAuthenticated.ToString(), clientInfo });
             };
 
-            #endregion
+#endregion
 
-            #region Steam events
+#region Steam events
 
             //var steam = Steam.Instance ?? throw new NullReferenceException("Steam not ready.");
 
@@ -122,9 +122,9 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(new { type = ScriptEvents.serverRegistered.ToString(), Steam.Masterserver.Server });
             });
 
-            #endregion
+#endregion
 
-            #region UnityEngine.Application events
+#region UnityEngine.Application events
 
             // Called when main Unity thread logs an error message
             Application.logMessageReceived += delegate (string condition, string trace, LogType logType)
@@ -140,9 +140,9 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(new { type = ScriptEvents.logMessageReceived.ToString(), condition, trace, logType });
             };
 
-            #endregion
+#endregion
 
-            #region GameManager events
+#region GameManager events
 
             // Called on shutdown when the world becomes null. Not called on startup apparently.
             // Removed because not useful
@@ -152,9 +152,9 @@ namespace ScriptingMod.Tools
             //    InvokeScriptEvents(new { type = ScriptEvents.gameManagerWorldChanged.ToString(), world = world_ });
             //}; 
 
-            #endregion
+#endregion
 
-            #region World events
+#region World events
 
             var world = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
 
@@ -190,9 +190,9 @@ namespace ScriptingMod.Tools
             //    InvokeScriptEvents(new { type = ScriptEvents.chunkClusterChanged.ToString(), chunkClusterIndex });
             //};
 
-            #endregion
+#endregion
 
-            #region Other events
+#region Other events
 
             // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
             GameStats.OnChangedDelegates += delegate(EnumGameStats gameState, object newValue)
@@ -202,7 +202,7 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(new { type = ScriptEvents.gameStatsChanged.ToString(), gameState, newValue});
             };
 
-            #endregion
+#endregion
 
             // -------- TODO: Events to explore further --------
             // - MapVisitor - needs patching to attach to always newly created object; use-case questionable
@@ -265,9 +265,16 @@ namespace ScriptingMod.Tools
             foreach (string script in scripts)
             {
                 var filePath = script; // Needed prior C# 5.0 as closure
-                var fileName = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
+                var fileRelativePath = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
+                var fileName = Path.GetFileName(filePath);
 
-                Log.Debug($"Loading script {fileName} ...");
+                if (fileName.StartsWith("_"))
+                {
+                    Log.Out($"Script file {fileRelativePath} is ignored because it starts with underscore.");
+                    continue;
+                }
+
+                Log.Debug($"Loading script {fileRelativePath} ...");
 
                 try
                 {
@@ -286,7 +293,7 @@ namespace ScriptingMod.Tools
                         var action            = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
                         var commandObject     = new DynamicCommand(commandNames, description, help, defaultPermission, action);
                         AddCommand(commandObject);
-                        Log.Out($"Registered command{(commandNames.Length == 1 ? "" : "s")} \"{commandNames.Join(" ")}\" from script {fileName}.");
+                        Log.Out($"Registered command{(commandNames.Length == 1 ? "" : "s")} \"{commandNames.Join(" ")}\" from script {fileRelativePath}.");
                     }
 
                     // Register events
@@ -298,7 +305,7 @@ namespace ScriptingMod.Tools
                         {
                             if (!EventExists(eventName))
                             {
-                                Log.Warning($"Event \"{eventName}\" in script {fileName} is unknown and will be ignored.");
+                                Log.Warning($"Event \"{eventName}\" in script {fileRelativePath} is unknown and will be ignored.");
                                 continue;
                             }
 
@@ -306,17 +313,17 @@ namespace ScriptingMod.Tools
                                 _events[eventName] = new List<string>();
                             _events[eventName].Add(filePath);
                         }
-                        Log.Out($"Registered event{(eventNames.Length == 1 ? "" : "s")} \"{eventNames.Join(" ")}\" from script {fileName}.");
+                        Log.Out($"Registered event{(eventNames.Length == 1 ? "" : "s")} \"{eventNames.Join(" ")}\" from script {fileRelativePath}.");
                     }
 
                     if (!scriptUsed)
                     {
-                        Log.Out($"Script file {fileName} is ignored because it defines neither command names nor events.");
+                        Log.Out($"Script file {fileRelativePath} is ignored because it defines neither command names nor events.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"Could not load command script {fileName}: {ex}");
+                    Log.Error($"Could not load command script {fileRelativePath}: {ex}");
                 }
             }
 

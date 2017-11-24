@@ -31,9 +31,9 @@ namespace ScriptingMod.ScriptEngines
 
         protected override void ExecuteFile(string filePath)
         {
-            var fileName = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
+            var fileRelativePath = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
 
-            Log.Debug($"Starting Lua script {fileName} ...");
+            Log.Debug($"Starting Lua script {fileRelativePath} ...");
 
             // We are not using _lua.DoFile(..) because it does not support UTF-8 w/ BOM encoding
             // TODO: Fix UTF-8 for require()'d files too, e.g. by adjusting all scripts on start
@@ -43,14 +43,14 @@ namespace ScriptingMod.ScriptEngines
             try
             {
                 _lua.DoString(script);
-                Log.Debug($"Lua script {fileName} ended.");
+                Log.Debug($"Lua script {fileRelativePath} ended.");
             }
             catch (LuaScriptException ex)
             {
-                SdtdConsole.Instance.Output($"Lua script error in {fileName}: " + GetShortErrorMessage(ex) + " [details in server log]");
+                SdtdConsole.Instance.Output($"Lua script error in {fileRelativePath}: " + GetShortErrorMessage(ex) + " [details in server log]");
 
                 // LuaScriptException.ToString() does not - against convention - print stack trace or inner exceptions
-                Log.Error($"Lua script error in {fileName}: " + (ex.Source ?? "") + ex.ToStringDefault());
+                Log.Error($"Lua script error in {fileRelativePath}: " + (ex.Source ?? "") + ex.ToStringDefault());
 
                 // Dump only for me
                 Log.Dump(ex, 2);

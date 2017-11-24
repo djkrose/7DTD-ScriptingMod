@@ -65,7 +65,7 @@ namespace ScriptingMod.Extensions
             IEnumerable<string> lines = source.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
             lines = TrimEmptyLines(lines);
             string indent = new string((lines.FirstOrDefault() ?? "").TakeWhile(char.IsWhiteSpace).ToArray());
-            lines = lines.Select(l => l.StartsWith(indent) ? l.Substring(indent.Length) : l);
+            lines = lines.Select(l => l.StartsWith(indent) ? l.Substring(indent.Length) : l.TrimStart(' '));
             return string.Join(Environment.NewLine, lines.ToArray());
         }
 
