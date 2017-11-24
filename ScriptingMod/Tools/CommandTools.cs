@@ -466,13 +466,11 @@ namespace ScriptingMod.Tools
                     commandObjectPairs.RemoveAt(i);
             }
 
-            // Clear out attached scripts but leave the eventName keys intact for reference of available events
-            foreach (var eventName in _events.Keys)
-            {
-                _events[eventName] = new List<string>();
-            }
-
             SaveChanges();
+
+            // Clear out attached scripts
+            _events.Clear();
+
             Log.Out("Unloaded all scripting commands.");
         }
 
