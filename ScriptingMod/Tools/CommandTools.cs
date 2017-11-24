@@ -202,7 +202,7 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(new { type = ScriptEvents.gameStatsChanged.ToString(), gameState, newValue});
             };
 
-#endregion
+            #endregion
 
             // -------- TODO: Events to explore further --------
             // - MapVisitor - needs patching to attach to always newly created object; use-case questionable
@@ -218,20 +218,21 @@ namespace ScriptingMod.Tools
             // - Event for idling more than X minutes
             // - Event for blacing bed
             // - Event for placing LCB
-            // - Event on zombie/entity proximity (triggered when a player gets withing reach of X meters of a zombie)
+            // - Event on zombie/entity proximity (triggered when a player gets or leaves withing reach of X meters of a zombie) [Xyth]
             // - Exploring of new land
             // - Bloodmoon starting/ending
-            // - EntityAlive was attacked
-            // - Item was dropped
-            // - Item durability hits zero
-            // - Screamer spawned for a chunk/player/xyz
+            // - EntityAlive was attacked [Xyth]
+            // - Item was dropped [Xyth]
+            // - Item durability hits zero [Xyth]
+            // - Screamer spawned for a chunk/player/xyz [kenyer]
             // - AirDrop spawned
             // - Player banned
             // - Player unbanned
-            // - Player died
+            // - Player died [Xyth]
             // - New Player connected for first time
-            // - Events for ScriptingMode things
-            // - Player got hit by weapon type (weapon itemclass.type that is)
+            // - Events for ScriptingMod things
+            // - Player got hit by weapon type (weapon itemclass.type that is) [Guppycur, StompyNZ]
+            // - Command that triggers when someone is in the air for more than X seconds, to catch hackers [war4head]
 
             // --------- Events never used on dedicated server ----------
             // - Steam.ConnectedToServerEv
