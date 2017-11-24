@@ -11,36 +11,6 @@ namespace ScriptingMod.ScriptEngines
 
     internal abstract class ScriptEngine
     {
-        private Regex metaDataRegex;
-
-        protected ScriptEngine()
-        {
-            // ReSharper disable once VirtualMemberCallInConstructor
-            var commentPrefix = GetCommentPrefix();
-            var metaDataPattern = string.Format(@"(?xmn)
-                # Lookbehind from beginning of file (\A)
-                (?<=\A
-                    # File can start with some spaces and newlines
-                    \s*
-                    # Then all lines must start with '--'
-                    (^{0}.*(\r\n|\r|\n))*
-                )
-                # Matching line must start like '-- @key ' ...
-                ^{0}[\ \t]*@(?<key>[a-zA-Z0-9_-]+)[\ \t]+
-                # ... followed by a value, which can span multiple lines ([\s\S])
-                [\s\S]+?
-                # Value ends before (look-ahead) either ...
-                (?=(
-                    # ... a new key->value line starts, or
-                    ^{0}[\ \t]*@|
-                    # ... the next line starts with something else than '--', or
-                    ^(?!{0})|
-                    # ... the file ends (so it only has metadata).
-                    \Z
-                ))",
-                Regex.Escape(commentPrefix));
-            metaDataRegex = new Regex(metaDataPattern);
-        }
 
         public static ScriptEngine GetInstance(string fileExtension)
         {
@@ -51,7 +21,7 @@ namespace ScriptingMod.ScriptEngines
                 case JsEngine.FileExtension:
                     return JsEngine.Instance;
                 default:
-                    throw new NotImplementedException();
+                    throw new ArgumentException("Unsupported fileExtension: " + fileExtension, nameof(fileExtension));
             }
         }
 
@@ -108,34 +78,68 @@ namespace ScriptingMod.ScriptEngines
             Directory.SetCurrentDirectory(oldDirectory);
         }
 
+        /// <summary>
+        /// Extracts metadata from the first comment block of a script. Metadata must be formatted as
+        /// a series of @key value lines, where value can span multiple lines. See example files.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         public Dictionary<string, string> LoadMetadata(string filePath)
         {
             var commentPrefix = GetCommentPrefix();
-            var script = File.ReadAllText(filePath);
             var metadata = new Dictionary<string, string>();
+            var lines = File.ReadAllLines(filePath);
 
-            var match = metaDataRegex.Match(script);
-            while (match.Success)
+            bool contentStarted = false;
+            string currentTag = null;
+
+            // ReSharper disable once ForCanBeConvertedToForeach
+            for (var index = 0; index < lines.Length; index++)
             {
-                var key = match.Groups["key"].Value;
-                var value = match.Value;
+                var line = lines[index].Trim().Replace("\t", "    ");
 
-                // Remove comment markers from all value lines
-                value = Regex.Replace(value, "^" + Regex.Escape(commentPrefix), "", RegexOptions.Multiline);
+                // Ignore empty lines before first comment block
+                if (!contentStarted)
+                {
+                    if (line == string.Empty)
+                        continue;
+                    contentStarted = true;
+                }
 
-                // Replace @key in match with equal amount of spaces to keep indentation
-                value = new Regex("@" + Regex.Escape(key)).Replace(value, new string(' ', key.Length + 1), 1);
+                // Stop parsing when comment block ends
+                if (!line.StartsWith(commentPrefix))
+                    break;
 
-                // Replace tabs with 4 spaces to make the following easier
-                value = value.Replace("\t", "    ");
+                // Remove comment prefixes
+                line = line.Substring(commentPrefix.Length);
 
-                // Remove common indentation to all lines but keep indentation relative to first line
-                value = value.Unindent();
+                // Extract tag if any
+                var match = Regex.Match(line, "^ *@([a-zA-Z0-9_-]+) ");
+                if (match.Success)
+                {
+                    currentTag = match.Groups[1].Value;
+                    if (metadata.ContainsKey(currentTag))
+                    {
+                        var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                        Log.Warning($"Tag @{currentTag} appears more han once in {fileName}. Only the last occurence is considered.");
+                    }
+                    metadata[currentTag] = "";
+                }
 
-                metadata.Add(key, value);
+                // Ignore comment lines before the first tag
+                if (currentTag == null)
+                    continue;
 
-                match = match.NextMatch();
+                // Replace @key in line with equal amount of spaces to keep indentation
+                line = line.ReplaceFirst("@" + currentTag, new string(' ', currentTag.Length + 1));
+
+                // Add line as value for the tag; dealing with whitespace later...
+                metadata[currentTag] += line + Environment.NewLine;
             }
+
+            // Remove space indentation relative to first line of values; also removes trailing newline
+            foreach (var key in metadata.Keys.ToList())
+                metadata[key] = metadata[key].Unindent();
 
             return metadata;
         }

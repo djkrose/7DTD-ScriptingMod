@@ -12,7 +12,7 @@ namespace UnitTests
     public class DumperTests
     {
         [Test]
-        public void DumperTest()
+        public void DumpTest()
         {
             // Test object without any properties or fields
             Console.WriteLine(Dumper.Dump(this));

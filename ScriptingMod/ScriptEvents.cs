@@ -22,5 +22,6 @@
         playerSaveData,
         playerSpawnedInWorld,
         playerSpawning,
+        serverRegistered,
     }
 }

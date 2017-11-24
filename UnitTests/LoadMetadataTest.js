@@ -1,4 +1,6 @@
-﻿// This script gets automatically registered in 7DTD as a new command. The tags (@) in the first
+﻿  
+
+// This script gets automatically registered in 7DTD as a new command. The tags (@) in the first
 // comment block define the command name and aliases, description, help text, etc. The metadata
 // must use single-line comment (//) and must appear before the first Lua statement at the
 // beginning. Command scripts require at least the tags @commands and @description, all others
@@ -17,7 +19,8 @@
 
 
 // Help text has ended here because the comment block is interrupted by a newline without comment.
-// 
+// @shouldBeIgnored    Foobar
+//
 // Global variables:
 //   global       special object       Global namespace similar to "window" in browsers. Can be omitted.
 //   params       string[]             Array of parameters to the command, e.g params[0], params[1]

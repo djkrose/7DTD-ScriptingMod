@@ -115,6 +115,13 @@ namespace ScriptingMod.Tools
             //    InvokeScriptEvents(new { type = ScriptEvents.steamPlayerDisconnected.ToString(), networkPlayer });
             //};
 
+            // Called when the server was registered with Steam and announced to the master servers (also done for non-public dedicated servers)
+            Steam.Masterserver.Server.AddEventServerRegistered(delegate()
+            {
+                Log.Debug($"Event \"{typeof(MasterServerAnnouncer)}.ServerRegistered (Event_0)\" invoked.");
+                InvokeScriptEvents(new { type = ScriptEvents.serverRegistered.ToString(), Steam.Masterserver.Server });
+            });
+
             #endregion
 
             #region UnityEngine.Application events
@@ -224,7 +231,7 @@ namespace ScriptingMod.Tools
             // - Player died
             // - New Player connected for first time
             // - Events for ScriptingMode things
-            // - Player got hit by weapon type
+            // - Player got hit by weapon type (weapon itemclass.type that is)
 
             // --------- Events never used on dedicated server ----------
             // - Steam.ConnectedToServerEv

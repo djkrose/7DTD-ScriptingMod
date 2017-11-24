@@ -92,6 +92,7 @@
     <Compile Include="Extensions\EntityPlayerExtensions.cs" />
     <Compile Include="Extensions\EnumExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
+    <Compile Include="Tools\ReflectionTools.cs" />
     <Compile Include="Patches\CorpseDupePatch.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />

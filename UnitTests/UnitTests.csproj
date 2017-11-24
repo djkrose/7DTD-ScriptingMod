@@ -92,6 +92,7 @@
   <ItemGroup>
     <Compile Include="DumperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScriptEngineTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ScriptingMod\ScriptingMod.csproj">
@@ -108,6 +109,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="LoadMetadataTest.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
