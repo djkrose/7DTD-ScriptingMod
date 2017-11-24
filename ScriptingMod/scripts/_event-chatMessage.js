@@ -1,4 +1,4 @@
-﻿// Example script to show how to filter chat messages.
+// Example script to show how to filter chat messages.
 //
 // This script is disabled by default because its filename is prefixed with underscore (_).
 // Remove the underscore to activate the script and test it. No server restart required.

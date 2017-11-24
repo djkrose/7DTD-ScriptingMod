@@ -1,4 +1,4 @@
-﻿// Script is executed when the server has started and is ready for players.
+// Script is executed when the server has started and is ready for players.
 //
 // This script is disabled by default because its filename is prefixed with underscore (_).
 // Remove the underscore to activate the script and test it. No server restart required.

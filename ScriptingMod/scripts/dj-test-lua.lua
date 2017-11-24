@@ -1,4 +1,4 @@
-﻿-- This script gets automatically registered in 7DTD as a new command. The tags (@) in the first
+-- This script gets automatically registered in 7DTD as a new command. The tags (@) in the first
 -- comment block define the command name and aliases, description, help text, etc. The metadata
 -- must use single-line comment (--) and must appear before the first Lua statement at the
 -- beginning. The tags @commands and @description are mandatory, all others are optional.
