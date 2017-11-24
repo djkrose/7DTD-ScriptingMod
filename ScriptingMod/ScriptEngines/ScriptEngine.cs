@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using ScriptingMod.Extensions;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod.ScriptEngines
 {
@@ -42,7 +43,7 @@ namespace ScriptingMod.ScriptEngines
             // JavaScriptException is already handled in JsEngine
             catch (Exception ex)
             {
-                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                var fileName = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
                 Log.Error($"Script {fileName} failed: " + ex);
             }
 
@@ -70,7 +71,7 @@ namespace ScriptingMod.ScriptEngines
             // JavaScriptException is already handled in JsEngine
             catch (Exception ex)
             {
-                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                var fileName = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
                 SdtdConsole.Instance.Output($"Script {fileName} failed: " + ex.GetType().FullName + ": " + ex.Message + " [details in server log]");
                 Log.Error($"Script {fileName} failed: " + ex);
             }
@@ -120,7 +121,7 @@ namespace ScriptingMod.ScriptEngines
                     currentTag = match.Groups[1].Value;
                     if (metadata.ContainsKey(currentTag))
                     {
-                        var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                        var fileName = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
                         Log.Warning($"Tag @{currentTag} appears more han once in {fileName}. Only the last occurence is considered.");
                     }
                     metadata[currentTag] = "";

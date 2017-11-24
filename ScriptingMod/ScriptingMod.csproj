@@ -117,7 +117,7 @@
     <Compile Include="Extensions\IEnumerableExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Extensions\Vector3Extensions.cs" />
-    <Compile Include="FileHelper.cs" />
+    <Compile Include="Tools\FileTools.cs" />
     <Compile Include="Exceptions\FriendlyMessageException.cs" />
     <Compile Include="Tools\ChunkTools.cs" />
     <Compile Include="Tools\CommandTools.cs" />

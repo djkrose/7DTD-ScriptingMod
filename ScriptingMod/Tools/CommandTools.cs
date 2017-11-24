@@ -265,7 +265,7 @@ namespace ScriptingMod.Tools
             foreach (string script in scripts)
             {
                 var filePath = script; // Needed prior C# 5.0 as closure
-                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                var fileName = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
 
                 Log.Debug($"Loading script {fileName} ...");
 

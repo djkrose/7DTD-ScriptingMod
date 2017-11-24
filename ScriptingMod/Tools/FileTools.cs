@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
-namespace ScriptingMod
+namespace ScriptingMod.Tools
 {
-    internal class FileHelper
+    internal static class FileTools
     {
         /// <summary>
         /// Makes the given filePath relative to the given folder

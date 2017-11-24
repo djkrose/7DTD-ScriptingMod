@@ -10,6 +10,7 @@ using Jint.Parser;
 using Jint.Runtime;
 using Jint.Runtime.Interop;
 using ScriptingMod.Extensions;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod.ScriptEngines
 {
@@ -40,7 +41,7 @@ namespace ScriptingMod.ScriptEngines
 
         protected override void ExecuteFile(string filePath)
         {
-            var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+            var fileName = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
 
             Log.Debug($"Starting JavaScript {fileName} ...");
 
