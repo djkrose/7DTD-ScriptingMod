@@ -31,6 +31,10 @@ namespace ScriptingMod.Tools
         /// </summary>
         private static Dictionary<string, List<string>> _events = new Dictionary<string, List<string>>();
 
+        /// <summary>
+        /// Subscribes to additional scripting events that are not called directly;
+        /// MUST be called in GameStartDone or later because World is used
+        /// </summary>
         public static void InitEvents()
         {
             // A lot of other methods are already calling InvokeScriptEvents(..) directly.

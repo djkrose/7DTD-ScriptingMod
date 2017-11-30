@@ -20,6 +20,10 @@ namespace ScriptingMod
         public Api()
         {
             Log.Debug("Api constructor called.");
+            Log.Out("Initializing phase 1/3 ...");
+            NonPublic.Init();
+            PersistentData.Load();
+            PatchTools.ApplyPatches();
         }
 
         /// <summary>
@@ -28,14 +32,9 @@ namespace ScriptingMod
         public override void GameAwake()
         {
             Log.Debug("Api.GameAwake called.");
-            Log.Out($"Initializing {Constants.ModNameFull} ...");
-            NonPublic.Init();
-            PersistentData.Load();
-            PatchTools.ApplyPatches();
+            Log.Out("Initializing phase 2/3 ...");
             CommandTools.InitScripts();
             CommandTools.InitScriptsMonitoring();
-            RepairEngine.InitAuto();
-            Log.Out($"Done initializing {Constants.ModNameFull}.");
 
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.gameAwake.ToString() });
         }
@@ -46,8 +45,11 @@ namespace ScriptingMod
         public override void GameStartDone()
         {
             Log.Debug("Api.GameStartDone called.");
+            Log.Out("Initializing phase 3/3 ...");
             EacTools.Init();
             CommandTools.InitEvents();
+            RepairEngine.InitAuto();
+            Log.Out($"Done initializing {Constants.ModNameFull}.");
 
             CommandTools.InvokeScriptEvents(new { type = ScriptEvents.gameStartDone.ToString() });
         }

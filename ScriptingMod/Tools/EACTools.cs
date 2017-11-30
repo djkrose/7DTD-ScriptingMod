@@ -23,6 +23,10 @@ namespace ScriptingMod.Tools
         /// </summary>
         public static event AuthenticationSuccessfulCallbackDelegate AuthenticationSuccessful;
 
+        /// <summary>
+        /// Hooks into EAC checks and exposes events for it;
+        /// MUST be called after in GameStartDone or later
+        /// </summary>
         public static void Init()
         {
             //if (_isInitialized)
