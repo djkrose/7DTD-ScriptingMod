@@ -15,9 +15,6 @@ namespace ScriptingMod.Patches
     { 
         public static bool Prefix([NotNull] EntityAlive __instance, DamageResponse _dmResponse)
         {
-            var sw = new MicroStopwatch();
-            sw.Start();
-
             Log.Debug($"Executing patch prefix for {typeof(EntityAlive)}.{nameof(EntityAlive.Kill)} ...");
 
             ScriptEvents eventType;
@@ -31,8 +28,6 @@ namespace ScriptingMod.Patches
                 return true;
 
             CommandTools.InvokeScriptEvents(eventType, new { entity = __instance, damageResponse = _dmResponse });
-
-            Log.Debug("Processing patch took " + sw.ElapsedMicroseconds + " µs.");
 
             return true;
         }

@@ -27,9 +27,11 @@ namespace ScriptingMod.Tools
         private static object _scriptsChangedLock = new object();
 
         /// <summary>
-        /// Dictionary of event => [NotNull] List of script filePaths
+        /// Array of (int)eventType => List of script filePaths
+        /// Elements that are null mean that there is no script event attached to this event type.
+        /// Using an array may look "unclean" but it's much faster than Dictionary.
         /// </summary>
-        private static Dictionary<ScriptEvents, List<string>> _events = new Dictionary<ScriptEvents, List<string>>();
+        private static List<string>[] _events = new List<string>[(int)Enum.GetValues(typeof(ScriptEvents)).Cast<ScriptEvents>().Max() + 1];
 
         /// <summary>
         /// Subscribes to additional scripting events that are not called directly;
@@ -41,7 +43,7 @@ namespace ScriptingMod.Tools
             // Here are just the ones that need to be attached to actual events.
             // See enum ScriptEvents and it's usages for a full list of supported scripting events.
 
-#region ScriptingMod events
+            #region ScriptingMod events
 
             // Called when a player got kicked due to failed EAC check
             EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
@@ -57,9 +59,9 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(ScriptEvents.eacPlayerAuthenticated, new { clientInfo });
             };
 
-#endregion
+            #endregion
 
-#region Steam events
+            #region Steam events
 
             //var steam = Steam.Instance ?? throw new NullReferenceException("Steam not ready.");
 
@@ -126,9 +128,9 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(ScriptEvents.serverRegistered, new { masterServerAnnouncer = Steam.Masterserver.Server });
             });
 
-#endregion
+            #endregion
 
-#region UnityEngine.Application events
+            #region UnityEngine.Application events
 
             // Called when main Unity thread logs an error message
             Application.logMessageReceived += delegate (string condition, string trace, LogType logType)
@@ -144,9 +146,9 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(ScriptEvents.logMessageReceived, new { condition, trace, logType });
             };
 
-#endregion
+            #endregion
 
-#region GameManager events
+            #region GameManager events
 
             // Called on shutdown when the world becomes null. Not called on startup apparently.
             // Removed because not useful
@@ -156,9 +158,9 @@ namespace ScriptingMod.Tools
             //    InvokeScriptEvents(new { type = ScriptEvents.gameManagerWorldChanged.ToString(), world = world_ });
             //}; 
 
-#endregion
+            #endregion
 
-#region World events
+            #region World events
 
             var world = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
 
@@ -194,9 +196,9 @@ namespace ScriptingMod.Tools
             //    InvokeScriptEvents(new { type = ScriptEvents.chunkClusterChanged.ToString(), chunkClusterIndex });
             //};
 
-#endregion
+            #endregion
 
-#region Other events
+            #region Other events
 
             // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
             GameStats.OnChangedDelegates += delegate(EnumGameStats gameState, object newValue)
@@ -318,9 +320,9 @@ namespace ScriptingMod.Tools
                                 continue;
                             }
 
-                            if (!_events.ContainsKey(eventType))
-                                _events[eventType] = new List<string>();
-                            _events[eventType].Add(filePath);
+                            if (_events[(int)eventType] == null)
+                                _events[(int)eventType] = new List<string>();
+                            _events[(int)eventType].Add(filePath);
                         }
                         Log.Out($"Registered event{(eventNames.Length == 1 ? "" : "s")} \"{eventNames.Join(" ")}\" from script {fileRelativePath}.");
                     }
@@ -361,21 +363,21 @@ namespace ScriptingMod.Tools
             }
         }
 
+        public static bool ShouldInvokeScriptEvents(ScriptEvents eventType)
+        {
+            return _events[(int) eventType] != null;
+        }
+
         public static void InvokeScriptEvents(ScriptEvents eventType, [CanBeNull] object eventArgs)
         {
-            // TrackInvocation(eventType, eventArgs);
+            TrackInvocation(eventType, eventArgs);
 
-            var sw = new MicroStopwatch(true);
-
-            var contains = _events.ContainsKey(eventType);
-            Log.Debug("Searching for script event took " + sw.ElapsedMicroseconds + " µs.");
-
-            if (!contains)
+            if (_events[(int)eventType] == null)
                 return;
 
             Log.Debug($"Invoking script event \"{eventType}\" ...");
 
-            foreach (var filePath in _events[eventType])
+            foreach (var filePath in _events[(int)eventType])
             {
                 var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
                 scriptEngine.ExecuteEvent(filePath, eventType, eventArgs);
@@ -441,7 +443,7 @@ namespace ScriptingMod.Tools
             SaveChanges();
 
             // Clear out attached scripts
-            _events.Clear();
+            Array.Clear(_events, 0, _events.Length);
 
             Log.Out("Unloaded all scripting commands.");
         }
