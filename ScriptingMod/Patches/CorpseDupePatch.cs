@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using Harmony;
 using JetBrains.Annotations;
@@ -36,7 +35,7 @@ namespace ScriptingMod.Patches
             return true;
         }
 
-        public static bool Prefix(EntityZombie __instance)
+        public static bool Prefix([NotNull] EntityZombie __instance)
         {
             if (!PersistentData.Instance.PatchCorpseItemDupeExploit)
             {

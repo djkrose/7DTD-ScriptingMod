@@ -26,10 +26,12 @@ namespace ScriptingMod.ScriptEngines
             }
         }
 
-        public void ExecuteEvent(string filePath, [CanBeNull] object eventArgs)
+        public void ExecuteEvent(string filePath, ScriptEvents eventType, [CanBeNull] object eventArgs)
         {
+            var sw = new MicroStopwatch(true);
             ResetEngine();
             InitCommonValues();
+            SetValue("eventType", eventType.ToString());
             SetValue("event", eventArgs);
 
             var oldDirectory = Directory.GetCurrentDirectory();
@@ -48,6 +50,7 @@ namespace ScriptingMod.ScriptEngines
             }
 
             Directory.SetCurrentDirectory(oldDirectory);
+            Log.Debug("Executing event took " + sw.ElapsedMicroseconds + " µs.");
         }
 
         public void ExecuteCommand(string filePath, List<string> parameters, CommandSenderInfo senderInfo)

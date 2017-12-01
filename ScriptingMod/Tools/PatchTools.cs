@@ -11,11 +11,11 @@ namespace ScriptingMod.Tools
     {
         public static void ApplyPatches()
         {
-            if (!PersistentData.Instance.PatchCorpseItemDupeExploit)
-            {
-                Log.Debug("Skipping whole patching system because no patch is enabled.");
-                return;
-            }
+            //if (!PersistentData.Instance.PatchCorpseItemDupeExploit)
+            //{
+            //    Log.Debug("Skipping whole patching system because no patch is enabled.");
+            //    return;
+            //}
 
             Log.Debug("Applying patches ...");
             var harmony = HarmonyInstance.Create("com.github.djkrose.7DTD-ScriptingMod");

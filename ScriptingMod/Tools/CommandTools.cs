@@ -27,9 +27,9 @@ namespace ScriptingMod.Tools
         private static object _scriptsChangedLock = new object();
 
         /// <summary>
-        /// Dictionary of event name => [NotNull] List of script filePaths
+        /// Dictionary of event => [NotNull] List of script filePaths
         /// </summary>
-        private static Dictionary<string, List<string>> _events = new Dictionary<string, List<string>>();
+        private static Dictionary<ScriptEvents, List<string>> _events = new Dictionary<ScriptEvents, List<string>>();
 
         /// <summary>
         /// Subscribes to additional scripting events that are not called directly;
@@ -47,14 +47,14 @@ namespace ScriptingMod.Tools
             EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
             {
                 Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.PlayerKicked)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.eacPlayerKicked.ToString(), clientInfo, kickPlayerData });
+                InvokeScriptEvents(ScriptEvents.eacPlayerKicked, new { clientInfo, kickPlayerData });
             };
 
             // Called when a player successfully passed the EAC check
             EacTools.AuthenticationSuccessful += delegate (ClientInfo clientInfo)
             {
                 Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.AuthenticationSuccessful)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.eacPlayerAuthenticated.ToString(), clientInfo });
+                InvokeScriptEvents(ScriptEvents.eacPlayerAuthenticated, new { clientInfo });
             };
 
 #endregion
@@ -123,7 +123,7 @@ namespace ScriptingMod.Tools
             Steam.Masterserver.Server.AddEventServerRegistered(delegate()
             {
                 Log.Debug($"Event \"{typeof(MasterServerAnnouncer)}.ServerRegistered (Event_0)\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.serverRegistered.ToString(), Steam.Masterserver.Server });
+                InvokeScriptEvents(ScriptEvents.serverRegistered, new { masterServerAnnouncer = Steam.Masterserver.Server });
             });
 
 #endregion
@@ -134,14 +134,14 @@ namespace ScriptingMod.Tools
             Application.logMessageReceived += delegate (string condition, string trace, LogType logType)
             {
                 Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceived)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.logMessageReceived.ToString(), condition, trace, logType });
+                InvokeScriptEvents(ScriptEvents.logMessageReceived, new { condition, trace, logType });
             };
 
             // Called when ANY Unity thread logs an error message
             Application.logMessageReceivedThreaded += delegate (string condition, string trace, LogType logType)
             {
                 Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceivedThreaded)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.logMessageReceived.ToString(), condition, trace, logType });
+                InvokeScriptEvents(ScriptEvents.logMessageReceived, new { condition, trace, logType });
             };
 
 #endregion
@@ -166,14 +166,14 @@ namespace ScriptingMod.Tools
             world.EntityLoadedDelegates += delegate (Entity entity)
             {
                 Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityLoadedDelegates)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.entityLoaded.ToString(), entity });
+                InvokeScriptEvents(ScriptEvents.entityLoaded, new { entity });
             };
 
             // Called when any entity (zombie, item, air drop, player, ...) disappears from the world, e.g. it got killed, picked up, despawned, logged off, ...
             world.EntityUnloadedDelegates += delegate (Entity entity, EnumRemoveEntityReason reason)
             {
                 Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityUnloadedDelegates)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.entityUnloaded.ToString(), entity, reason });
+                InvokeScriptEvents(ScriptEvents.entityUnloaded, new { entity, reason });
             };
 
             // Called when chunks change display status, i.e. either get displayed or stop being displayed.
@@ -183,7 +183,7 @@ namespace ScriptingMod.Tools
             {
                 // No logging to avoid spam
                 //Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunkVisibleDelegates)}\" invoked. (displayed={displayed}).");
-                InvokeScriptEvents(new { type = displayed ? ScriptEvents.chunkLoaded.ToString() : ScriptEvents.chunkUnloaded.ToString(), chunkKey });
+                InvokeScriptEvents(displayed ? ScriptEvents.chunkLoaded : ScriptEvents.chunkUnloaded, new { chunkKey });
             };
 
             // Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
@@ -203,7 +203,7 @@ namespace ScriptingMod.Tools
             {
                 // No logging to avoid spam
                 // Log.Debug($"Event \"{typeof(GameStats)}.{nameof(GameStats.OnChangedDelegates)}\" invoked.");
-                InvokeScriptEvents(new { type = ScriptEvents.gameStatsChanged.ToString(), gameState, newValue});
+                InvokeScriptEvents(ScriptEvents.gameStatsChanged, new { gameState, newValue});
             };
 
             #endregion
@@ -225,7 +225,6 @@ namespace ScriptingMod.Tools
             // - Event on zombie/entity proximity (triggered when a player gets or leaves withing reach of X meters of a zombie) [Xyth]
             // - Exploring of new land
             // - Bloodmoon starting/ending
-            // - EntityAlive was attacked [Xyth]
             // - Item was dropped [Xyth]
             // - Item durability hits zero [Xyth]
             // - Screamer spawned for a chunk/player/xyz [kenyer]
@@ -235,7 +234,6 @@ namespace ScriptingMod.Tools
             // - Player died [Xyth]
             // - New Player connected for first time
             // - Events for ScriptingMod things
-            // - Player got hit by weapon type (weapon itemclass.type that is) [Guppycur, StompyNZ]
             // - Command that triggers when someone is in the air for more than X seconds, to catch hackers [war4head]
 
             // --------- Events never used on dedicated server ----------
@@ -308,15 +306,21 @@ namespace ScriptingMod.Tools
                         scriptUsed = true;
                         foreach (var eventName in eventNames)
                         {
-                            if (!EventExists(eventName))
+                            ScriptEvents eventType;
+                            try
+                            {
+                                // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
+                                eventType = (ScriptEvents)Enum.Parse(typeof(ScriptEvents), eventName);
+                            }
+                            catch (Exception)
                             {
                                 Log.Warning($"Event \"{eventName}\" in script {fileRelativePath} is unknown and will be ignored.");
                                 continue;
                             }
 
-                            if (!_events.ContainsKey(eventName))
-                                _events[eventName] = new List<string>();
-                            _events[eventName].Add(filePath);
+                            if (!_events.ContainsKey(eventType))
+                                _events[eventType] = new List<string>();
+                            _events[eventType].Add(filePath);
                         }
                         Log.Out($"Registered event{(eventNames.Length == 1 ? "" : "s")} \"{eventNames.Join(" ")}\" from script {fileRelativePath}.");
                     }
@@ -335,20 +339,6 @@ namespace ScriptingMod.Tools
             SaveChanges();
 
             Log.Debug("All script commands added.");
-        }
-
-        private static bool EventExists(string eventName)
-        {
-            try
-            {
-                // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
-                Enum.Parse(typeof(ScriptEvents), eventName);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-            return true;
         }
 
         public static void InitScriptsMonitoring()
@@ -371,31 +361,35 @@ namespace ScriptingMod.Tools
             }
         }
 
-        public static void InvokeScriptEvents([NotNull] object eventArgs)
+        public static void InvokeScriptEvents(ScriptEvents eventType, [CanBeNull] object eventArgs)
         {
-            var eventName = GetEventNameFromEventArgs(eventArgs);
+            // TrackInvocation(eventType, eventArgs);
 
-            TrackInvocation(eventName, eventArgs);
+            var sw = new MicroStopwatch(true);
 
-            if (!_events.ContainsKey(eventName))
+            var contains = _events.ContainsKey(eventType);
+            Log.Debug("Searching for script event took " + sw.ElapsedMicroseconds + " µs.");
+
+            if (!contains)
                 return;
 
-            Log.Debug($"Invoking event \"{eventName}\" ...");
+            Log.Debug($"Invoking script event \"{eventType}\" ...");
 
-            foreach (var filePath in _events[eventName])
+            foreach (var filePath in _events[eventType])
             {
                 var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-                scriptEngine.ExecuteEvent(filePath, eventArgs);
+                scriptEngine.ExecuteEvent(filePath, eventType, eventArgs);
             }
         }
 
         /// <summary>
-        /// Track when and how this event was invoked first time
+        /// Track when and how this event was invoked first time;
+        /// Only for development to learn if and when events are called.
         /// </summary>
-        /// <param name="eventName"></param>
+        /// <param name="eventType"></param>
         /// <param name="eventArgs"></param>
         [Conditional("DEBUG")]
-        private static void TrackInvocation(string eventName, object eventArgs)
+        private static void TrackInvocation(ScriptEvents eventType, object eventArgs)
         {
 #if DEBUG
             var invocationLog = Environment.NewLine +
@@ -403,13 +397,13 @@ namespace ScriptingMod.Tools
                                 Environment.StackTrace + Environment.NewLine +
                                 Dumper.Dump(eventArgs, 1).TrimEnd();
 
-            var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventName);
+            var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventType.ToString());
 
             if (invokedEvent == null)
             {
                 invokedEvent = new PersistentData.InvokedEvent()
                 {
-                    EventName = eventName,
+                    EventName = eventType.ToString(),
                     FirstCall = invocationLog.Indent(8) + Environment.NewLine + new string(' ', 6),
                     LastCalls = new List<string>()
                 };
@@ -423,32 +417,6 @@ namespace ScriptingMod.Tools
 
             PersistentData.Instance.SaveLater();
 #endif
-        }
-
-        /// <summary>
-        /// Extracts the event name from the type property of the given event args object using reflection.
-        /// If the property doesn't exist or the eventName is null or empty, an ArgumentException is thrown.
-        /// </summary>
-        /// <param name="eventArgs">An event args object that contains the event name in the property "type"</param>
-        /// <returns>The event name; never null or empty</returns>
-        /// <exception cref="ArgumentException">If the property doesn't exist or the event name is null or empty</exception>
-        private static string GetEventNameFromEventArgs(object eventArgs)
-        {
-            const string eventNameProperty = "type";
-
-            var eventNameGetter = eventArgs.GetType().GetProperty(eventNameProperty)?.GetGetMethod();
-
-            if (eventNameGetter == null)
-                throw new ArgumentException($"Event object {eventArgs.GetType()} is missing the mandatory \"{eventNameProperty}\" property.");
-
-            if (eventNameGetter.ReturnType != typeof(string))
-                throw new ArgumentException($"Property \"{eventNameProperty}\" in event object {eventArgs.GetType()} is of type {eventNameGetter.ReturnType} but should be {typeof(string)}.");
-
-            var eventName = (string) eventNameGetter.Invoke(eventArgs, null);
-            if (string.IsNullOrEmpty(eventName))
-                throw new ArgumentException($"Property \"{eventNameProperty}\" in event object {eventArgs.GetType()} is null or empty.");
-
-            return eventName;
         }
 
         /// <summary>

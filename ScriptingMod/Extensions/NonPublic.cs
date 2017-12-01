@@ -98,7 +98,7 @@ namespace ScriptingMod.Extensions
                 ev_MasterServerAnnouncer_ServerRegistered              = ReflectionTools.GetEvent(typeof(MasterServerAnnouncer), typeof(Action));
 
 
-                Log.Debug("Successfilly established reflection references.");
+                Log.Out("Successfilly established reflection references.");
             }
             catch (Exception ex)
             {

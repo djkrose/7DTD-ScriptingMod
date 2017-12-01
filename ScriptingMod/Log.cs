@@ -41,6 +41,12 @@ namespace ScriptingMod
         }
 
         [Conditional("DEBUG")]
+        public static void Dump(object obj, string name, int depth)
+        {
+            Debug(Dumper.Dump(obj, name, depth));
+        }
+
+        [Conditional("DEBUG")]
         public static void Dump(object obj, string name, DumperOptions options)
         {
             Debug(Dumper.Dump(obj, name, options));
