@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using ScriptingMod;
 using ScriptingMod.ScriptEngines;
@@ -40,7 +37,6 @@ namespace UnitTests
             Assert.AreEqual("0", metadata["defaultPermission"]);
             Assert.AreEqual("Some example command", metadata["description"]);
             Console.WriteLine(Dumper.Dump(metadata, "metadata"));
-            
             var help = Regex.Split(metadata["help"], "(?:\r\n|\r|\n)");
             Console.WriteLine(Dumper.Dump(help, "help"));
 
