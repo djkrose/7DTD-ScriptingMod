@@ -55,7 +55,7 @@ namespace ScriptingMod.Extensions
 
         private static FieldInfo       fi_EntityAlive_damageResponse;                          // EntityAlive                -> private DamageResponse damageResponse_0;
 
-        private static EventInfo       ev_MasterServerAnnouncer_ServerRegistered;              // MasterServerAnnouncer      -> private event Action Event_0
+        private static MethodInfo      ev_MasterServerAnnouncer_add_ServerRegistered;          // MasterServerAnnouncer      -> private void add_Event_0(Action)
 
         public static void Init()
         {
@@ -95,8 +95,7 @@ namespace ScriptingMod.Extensions
 
                 fi_EntityAlive_damageResponse                          = ReflectionTools.GetField(typeof(EntityAlive), typeof(DamageResponse));
 
-                ev_MasterServerAnnouncer_ServerRegistered              = ReflectionTools.GetEvent(typeof(MasterServerAnnouncer), typeof(Action));
-
+                ev_MasterServerAnnouncer_add_ServerRegistered          = ReflectionTools.GetAddMethod(typeof(MasterServerAnnouncer), typeof(void), new [] { typeof(Action) });
 
                 Log.Out("Successfilly established reflection references.");
             }
@@ -294,13 +293,11 @@ namespace ScriptingMod.Extensions
         /// which is called after the game was registered in Steam master servers,
         /// see MasterServerAnnouncer.RegisterGame
         /// </summary>
-        /// <param name="masterServerAnnouncer"></param>
+        /// <param name="target"></param>
         /// <param name="onServerRegistered"></param>
-        public static void AddEventServerRegistered(this MasterServerAnnouncer masterServerAnnouncer, Action onServerRegistered)
+        public static void AddEventServerRegistered(this MasterServerAnnouncer target, Action onServerRegistered)
         {
-            // Can't use AddEventHandler because the add method is private
-            var addMethod = ev_MasterServerAnnouncer_ServerRegistered.GetAddMethod(true);
-            addMethod.Invoke(masterServerAnnouncer, new object[] {onServerRegistered});
+            ev_MasterServerAnnouncer_add_ServerRegistered.Invoke(target, new object[] {onServerRegistered});
         }
 
         #endregion
