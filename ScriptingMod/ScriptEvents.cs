@@ -2,8 +2,6 @@
 {
     public enum ScriptEvents
     {
-        // Each member should have exactly ONE using, which is where the event handler is invoked
-
         animalDamaged,
         animalDied,
         chatMessage,

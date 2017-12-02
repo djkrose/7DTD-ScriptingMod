@@ -88,11 +88,11 @@
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="Patches\EntityDied.cs" />
     <Compile Include="Patches\EntityDamaged.cs" />
+    <Compile Include="ScriptEngines\EventArgs.cs" />
     <Compile Include="Tools\ReflectionTools.cs" />
     <Compile Include="Patches\CorpseDupePatch.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
-    <Compile Include="ScriptEngines\ChatMessageEventArgs.cs" />
     <Compile Include="ScriptEvents.cs" />
     <Compile Include="ScriptEngines\JsConsole.cs" />
     <Compile Include="Tools\EacTools.cs" />
@@ -135,7 +135,7 @@
     <Compile Include="Tools\WorldTools.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="scripts\event-died.js">
+    <Content Include="scripts\_event-died.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="scripts\_dj-pay.js">

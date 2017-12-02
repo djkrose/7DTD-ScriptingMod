@@ -10,6 +10,7 @@ using JetBrains.Annotations;
 namespace ScriptingMod
 {
     [Serializable]
+    [XmlRoot("PersistentData")]
     [UsedImplicitly(ImplicitUseTargetFlags.Members)]
     public class PersistentData
     {
@@ -30,6 +31,20 @@ namespace ScriptingMod
         public int RepairInterval; // seconds
         public int RepairCounter;
         public bool PatchCorpseItemDupeExploit;
+
+        [NotNull]
+        public HashSet<ScriptEvents> LogEvents = new HashSet<ScriptEvents>()
+        {
+            ScriptEvents.animalDamaged,
+            ScriptEvents.animalDied,
+            ScriptEvents.playerDamaged,
+            ScriptEvents.entityLoaded,
+            ScriptEvents.entityUnloaded,
+            ScriptEvents.gameStatsChanged,
+            ScriptEvents.playerDied,
+            ScriptEvents.zombieDamaged,
+            ScriptEvents.zombieDied,
+        };
 
         [NotNull]
         public List<string> EacWhitelist = new List<string>();

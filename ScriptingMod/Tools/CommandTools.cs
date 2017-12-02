@@ -49,14 +49,14 @@ namespace ScriptingMod.Tools
             EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
             {
                 Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.PlayerKicked)}\" invoked.");
-                InvokeScriptEvents(ScriptEvents.eacPlayerKicked, new { clientInfo, kickPlayerData });
+                InvokeScriptEvents(new EacPlayerKickedEventArgs(ScriptEvents.eacPlayerKicked, clientInfo, kickPlayerData));
             };
 
             // Called when a player successfully passed the EAC check
             EacTools.AuthenticationSuccessful += delegate (ClientInfo clientInfo)
             {
                 Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.AuthenticationSuccessful)}\" invoked.");
-                InvokeScriptEvents(ScriptEvents.eacPlayerAuthenticated, new { clientInfo });
+                InvokeScriptEvents(new EacPlayerAuthenticatedEventArgs(ScriptEvents.eacPlayerAuthenticated, clientInfo));
             };
 
             #endregion
@@ -125,7 +125,7 @@ namespace ScriptingMod.Tools
             Steam.Masterserver.Server.AddEventServerRegistered(delegate()
             {
                 Log.Debug($"Event \"{typeof(MasterServerAnnouncer)}.ServerRegistered (Event_0)\" invoked.");
-                InvokeScriptEvents(ScriptEvents.serverRegistered, new { masterServerAnnouncer = Steam.Masterserver.Server });
+                InvokeScriptEvents(new ServerRegisteredEventArgs(ScriptEvents.serverRegistered, Steam.Masterserver.Server));
             });
 
             #endregion
@@ -133,17 +133,18 @@ namespace ScriptingMod.Tools
             #region UnityEngine.Application events
 
             // Called when main Unity thread logs an error message
-            Application.logMessageReceived += delegate (string condition, string trace, LogType logType)
-            {
-                Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceived)}\" invoked.");
-                InvokeScriptEvents(ScriptEvents.logMessageReceived, new { condition, trace, logType });
-            };
+            // Removed because it is included in logMessageReceivedThreaded
+            //Application.logMessageReceived += delegate (string condition, string trace, LogType logType)
+            //{
+            //    Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceived)}\" invoked.");
+            //    InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvents.logMessageReceived, condition, trace, logType));
+            //};
 
-            // Called when ANY Unity thread logs an error message
+            // Called when ANY Unity thread logs an error message, incl. the main thread
             Application.logMessageReceivedThreaded += delegate (string condition, string trace, LogType logType)
             {
                 Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceivedThreaded)}\" invoked.");
-                InvokeScriptEvents(ScriptEvents.logMessageReceived, new { condition, trace, logType });
+                InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvents.logMessageReceived, condition, trace, logType));
             };
 
             #endregion
@@ -168,14 +169,14 @@ namespace ScriptingMod.Tools
             world.EntityLoadedDelegates += delegate (Entity entity)
             {
                 Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityLoadedDelegates)}\" invoked.");
-                InvokeScriptEvents(ScriptEvents.entityLoaded, new { entity });
+                InvokeScriptEvents(new EntityLoadedEventArgs(ScriptEvents.entityLoaded, entity));
             };
 
             // Called when any entity (zombie, item, air drop, player, ...) disappears from the world, e.g. it got killed, picked up, despawned, logged off, ...
             world.EntityUnloadedDelegates += delegate (Entity entity, EnumRemoveEntityReason reason)
             {
                 Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityUnloadedDelegates)}\" invoked.");
-                InvokeScriptEvents(ScriptEvents.entityUnloaded, new { entity, reason });
+                InvokeScriptEvents(new EntityUnloadedEventArgs(ScriptEvents.entityUnloaded, entity, reason));
             };
 
             // Called when chunks change display status, i.e. either get displayed or stop being displayed.
@@ -185,7 +186,7 @@ namespace ScriptingMod.Tools
             {
                 // No logging to avoid spam
                 //Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunkVisibleDelegates)}\" invoked. (displayed={displayed}).");
-                InvokeScriptEvents(displayed ? ScriptEvents.chunkLoaded : ScriptEvents.chunkUnloaded, new { chunkKey });
+                InvokeScriptEvents(new ChunkLoadedUnloadedEventArgs(displayed ? ScriptEvents.chunkLoaded : ScriptEvents.chunkUnloaded, chunkKey));
             };
 
             // Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
@@ -205,7 +206,7 @@ namespace ScriptingMod.Tools
             {
                 // No logging to avoid spam
                 // Log.Debug($"Event \"{typeof(GameStats)}.{nameof(GameStats.OnChangedDelegates)}\" invoked.");
-                InvokeScriptEvents(ScriptEvents.gameStatsChanged, new { gameState, newValue});
+                InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvents.gameStatsChanged, gameState, newValue));
             };
 
             #endregion
@@ -363,24 +364,24 @@ namespace ScriptingMod.Tools
             }
         }
 
-        public static bool ShouldInvokeScriptEvents(ScriptEvents eventType)
+        public static void InvokeScriptEvents(ScriptEventArgs eventArgs)
         {
-            return _events[(int) eventType] != null;
-        }
+            TrackInvocation(eventArgs);
 
-        public static void InvokeScriptEvents(ScriptEvents eventType, [CanBeNull] object eventArgs)
-        {
-            TrackInvocation(eventType, eventArgs);
-
-            if (_events[(int)eventType] == null)
-                return;
-
-            Log.Debug($"Invoking script event \"{eventType}\" ...");
-
-            foreach (var filePath in _events[(int)eventType])
+            if (PersistentData.Instance.LogEvents.Contains(eventArgs.type))
             {
-                var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-                scriptEngine.ExecuteEvent(filePath, eventType, eventArgs);
+                Log.Out("[EVENT] " + eventArgs);
+            }
+
+            if (_events[(int)eventArgs.type] != null)
+            {
+                Log.Debug($"Invoking script event \"{eventArgs.type}\" ...");
+
+                foreach (var filePath in _events[(int)eventArgs.type])
+                {
+                    var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
+                    scriptEngine.ExecuteEvent(filePath, eventArgs.type, eventArgs);
+                }
             }
         }
 
@@ -388,10 +389,9 @@ namespace ScriptingMod.Tools
         /// Track when and how this event was invoked first time;
         /// Only for development to learn if and when events are called.
         /// </summary>
-        /// <param name="eventType"></param>
         /// <param name="eventArgs"></param>
         [Conditional("DEBUG")]
-        private static void TrackInvocation(ScriptEvents eventType, object eventArgs)
+        private static void TrackInvocation(ScriptEventArgs eventArgs)
         {
 #if DEBUG
             var invocationLog = Environment.NewLine +
@@ -399,13 +399,13 @@ namespace ScriptingMod.Tools
                                 Environment.StackTrace + Environment.NewLine +
                                 Dumper.Dump(eventArgs, 1).TrimEnd();
 
-            var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventType.ToString());
+            var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventArgs.type.ToString());
 
             if (invokedEvent == null)
             {
                 invokedEvent = new PersistentData.InvokedEvent()
                 {
-                    EventName = eventType.ToString(),
+                    EventName = eventArgs.type.ToString(),
                     FirstCall = invocationLog.Indent(8) + Environment.NewLine + new string(' ', 6),
                     LastCalls = new List<string>()
                 };

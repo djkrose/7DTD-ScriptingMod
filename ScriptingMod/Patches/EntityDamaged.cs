@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Harmony;
 using JetBrains.Annotations;
+using ScriptingMod.ScriptEngines;
 using ScriptingMod.Tools;
 
 namespace ScriptingMod.Patches
@@ -27,7 +28,7 @@ namespace ScriptingMod.Patches
             else
                 return true;
 
-            CommandTools.InvokeScriptEvents(eventType, new { entity = __instance, damageResponse = _dmResponse });
+            CommandTools.InvokeScriptEvents(new EntityDamagedEventArgs(eventType, __instance, _dmResponse));
 
             return true;
         }
