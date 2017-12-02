@@ -10,16 +10,16 @@ namespace ScriptingMod.ScriptEngines
     [UsedImplicitly(ImplicitUseTargetFlags.Members)]
     public class ScriptEventArgs
     {
-        public ScriptEvents type;
+        public ScriptEvent type;
 
-        public ScriptEventArgs(ScriptEvents type)
+        public ScriptEventArgs(ScriptEvent type)
         {
             this.type = type;
         }
 
         public override string ToString()
         {
-            return "type=" + type;
+            return "eventType=" + type;
         }
     }
 
@@ -35,7 +35,7 @@ namespace ScriptingMod.ScriptEngines
 
         public bool isPropagationStopped = false;
 
-        public ChatMessageEventArgs(ScriptEvents type) : base(type)
+        public ChatMessageEventArgs(ScriptEvent type) : base(type)
         {
         }
 
@@ -52,7 +52,7 @@ namespace ScriptingMod.ScriptEngines
         public EntityAlive entity;
         public DamageResponse damageResponse;
 
-        public EntityDamagedEventArgs(ScriptEvents type, EntityAlive entity, DamageResponse damageResponse) : base(type)
+        public EntityDamagedEventArgs(ScriptEvent type, EntityAlive entity, DamageResponse damageResponse) : base(type)
         {
             this.entity = entity;
             this.damageResponse = damageResponse;
@@ -73,7 +73,7 @@ namespace ScriptingMod.ScriptEngines
 
     public class EntityDiedEventArgs : EntityDamagedEventArgs
     {
-        public EntityDiedEventArgs(ScriptEvents type, EntityAlive entity, DamageResponse damageResponse) : base(type, entity, damageResponse)
+        public EntityDiedEventArgs(ScriptEvent type, EntityAlive entity, DamageResponse damageResponse) : base(type, entity, damageResponse)
         {
         }
     }
@@ -82,7 +82,7 @@ namespace ScriptingMod.ScriptEngines
     {
         public ClientInfo clientInfo;
 
-        public EacPlayerAuthenticatedEventArgs(ScriptEvents type, ClientInfo clientInfo) : base(type)
+        public EacPlayerAuthenticatedEventArgs(ScriptEvent type, ClientInfo clientInfo) : base(type)
         {
             this.clientInfo = clientInfo;
         }
@@ -93,7 +93,7 @@ namespace ScriptingMod.ScriptEngines
         public ClientInfo clientInfo;
         public GameUtils.KickPlayerData kickPlayerData;
 
-        public EacPlayerKickedEventArgs(ScriptEvents type, ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData) : base(type)
+        public EacPlayerKickedEventArgs(ScriptEvent type, ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData) : base(type)
         {
             this.clientInfo = clientInfo;
             this.kickPlayerData = kickPlayerData;
@@ -104,7 +104,7 @@ namespace ScriptingMod.ScriptEngines
     {
         public MasterServerAnnouncer masterServerAnnouncer;
 
-        public ServerRegisteredEventArgs(ScriptEvents type, MasterServerAnnouncer masterServerAnnouncer) : base(type)
+        public ServerRegisteredEventArgs(ScriptEvent type, MasterServerAnnouncer masterServerAnnouncer) : base(type)
         {
             this.masterServerAnnouncer = masterServerAnnouncer;
         }
@@ -116,7 +116,7 @@ namespace ScriptingMod.ScriptEngines
         public string trace;
         public LogType logType;
 
-        public LogMessageReceivedEventArgs(ScriptEvents type, string condition, string trace, LogType logType) : base(type)
+        public LogMessageReceivedEventArgs(ScriptEvent type, string condition, string trace, LogType logType) : base(type)
         {
             this.condition = condition;
             this.trace = trace;
@@ -128,7 +128,7 @@ namespace ScriptingMod.ScriptEngines
     {
         public Entity entity;
 
-        public EntityLoadedEventArgs(ScriptEvents type, Entity entity) : base(type)
+        public EntityLoadedEventArgs(ScriptEvent type, Entity entity) : base(type)
         {
             this.entity = entity;
         }
@@ -139,7 +139,7 @@ namespace ScriptingMod.ScriptEngines
         public Entity entity;
         public EnumRemoveEntityReason reason;
 
-        public EntityUnloadedEventArgs(ScriptEvents type, Entity entity, EnumRemoveEntityReason reason) : base(type)
+        public EntityUnloadedEventArgs(ScriptEvent type, Entity entity, EnumRemoveEntityReason reason) : base(type)
         {
             this.entity = entity;
             this.reason = reason;
@@ -150,7 +150,7 @@ namespace ScriptingMod.ScriptEngines
     {
         public long chunkKey;
 
-        public ChunkLoadedUnloadedEventArgs(ScriptEvents type, long chunkKey) : base(type)
+        public ChunkLoadedUnloadedEventArgs(ScriptEvent type, long chunkKey) : base(type)
         {
             this.chunkKey = chunkKey;
         }
@@ -161,7 +161,7 @@ namespace ScriptingMod.ScriptEngines
         public EnumGameStats gameState;
         public object newValue;
 
-        public GameStatsChangedEventArgs(ScriptEvents type, EnumGameStats gameState, object newValue) : base(type)
+        public GameStatsChangedEventArgs(ScriptEvent type, EnumGameStats gameState, object newValue) : base(type)
         {
             this.gameState = gameState;
             this.newValue = newValue;
@@ -173,7 +173,7 @@ namespace ScriptingMod.ScriptEngines
         public ClientInfo clientInfo;
         public string compatibilityVersion;
 
-        public PlayerLoginEventArgs(ScriptEvents type, ClientInfo clientInfo, string compatibilityVersion) : base(type)
+        public PlayerLoginEventArgs(ScriptEvent type, ClientInfo clientInfo, string compatibilityVersion) : base(type)
         {
             this.clientInfo = clientInfo;
             this.compatibilityVersion = compatibilityVersion;
@@ -187,7 +187,7 @@ namespace ScriptingMod.ScriptEngines
         public int chunkViewDim;
         public PlayerProfile playerProfile;
 
-        public PlayerSpawningEventArgs(ScriptEvents type, ClientInfo clientInfo, int chunkViewDim, PlayerProfile playerProfile) : base(type)
+        public PlayerSpawningEventArgs(ScriptEvent type, ClientInfo clientInfo, int chunkViewDim, PlayerProfile playerProfile) : base(type)
         {
             this.clientInfo = clientInfo;
             this.chunkViewDim = chunkViewDim;
@@ -201,7 +201,7 @@ namespace ScriptingMod.ScriptEngines
         public RespawnType respawnReason;
         public Vector3i pos;
 
-        public PlayerSpawnedInWorldEventArgs(ScriptEvents type, ClientInfo clientInfo, RespawnType respawnReason, Vector3i pos) : base(type)
+        public PlayerSpawnedInWorldEventArgs(ScriptEvent type, ClientInfo clientInfo, RespawnType respawnReason, Vector3i pos) : base(type)
         {
             this.clientInfo = clientInfo;
             this.respawnReason = respawnReason;
@@ -214,7 +214,7 @@ namespace ScriptingMod.ScriptEngines
         public ClientInfo clientInfo;
         public bool shutdown;
 
-        public PlayerDisconnectedEventArgs(ScriptEvents type, ClientInfo clientInfo, bool shutdown) : base(type)
+        public PlayerDisconnectedEventArgs(ScriptEvent type, ClientInfo clientInfo, bool shutdown) : base(type)
         {
             this.clientInfo = clientInfo;
             this.shutdown = shutdown;
@@ -226,7 +226,7 @@ namespace ScriptingMod.ScriptEngines
         public ClientInfo clientInfo;
         public PlayerDataFile playerDataFile;
 
-        public PlayerSaveDataEventArgs(ScriptEvents type, ClientInfo clientInfo, PlayerDataFile playerDataFile) : base(type)
+        public PlayerSaveDataEventArgs(ScriptEvent type, ClientInfo clientInfo, PlayerDataFile playerDataFile) : base(type)
         {
             this.clientInfo = clientInfo;
             this.playerDataFile = playerDataFile;
@@ -237,7 +237,7 @@ namespace ScriptingMod.ScriptEngines
     {
         public Chunk chunk;
 
-        public ChunkMapCalculatedEventArgs(ScriptEvents type, Chunk chunk) : base(type)
+        public ChunkMapCalculatedEventArgs(ScriptEvent type, Chunk chunk) : base(type)
         {
             this.chunk = chunk;
         }

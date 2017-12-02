@@ -36,7 +36,7 @@ namespace ScriptingMod
             CommandTools.InitScripts();
             CommandTools.InitScriptsMonitoring();
 
-            CommandTools.InvokeScriptEvents(new ScriptEventArgs(ScriptEvents.gameAwake));
+            CommandTools.InvokeScriptEvents(new ScriptEventArgs(ScriptEvent.gameAwake));
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace ScriptingMod
             RepairEngine.InitAuto();
             Log.Out($"Done initializing {Constants.ModNameFull}.");
 
-            CommandTools.InvokeScriptEvents(new ScriptEventArgs(ScriptEvents.gameStartDone));
+            CommandTools.InvokeScriptEvents(new ScriptEventArgs(ScriptEvent.gameStartDone));
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace ScriptingMod
         public override void GameShutdown()
         {
             Log.Debug("Api.GameShutdown called.");
-            CommandTools.InvokeScriptEvents(new ScriptEventArgs(ScriptEvents.gameShutdown));
+            CommandTools.InvokeScriptEvents(new ScriptEventArgs(ScriptEvent.gameShutdown));
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace ScriptingMod
         public override void PlayerLogin(ClientInfo clientInfo, string compatibilityVersion)
         {
             Log.Debug("Api.PlayerLogin called.");
-            CommandTools.InvokeScriptEvents(new PlayerLoginEventArgs(ScriptEvents.playerLogin, clientInfo, compatibilityVersion));
+            CommandTools.InvokeScriptEvents(new PlayerLoginEventArgs(ScriptEvent.playerLogin, clientInfo, compatibilityVersion));
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace ScriptingMod
         public override void PlayerSpawning(ClientInfo clientInfo, int chunkViewDim, PlayerProfile playerProfile)
         {
             Log.Debug("Api.PlayerSpawning called.");
-            CommandTools.InvokeScriptEvents(new PlayerSpawningEventArgs(ScriptEvents.playerSpawning, clientInfo, chunkViewDim, playerProfile));
+            CommandTools.InvokeScriptEvents(new PlayerSpawningEventArgs(ScriptEvent.playerSpawning, clientInfo, chunkViewDim, playerProfile));
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace ScriptingMod
         public override void PlayerSpawnedInWorld(ClientInfo clientInfo, RespawnType respawnReason, Vector3i pos)
         {
             Log.Debug("Api.PlayerSpawnedInWorld called.");
-            CommandTools.InvokeScriptEvents(new PlayerSpawnedInWorldEventArgs(ScriptEvents.playerSpawnedInWorld, clientInfo, respawnReason, pos));
+            CommandTools.InvokeScriptEvents(new PlayerSpawnedInWorldEventArgs(ScriptEvent.playerSpawnedInWorld, clientInfo, respawnReason, pos));
         }
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace ScriptingMod
         public override void PlayerDisconnected(ClientInfo clientInfo, bool shutdown)
         {
             Log.Debug("Api.PlayerDisconnected called.");
-            CommandTools.InvokeScriptEvents(new PlayerDisconnectedEventArgs(ScriptEvents.playerDisconnected, clientInfo, shutdown));
+            CommandTools.InvokeScriptEvents(new PlayerDisconnectedEventArgs(ScriptEvent.playerDisconnected, clientInfo, shutdown));
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace ScriptingMod
         public override void SavePlayerData(ClientInfo clientInfo, PlayerDataFile playerDataFile)
         {
             Log.Debug("Api.SavePlayerData called.");
-            CommandTools.InvokeScriptEvents(new PlayerSaveDataEventArgs(ScriptEvents.playerSaveData, clientInfo, playerDataFile));
+            CommandTools.InvokeScriptEvents(new PlayerSaveDataEventArgs(ScriptEvent.playerSaveData, clientInfo, playerDataFile));
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace ScriptingMod
         public override bool ChatMessage(ClientInfo clientInfo, EnumGameMessages messageType, string message, string mainName, bool localizeMain, string secondaryName, bool localizeSecondary)
         {
             Log.Debug("Api.ChatMessage called.");
-            var args = new ChatMessageEventArgs(ScriptEvents.chatMessage)
+            var args = new ChatMessageEventArgs(ScriptEvent.chatMessage)
             {
                 clientInfo = clientInfo,
                 messageType = messageType,
@@ -169,7 +169,7 @@ namespace ScriptingMod
         {
             // No logging to avoid spam
             // Log.Debug("Api.CalcChunkColorsDone called.");
-            CommandTools.InvokeScriptEvents(new ChunkMapCalculatedEventArgs(ScriptEvents.chunkMapCalculated, chunk));
+            CommandTools.InvokeScriptEvents(new ChunkMapCalculatedEventArgs(ScriptEvent.chunkMapCalculated, chunk));
         }
 
     }

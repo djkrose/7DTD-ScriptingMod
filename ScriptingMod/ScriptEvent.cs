@@ -1,6 +1,6 @@
 ﻿namespace ScriptingMod
 {
-    public enum ScriptEvents
+    public enum ScriptEvent
     {
         animalDamaged,
         animalDied,

@@ -33,17 +33,17 @@ namespace ScriptingMod
         public bool PatchCorpseItemDupeExploit;
 
         [NotNull]
-        public HashSet<ScriptEvents> LogEvents = new HashSet<ScriptEvents>()
+        public HashSet<ScriptEvent> LogEvents = new HashSet<ScriptEvent>()
         {
-            ScriptEvents.animalDamaged,
-            ScriptEvents.animalDied,
-            ScriptEvents.playerDamaged,
-            ScriptEvents.entityLoaded,
-            ScriptEvents.entityUnloaded,
-            ScriptEvents.gameStatsChanged,
-            ScriptEvents.playerDied,
-            ScriptEvents.zombieDamaged,
-            ScriptEvents.zombieDied,
+            ScriptEvent.animalDamaged,
+            ScriptEvent.animalDied,
+            ScriptEvent.playerDamaged,
+            ScriptEvent.entityLoaded,
+            ScriptEvent.entityUnloaded,
+            ScriptEvent.gameStatsChanged,
+            ScriptEvent.playerDied,
+            ScriptEvent.zombieDamaged,
+            ScriptEvent.zombieDied,
         };
 
         [NotNull]

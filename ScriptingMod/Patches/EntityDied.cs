@@ -18,13 +18,13 @@ namespace ScriptingMod.Patches
         {
             Log.Debug($"Executing patch prefix for {typeof(EntityAlive)}.{nameof(EntityAlive.Kill)} ...");
 
-            ScriptEvents eventType;
+            ScriptEvent eventType;
             if (__instance is EntityPlayer)
-                eventType = ScriptEvents.playerDied;
+                eventType = ScriptEvent.playerDied;
             else if (__instance is EntityAnimal || __instance is EntityZombieDog || __instance is EntityEnemyAnimal || __instance is EntityHornet)
-                eventType = ScriptEvents.animalDied;
+                eventType = ScriptEvent.animalDied;
             else if (__instance is EntityZombie)
-                eventType = ScriptEvents.zombieDied;
+                eventType = ScriptEvent.zombieDied;
             else
                 return true;
 

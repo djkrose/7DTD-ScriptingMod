@@ -93,7 +93,7 @@
     <Compile Include="Patches\CorpseDupePatch.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
-    <Compile Include="ScriptEvents.cs" />
+    <Compile Include="ScriptEvent.cs" />
     <Compile Include="ScriptEngines\JsConsole.cs" />
     <Compile Include="Tools\EacTools.cs" />
     <Compile Include="Tools\PatchTools.cs" />

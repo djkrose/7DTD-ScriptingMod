@@ -31,7 +31,7 @@ namespace ScriptingMod.Tools
         /// Elements that are null mean that there is no script event attached to this event type.
         /// Using an array may look "unclean" but it's much faster than Dictionary.
         /// </summary>
-        private static List<string>[] _events = new List<string>[(int)Enum.GetValues(typeof(ScriptEvents)).Cast<ScriptEvents>().Max() + 1];
+        private static List<string>[] _events = new List<string>[(int)Enum.GetValues(typeof(ScriptEvent)).Cast<ScriptEvent>().Max() + 1];
 
         /// <summary>
         /// Subscribes to additional scripting events that are not called directly;
@@ -49,14 +49,14 @@ namespace ScriptingMod.Tools
             EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
             {
                 Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.PlayerKicked)}\" invoked.");
-                InvokeScriptEvents(new EacPlayerKickedEventArgs(ScriptEvents.eacPlayerKicked, clientInfo, kickPlayerData));
+                InvokeScriptEvents(new EacPlayerKickedEventArgs(ScriptEvent.eacPlayerKicked, clientInfo, kickPlayerData));
             };
 
             // Called when a player successfully passed the EAC check
             EacTools.AuthenticationSuccessful += delegate (ClientInfo clientInfo)
             {
                 Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.AuthenticationSuccessful)}\" invoked.");
-                InvokeScriptEvents(new EacPlayerAuthenticatedEventArgs(ScriptEvents.eacPlayerAuthenticated, clientInfo));
+                InvokeScriptEvents(new EacPlayerAuthenticatedEventArgs(ScriptEvent.eacPlayerAuthenticated, clientInfo));
             };
 
             #endregion
@@ -125,7 +125,7 @@ namespace ScriptingMod.Tools
             Steam.Masterserver.Server.AddEventServerRegistered(delegate()
             {
                 Log.Debug($"Event \"{typeof(MasterServerAnnouncer)}.ServerRegistered (Event_0)\" invoked.");
-                InvokeScriptEvents(new ServerRegisteredEventArgs(ScriptEvents.serverRegistered, Steam.Masterserver.Server));
+                InvokeScriptEvents(new ServerRegisteredEventArgs(ScriptEvent.serverRegistered, Steam.Masterserver.Server));
             });
 
             #endregion
@@ -144,7 +144,7 @@ namespace ScriptingMod.Tools
             Application.logMessageReceivedThreaded += delegate (string condition, string trace, LogType logType)
             {
                 Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceivedThreaded)}\" invoked.");
-                InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvents.logMessageReceived, condition, trace, logType));
+                InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvent.logMessageReceived, condition, trace, logType));
             };
 
             #endregion
@@ -169,14 +169,14 @@ namespace ScriptingMod.Tools
             world.EntityLoadedDelegates += delegate (Entity entity)
             {
                 Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityLoadedDelegates)}\" invoked.");
-                InvokeScriptEvents(new EntityLoadedEventArgs(ScriptEvents.entityLoaded, entity));
+                InvokeScriptEvents(new EntityLoadedEventArgs(ScriptEvent.entityLoaded, entity));
             };
 
             // Called when any entity (zombie, item, air drop, player, ...) disappears from the world, e.g. it got killed, picked up, despawned, logged off, ...
             world.EntityUnloadedDelegates += delegate (Entity entity, EnumRemoveEntityReason reason)
             {
                 Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityUnloadedDelegates)}\" invoked.");
-                InvokeScriptEvents(new EntityUnloadedEventArgs(ScriptEvents.entityUnloaded, entity, reason));
+                InvokeScriptEvents(new EntityUnloadedEventArgs(ScriptEvent.entityUnloaded, entity, reason));
             };
 
             // Called when chunks change display status, i.e. either get displayed or stop being displayed.
@@ -186,7 +186,7 @@ namespace ScriptingMod.Tools
             {
                 // No logging to avoid spam
                 //Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunkVisibleDelegates)}\" invoked. (displayed={displayed}).");
-                InvokeScriptEvents(new ChunkLoadedUnloadedEventArgs(displayed ? ScriptEvents.chunkLoaded : ScriptEvents.chunkUnloaded, chunkKey));
+                InvokeScriptEvents(new ChunkLoadedUnloadedEventArgs(displayed ? ScriptEvent.chunkLoaded : ScriptEvent.chunkUnloaded, chunkKey));
             };
 
             // Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
@@ -206,7 +206,7 @@ namespace ScriptingMod.Tools
             {
                 // No logging to avoid spam
                 // Log.Debug($"Event \"{typeof(GameStats)}.{nameof(GameStats.OnChangedDelegates)}\" invoked.");
-                InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvents.gameStatsChanged, gameState, newValue));
+                InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvent.gameStatsChanged, gameState, newValue));
             };
 
             #endregion
@@ -309,11 +309,11 @@ namespace ScriptingMod.Tools
                         scriptUsed = true;
                         foreach (var eventName in eventNames)
                         {
-                            ScriptEvents eventType;
+                            ScriptEvent eventType;
                             try
                             {
                                 // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
-                                eventType = (ScriptEvents)Enum.Parse(typeof(ScriptEvents), eventName);
+                                eventType = (ScriptEvent)Enum.Parse(typeof(ScriptEvent), eventName);
                             }
                             catch (Exception)
                             {

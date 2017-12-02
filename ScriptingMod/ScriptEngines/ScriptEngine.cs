@@ -26,7 +26,7 @@ namespace ScriptingMod.ScriptEngines
             }
         }
 
-        public void ExecuteEvent(string filePath, ScriptEvents eventType, [CanBeNull] object eventArgs)
+        public void ExecuteEvent(string filePath, ScriptEvent eventType, [CanBeNull] object eventArgs)
         {
             var sw = new MicroStopwatch(true);
             ResetEngine();
