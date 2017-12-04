@@ -32,19 +32,8 @@ namespace ScriptingMod
         public int RepairCounter;
         public bool PatchCorpseItemDupeExploit;
 
-        [NotNull]
-        public HashSet<ScriptEvent> LogEvents = new HashSet<ScriptEvent>()
-        {
-            ScriptEvent.animalDamaged,
-            ScriptEvent.animalDied,
-            ScriptEvent.playerDamaged,
-            ScriptEvent.entityLoaded,
-            ScriptEvent.entityUnloaded,
-            ScriptEvent.gameStatsChanged,
-            ScriptEvent.playerDied,
-            ScriptEvent.zombieDamaged,
-            ScriptEvent.zombieDied,
-        };
+        [NotNull] public HashSet<ScriptEvent> LogEvents = new HashSet<ScriptEvent>();
+            // new HashSet<ScriptEvent>(Enum.GetValues(typeof(ScriptEvent)).Cast<ScriptEvent>()); // all
 
         [NotNull]
         public List<string> EacWhitelist = new List<string>();

@@ -33,6 +33,10 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="LitJson, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed\LitJson.dll</HintPath>
+    </Reference>
     <Reference Include="LogLibrary">
       <HintPath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed\LogLibrary.dll</HintPath>
     </Reference>
@@ -40,11 +44,16 @@
       <HintPath>..\packages\NUnit.3.9.0\lib\net35\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DumperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScriptEngineTests.cs" />
+    <Compile Include="TempTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="LoadMetadataTest.js">

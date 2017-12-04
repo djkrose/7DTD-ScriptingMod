@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
+using LitJson;
+using ScriptingMod.Tools;
 using UnityEngine;
 
 namespace ScriptingMod.ScriptEngines
@@ -17,14 +20,15 @@ namespace ScriptingMod.ScriptEngines
             this.type = type;
         }
 
-        public override string ToString()
+        public virtual string ToJson()
         {
-            return "eventType=" + type;
+            return JsonMapper.ToJson(new { eventType = type.ToString() });
         }
     }
 
     public class ChatMessageEventArgs : ScriptEventArgs
     {
+        [CanBeNull] // doesn't need to come from player: kill messages, server messages, etc
         public ClientInfo clientInfo;
         public EnumGameMessages messageType;
         public string message;
@@ -44,9 +48,19 @@ namespace ScriptingMod.ScriptEngines
             isPropagationStopped = true;
         }
 
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                messageType = messageType.ToString(),
+                from = mainName,
+                message,
+                clientInfo,
+            });
+        }
     }
 
-    [UsedImplicitly(ImplicitUseTargetFlags.Members)]
     public class EntityDamagedEventArgs : ScriptEventArgs
     {
         public EntityAlive entity;
@@ -58,16 +72,23 @@ namespace ScriptingMod.ScriptEngines
             this.damageResponse = damageResponse;
         }
 
-        public override string ToString()
+        public override string ToJson()
         {
-            return base.ToString() +
-                ",entityId=" + entity.entityId +
-                ",entityName=" + entity.EntityName +
-                ",sourceEntityId=" + damageResponse.Source?.getEntityId() +
-                ",damageType=" + damageResponse.Source?.GetName() +
-                ",bodyPart=" + damageResponse.HitBodyPart +
-                ",strength=" + damageResponse.Strength;
-            //TODO
+            var sourceEntity = GameManager.Instance.World?.GetEntity(damageResponse.Source?.getEntityId() ?? -1) as EntityAlive;
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                position = entity.GetBlockPosition(),
+                entityId = entity.entityId,
+                entityName = entity.EntityName,
+                sourceEntityId = sourceEntity?.entityId,
+                sourceEntityName = sourceEntity?.EntityName,
+                damageType = damageResponse.Source?.GetName().ToString(),
+                bodyPart = damageResponse.HitBodyPart.ToString(),
+                hitPoints = damageResponse.Strength,
+                critical = damageResponse.Critical,
+                fatal = damageResponse.Fatal,
+            });
         }
     }
 
@@ -86,6 +107,15 @@ namespace ScriptingMod.ScriptEngines
         {
             this.clientInfo = clientInfo;
         }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                clientInfo,
+            });
+        }
     }
 
     public class EacPlayerKickedEventArgs : ScriptEventArgs
@@ -98,6 +128,16 @@ namespace ScriptingMod.ScriptEngines
             this.clientInfo = clientInfo;
             this.kickPlayerData = kickPlayerData;
         }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                reason = kickPlayerData.ToString(),
+                clientInfo,
+            });
+        }
     }
 
     public class ServerRegisteredEventArgs : ScriptEventArgs
@@ -107,6 +147,18 @@ namespace ScriptingMod.ScriptEngines
         public ServerRegisteredEventArgs(ScriptEvent type, MasterServerAnnouncer masterServerAnnouncer) : base(type)
         {
             this.masterServerAnnouncer = masterServerAnnouncer;
+        }
+
+        public override string ToJson()
+        {
+            if (masterServerAnnouncer?.LocalGameInfo == null)
+                return base.ToJson();
+
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                gameInfos = masterServerAnnouncer.LocalGameInfo.GetDisplayValues() // dictionary of all relevant game infos
+            });
         }
     }
 
@@ -122,6 +174,17 @@ namespace ScriptingMod.ScriptEngines
             this.trace = trace;
             this.logType = logType;
         }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                logType = logType.ToString(),
+                condition,
+                trace,
+            });
+        }
     }
 
     public class EntityLoadedEventArgs : ScriptEventArgs
@@ -131,6 +194,19 @@ namespace ScriptingMod.ScriptEngines
         public EntityLoadedEventArgs(ScriptEvent type, Entity entity) : base(type)
         {
             this.entity = entity;
+        }
+
+        public override string ToJson()
+        {
+            var entityAlive = entity as EntityAlive;
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                entityType = entity.GetType().ToString(),
+                entityId = entity.entityId,
+                entityName = entityAlive?.EntityName,
+                position = entity.GetBlockPosition(),
+            });
         }
     }
 
@@ -144,6 +220,20 @@ namespace ScriptingMod.ScriptEngines
             this.entity = entity;
             this.reason = reason;
         }
+
+        public override string ToJson()
+        {
+            var entityAlive = entity as EntityAlive;
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                reason = reason.ToString(),
+                entityType = entity.GetType().ToString(),
+                entityId = entity.entityId,
+                entityName = entityAlive?.EntityName,
+                position = entity.GetBlockPosition(),
+            });
+        }
     }
 
     public class ChunkLoadedUnloadedEventArgs : ScriptEventArgs
@@ -154,17 +244,40 @@ namespace ScriptingMod.ScriptEngines
         {
             this.chunkKey = chunkKey;
         }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                chunkKey = chunkKey,
+                chunkPos = ChunkTools.ChunkKeyToChunkXZ(chunkKey)
+            });
+        }
     }
 
     public class GameStatsChangedEventArgs : ScriptEventArgs
     {
         public EnumGameStats gameState;
+        [CanBeNull]
         public object newValue;
 
         public GameStatsChangedEventArgs(ScriptEvent type, EnumGameStats gameState, object newValue) : base(type)
         {
             this.gameState = gameState;
             this.newValue = newValue;
+        }
+
+        public override string ToJson()
+        {
+            var jsonSupported = (newValue == null || newValue is int || newValue is long || newValue is float || newValue is double || newValue is bool);
+
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                gameState = gameState.ToString(),
+                newValue = jsonSupported ? newValue : newValue.ToString()
+            });
         }
     }
 
@@ -178,8 +291,17 @@ namespace ScriptingMod.ScriptEngines
             this.clientInfo = clientInfo;
             this.compatibilityVersion = compatibilityVersion;
         }
-    }
 
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                clientInfo,
+                compatibilityVersion,
+            });
+        }
+    }
 
     public class PlayerSpawningEventArgs : ScriptEventArgs
     {
@@ -192,6 +314,16 @@ namespace ScriptingMod.ScriptEngines
             this.clientInfo = clientInfo;
             this.chunkViewDim = chunkViewDim;
             this.playerProfile = playerProfile;
+        }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                clientInfo,
+                playerProfile
+            });
         }
     }
 
@@ -207,6 +339,17 @@ namespace ScriptingMod.ScriptEngines
             this.respawnReason = respawnReason;
             this.pos = pos;
         }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                reason = respawnReason.ToString(),
+                position = pos,
+                clientInfo,
+            });
+        }
     }
 
     public class PlayerDisconnectedEventArgs : ScriptEventArgs
@@ -219,6 +362,15 @@ namespace ScriptingMod.ScriptEngines
             this.clientInfo = clientInfo;
             this.shutdown = shutdown;
         }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                clientInfo,
+            });
+        }
     }
 
     public class PlayerSaveDataEventArgs : ScriptEventArgs
@@ -226,10 +378,31 @@ namespace ScriptingMod.ScriptEngines
         public ClientInfo clientInfo;
         public PlayerDataFile playerDataFile;
 
+        private static string _playerDataDir;
+        private static string PlayerDataDir
+        {
+            get
+            {
+                if (_playerDataDir == null)
+                    _playerDataDir = GameUtils.GetPlayerDataDir().Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                return _playerDataDir;
+            }
+        }
+
         public PlayerSaveDataEventArgs(ScriptEvent type, ClientInfo clientInfo, PlayerDataFile playerDataFile) : base(type)
         {
             this.clientInfo = clientInfo;
             this.playerDataFile = playerDataFile;
+        }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                playerDataFile = PlayerDataDir + clientInfo.playerId + "." + PlayerDataFile.EXT,
+                clientInfo,
+            });
         }
     }
 
@@ -240,6 +413,16 @@ namespace ScriptingMod.ScriptEngines
         public ChunkMapCalculatedEventArgs(ScriptEvent type, Chunk chunk) : base(type)
         {
             this.chunk = chunk;
+        }
+
+        public override string ToJson()
+        {
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                chunkKey = chunk.Key,
+                chunkPos = ChunkTools.ChunkKeyToChunkXZ(chunk.Key),
+            });
         }
     }
 }

@@ -24,6 +24,7 @@ namespace ScriptingMod
             NonPublic.Init();
             PersistentData.Load();
             PatchTools.ApplyPatches();
+            LitJsonTypeBindings.Register();
         }
 
         /// <summary>

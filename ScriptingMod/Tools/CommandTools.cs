@@ -48,14 +48,12 @@ namespace ScriptingMod.Tools
             // Called when a player got kicked due to failed EAC check
             EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
             {
-                Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.PlayerKicked)}\" invoked.");
                 InvokeScriptEvents(new EacPlayerKickedEventArgs(ScriptEvent.eacPlayerKicked, clientInfo, kickPlayerData));
             };
 
             // Called when a player successfully passed the EAC check
             EacTools.AuthenticationSuccessful += delegate (ClientInfo clientInfo)
             {
-                Log.Debug($"Event \"{typeof(EacTools)}.{nameof(EacTools.AuthenticationSuccessful)}\" invoked.");
                 InvokeScriptEvents(new EacPlayerAuthenticatedEventArgs(ScriptEvent.eacPlayerAuthenticated, clientInfo));
             };
 
@@ -124,7 +122,6 @@ namespace ScriptingMod.Tools
             // Called when the server was registered with Steam and announced to the master servers (also done for non-public dedicated servers)
             Steam.Masterserver.Server.AddEventServerRegistered(delegate()
             {
-                Log.Debug($"Event \"{typeof(MasterServerAnnouncer)}.ServerRegistered (Event_0)\" invoked.");
                 InvokeScriptEvents(new ServerRegisteredEventArgs(ScriptEvent.serverRegistered, Steam.Masterserver.Server));
             });
 
@@ -143,7 +140,6 @@ namespace ScriptingMod.Tools
             // Called when ANY Unity thread logs an error message, incl. the main thread
             Application.logMessageReceivedThreaded += delegate (string condition, string trace, LogType logType)
             {
-                Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceivedThreaded)}\" invoked.");
                 InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvent.logMessageReceived, condition, trace, logType));
             };
 
@@ -168,14 +164,12 @@ namespace ScriptingMod.Tools
             // Called when any entity (zombie, item, air drop, player, ...) is spawned in the world, both loaded and newly created
             world.EntityLoadedDelegates += delegate (Entity entity)
             {
-                Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityLoadedDelegates)}\" invoked.");
                 InvokeScriptEvents(new EntityLoadedEventArgs(ScriptEvent.entityLoaded, entity));
             };
 
             // Called when any entity (zombie, item, air drop, player, ...) disappears from the world, e.g. it got killed, picked up, despawned, logged off, ...
             world.EntityUnloadedDelegates += delegate (Entity entity, EnumRemoveEntityReason reason)
             {
-                Log.Debug($"Event \"{typeof(World)}.{nameof(World.EntityUnloadedDelegates)}\" invoked.");
                 InvokeScriptEvents(new EntityUnloadedEventArgs(ScriptEvent.entityUnloaded, entity, reason));
             };
 
@@ -184,8 +178,6 @@ namespace ScriptingMod.Tools
             // chunkUnloaded -> Called when a chunk is unloaded from the game engine because it is not used by any player anymore. Called frequently - use with care!
             world.ChunkCache.OnChunkVisibleDelegates += delegate (long chunkKey, bool displayed)
             {
-                // No logging to avoid spam
-                //Log.Debug($"Event \"{typeof(ChunkCluster)}.{nameof(ChunkCluster.OnChunkVisibleDelegates)}\" invoked. (displayed={displayed}).");
                 InvokeScriptEvents(new ChunkLoadedUnloadedEventArgs(displayed ? ScriptEvent.chunkLoaded : ScriptEvent.chunkUnloaded, chunkKey));
             };
 
@@ -204,8 +196,6 @@ namespace ScriptingMod.Tools
             // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
             GameStats.OnChangedDelegates += delegate(EnumGameStats gameState, object newValue)
             {
-                // No logging to avoid spam
-                // Log.Debug($"Event \"{typeof(GameStats)}.{nameof(GameStats.OnChangedDelegates)}\" invoked.");
                 InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvent.gameStatsChanged, gameState, newValue));
             };
 
@@ -370,13 +360,11 @@ namespace ScriptingMod.Tools
 
             if (PersistentData.Instance.LogEvents.Contains(eventArgs.type))
             {
-                Log.Out("[EVENT] " + eventArgs);
+                Log.Out("[EVENT] " + eventArgs.ToJson());
             }
 
             if (_events[(int)eventArgs.type] != null)
             {
-                Log.Debug($"Invoking script event \"{eventArgs.type}\" ...");
-
                 foreach (var filePath in _events[(int)eventArgs.type])
                 {
                     var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
