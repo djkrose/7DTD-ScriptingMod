@@ -43,8 +43,6 @@ namespace ScriptingMod.Tools
             // Here are just the ones that need to be attached to actual events.
             // See enum ScriptEvents and it's usages for a full list of supported scripting events.
 
-            #region ScriptingMod events
-
             // Called when a player got kicked due to failed EAC check
             EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
             {
@@ -57,107 +55,17 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(new EacPlayerAuthenticatedEventArgs(ScriptEvent.eacPlayerAuthenticated, clientInfo));
             };
 
-            #endregion
-
-            #region Steam events
-
-            //var steam = Steam.Instance ?? throw new NullReferenceException("Steam not ready.");
-
-            // Called first when a player is connecting before any authentication
-            // Removed because Api.PlayerLogin is also called before authentication and also contains clientInfo.networkPlayer
-            //steam.PlayerConnectedEv += delegate(NetworkPlayer networkPlayer)
-            //{
-            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerConnectedEv)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.steamPlayerConnected.ToString(), networkPlayer });
-            //};
-
-            // Called first when the server is about to shut down
-            // Removed because it doesn't add much value
-            //steam.ApplicationQuitEv += delegate()
-            //{
-            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.ApplicationQuitEv)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.steamApplicationQuit.ToString() });
-            //};
-
-            // Called right before the game process ends as last event of shutdown
-            // Removed because it doesn't add much value
-            //steam.DestroyEv += delegate()
-            //{
-            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DestroyEv)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.steamDestroy.ToString() });
-            //};
-
-            // Called after the game has disconnected from Steam servers and shuts down
-            // Removed because it doesn't add much value
-            //steam.DisconnectedFromServerEv += delegate(NetworkDisconnection reason)
-            //{
-            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.DisconnectedFromServerEv)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.steamDisconnectedFromServer.ToString(), reason });
-            //};
-
-            // Invoked on every tick
-            // Removed because too big performance impact for scripting event
-            //steam.UpdateEv += delegate ()
-            //{
-            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.UpdateEv)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.steamUpdate.ToString() });
-            //};
-
-            // Invoked on every tick
-            // Removed because too big performance impact for scripting event
-            //steam.LateUpdateEv += delegate ()
-            //{
-            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.LateUpdateEv)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.steamLateUpdate.ToString() });
-            //};
-
-            // Called after a player disconnected, a chat message was distributed, and all associated game data has been unloaded
-            // Removed because it's similar to "playerDisconnected" and the passed networkPlayer cannot be used on a disconnected client anyway
-            //steam.PlayerDisconnectedEv += delegate (NetworkPlayer networkPlayer)
-            //{
-            //    Log.Debug($"Event \"{typeof(Steam)}.{nameof(Steam.PlayerDisconnectedEv)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.steamPlayerDisconnected.ToString(), networkPlayer });
-            //};
-
             // Called when the server was registered with Steam and announced to the master servers (also done for non-public dedicated servers)
             Steam.Masterserver.Server.AddEventServerRegistered(delegate()
             {
                 InvokeScriptEvents(new ServerRegisteredEventArgs(ScriptEvent.serverRegistered, Steam.Masterserver.Server));
             });
 
-            #endregion
-
-            #region UnityEngine.Application events
-
-            // Called when main Unity thread logs an error message
-            // Removed because it is included in logMessageReceivedThreaded
-            //Application.logMessageReceived += delegate (string condition, string trace, LogType logType)
-            //{
-            //    Log.Debug($"Event \"{typeof(Application)}.{nameof(Application.logMessageReceived)}\" invoked.");
-            //    InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvents.logMessageReceived, condition, trace, logType));
-            //};
-
             // Called when ANY Unity thread logs an error message, incl. the main thread
             Application.logMessageReceivedThreaded += delegate (string condition, string trace, LogType logType)
             {
                 InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvent.logMessageReceived, condition, trace, logType));
             };
-
-            #endregion
-
-            #region GameManager events
-
-            // Called on shutdown when the world becomes null. Not called on startup apparently.
-            // Removed because not useful
-            //GameManager.Instance.OnWorldChanged += delegate (World world_)
-            //{
-            //    Log.Debug($"Event \"{typeof(GameManager)}.{nameof(GameManager.OnWorldChanged)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.gameManagerWorldChanged.ToString(), world = world_ });
-            //}; 
-
-            #endregion
-
-            #region World events
 
             var world = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
 
@@ -181,29 +89,70 @@ namespace ScriptingMod.Tools
                 InvokeScriptEvents(new ChunkLoadedUnloadedEventArgs(displayed ? ScriptEvent.chunkLoaded : ScriptEvent.chunkUnloaded, chunkKey));
             };
 
-            // Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
-            // Removed because not useful
-            //world.ChunkClusters.ChunkClusterChangedDelegates += delegate (int chunkClusterIndex)
-            //{
-            //    Log.Debug($"Event \"{typeof(ChunkClusterList)}.{nameof(ChunkClusterList.ChunkClusterChangedDelegates)}\" invoked.");
-            //    InvokeScriptEvents(new { type = ScriptEvents.chunkClusterChanged.ToString(), chunkClusterIndex });
-            //};
-
-            #endregion
-
-            #region Other events
-
             // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
             GameStats.OnChangedDelegates += delegate(EnumGameStats gameState, object newValue)
             {
                 InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvent.gameStatsChanged, gameState, newValue));
             };
 
-            #endregion
+            #region Event notes
+
+            // ------------ Events intentionally removed -----------
+            // - Steam.Instance.PlayerConnectedEv
+            //   Called first when a player is connecting before any authentication
+            //   Removed because Api.PlayerLogin is also called before authentication and also contains clientInfo.networkPlayer
+            // - Steam.Instance.ApplicationQuitEv
+            //   Called first when the server is about to shut down
+            //   Removed because it doesn't add much value
+            // - Steam.Instance.DestroyEv
+            //   Called right before the game process ends as last event of shutdown
+            //   Removed because it doesn't add much value
+            // - Steam.Instance.DisconnectedFromServerEv
+            //   Called after the game has disconnected from Steam servers and shuts down
+            //   Removed because it doesn't add much value
+            // - Steam.Instance.UpdateEv
+            //   Invoked on every tick
+            //   Removed because too big performance impact for scripting event
+            // - Steam.Instance.LateUpdateEv
+            //   Invoked on every tick
+            //   Removed because too big performance impact for scripting event
+            // - Steam.Instance.PlayerDisconnectedEv
+            //   Called after a player disconnected, a chat message was distributed, and all associated game data has been unloaded
+            //   Removed because it's similar to "playerDisconnected" and the passed networkPlayer cannot be used on a disconnected client anyway
+            // - Application.logMessageReceived
+            //   Called when main Unity thread logs an error message
+            //   Removed because it is included in logMessageReceivedThreaded
+            // - GameManager.Instance.OnWorldChanged
+            //   Called on shutdown when the world becomes null. Not called on startup apparently.
+            //   Removed because not useful
+            // - GameManager.Instance.World.ChunkClusters.ChunkClusterChangedDelegates
+            //   Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
+            //   Removed because not useful
+
+            // --------- Events never invoked on dedicated server ----------
+            // - Steam.ConnectedToServerEv
+            // - Steam.FailedToConnectEv
+            // - Steam.ServerInitializedEv
+            // - GameManager.Instance.OnLocalPlayerChanged
+            // - World.OnWorldChanged
+            // - ChunkCluster.OnChunksFinishedDisplayingDelegates
+            // - ChunkCluster.OnChunksFinishedLoadingDelegates
+            // - MapObjectManager.ChangedDelegates
+            // - ServerListManager.GameServerDetailsEvent
+            // - MenuItemEntry.ItemClicked
+            // - LocalPlayerManager.*
+            // - Inventory.OnToolbeltItemsChangedInternal
+            // - BaseObjective.ValueChanged
+            // - UserProfile.*
+            // - CraftingManager.RecipeUnlocked
+            // - QuestJournal.* (from EntityPlayer.QuestJournal)
+            // - QuestEventManager.*
+            // - UserProfileManager.*
 
             // -------- TODO: Events to explore further --------
             // - MapVisitor - needs patching to attach to always newly created object; use-case questionable
             // - AIWanderingHordeSpawner.HordeArrivedDelegate hordeArrivedDelegate_0
+            // - Entity.* for each zombie/player entity
 
             // ----------- TODO: More event ideas --------------
             // - Geofencing...trigger event when a player or zombie gets into a predefined area.
@@ -224,30 +173,11 @@ namespace ScriptingMod.Tools
             // - AirDrop spawned
             // - Player banned
             // - Player unbanned
-            // - Player died [Xyth]
             // - New Player connected for first time
             // - Events for ScriptingMod things
             // - Command that triggers when someone is in the air for more than X seconds, to catch hackers [war4head]
 
-            // --------- Events never used on dedicated server ----------
-            // - Steam.ConnectedToServerEv
-            // - Steam.FailedToConnectEv
-            // - Steam.ServerInitializedEv
-            // - GameManager.Instance.OnLocalPlayerChanged
-            // - World.OnWorldChanged
-            // - ChunkCluster.OnChunksFinishedDisplayingDelegates
-            // - ChunkCluster.OnChunksFinishedLoadingDelegates
-            // - MapObjectManager.ChangedDelegates
-            // - ServerListManager.GameServerDetailsEvent
-            // - MenuItemEntry.ItemClicked
-            // - LocalPlayerManager.*
-            // - Inventory.OnToolbeltItemsChangedInternal
-            // - BaseObjective.ValueChanged
-            // - UserProfile.*
-            // - CraftingManager.RecipeUnlocked
-            // - QuestJournal.* (from EntityPlayer.QuestJournal)
-            // - QuestEventManager.*
-            // - UserProfileManager.*
+            #endregion
 
             Log.Out("Subscribed to all relevant game events.");
         }
