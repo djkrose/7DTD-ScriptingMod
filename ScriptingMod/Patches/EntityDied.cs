@@ -10,17 +10,17 @@ using ScriptingMod.Tools;
 namespace ScriptingMod.Patches
 {
     [HarmonyPatch(typeof(EntityAlive))]
-    [HarmonyPatch("Kill")]
+    [HarmonyPatch("ClientKill")]
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class EntityDied
     { 
         public static bool Prefix([NotNull] EntityAlive __instance, DamageResponse _dmResponse)
         {
-            Log.Debug($"Executing patch prefix for {typeof(EntityAlive)}.{nameof(EntityAlive.Kill)} ...");
+            Log.Debug($"Executing patch prefix for {typeof(EntityAlive)}.ClientKill ...");
 
             ScriptEvent eventType;
             if (__instance is EntityPlayer)
-                eventType = ScriptEvent.playerDied; // TODO: Never applies for some reason!!!
+                eventType = ScriptEvent.playerDied;
             else if (__instance is EntityAnimal || __instance is EntityZombieDog || __instance is EntityEnemyAnimal || __instance is EntityHornet)
                 eventType = ScriptEvent.animalDied;
             else if (__instance is EntityZombie)

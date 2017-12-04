@@ -7,7 +7,7 @@ using LitJson;
 namespace ScriptingMod.Extensions
 {
     // source: https://github.com/Mervill/UnityLitJson/blob/master/Source/Extensions.cs
-    public static class LintJsonExtensions
+    internal static class LintJsonExtensions
     {
         public static void WriteProperty(this JsonWriter w, string name, long value)
         {

@@ -383,9 +383,9 @@ namespace ScriptingMod.Tools
         {
 #if DEBUG
             var invocationLog = Environment.NewLine +
-                                DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") + Environment.NewLine +
-                                Environment.StackTrace + Environment.NewLine +
-                                Dumper.Dump(eventArgs, 1).TrimEnd();
+                                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + Environment.NewLine +
+                                eventArgs.ToJson() + Environment.NewLine +
+                                Environment.StackTrace;
 
             var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventArgs.type.ToString());
 

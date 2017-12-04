@@ -181,8 +181,8 @@ namespace ScriptingMod.ScriptEngines
             {
                 eventType = type.ToString(),
                 logType = logType.ToString(),
-                condition,
-                trace,
+                condition = condition.TrimEnd(),
+                trace = trace.TrimEnd(),
             });
         }
     }

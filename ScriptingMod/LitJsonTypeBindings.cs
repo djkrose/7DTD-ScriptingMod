@@ -64,7 +64,12 @@ namespace ScriptingMod
 
         private static void WriteColor(Color v, JsonWriter w)
         {
-            // TODO: Change values to some meaningful integers
+            // Color can be implicitly converted to Color32, see https://docs.unity3d.com/ScriptReference/Color32.html
+            WriteColor32(v, w);
+        }
+
+        private static void WriteColor32(Color32 v, JsonWriter w)
+        {
             w.WriteObjectStart();
             w.WriteProperty("r", v.r);
             w.WriteProperty("g", v.g);
@@ -103,16 +108,6 @@ namespace ScriptingMod
             w.WritePropertyName("size");
             WriteVector3(v.size, w);
 
-            w.WriteObjectEnd();
-        }
-
-        private static void WriteColor32(Color32 v, JsonWriter w)
-        {
-            w.WriteObjectStart();
-            w.WriteProperty("r", v.r);
-            w.WriteProperty("g", v.g);
-            w.WriteProperty("b", v.b);
-            w.WriteProperty("a", v.a);
             w.WriteObjectEnd();
         }
 
