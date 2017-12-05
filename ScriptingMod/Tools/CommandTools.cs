@@ -228,13 +228,7 @@ namespace ScriptingMod.Tools
                         scriptUsed = true;
                         foreach (var eventName in eventNames)
                         {
-                            ScriptEvent eventType;
-                            try
-                            {
-                                // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
-                                eventType = (ScriptEvent)Enum.Parse(typeof(ScriptEvent), eventName);
-                            }
-                            catch (Exception)
+                            if (!EnumHelper.TryParse<ScriptEvent>(eventName, out var eventType, true))
                             {
                                 Log.Warning($"Event \"{eventName}\" in script {fileRelativePath} is unknown and will be ignored.");
                                 continue;

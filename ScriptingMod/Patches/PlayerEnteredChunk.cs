@@ -23,7 +23,7 @@ namespace ScriptingMod.Patches
                 return false;
             }
 
-            Log.Out($"Applying event tracker patch {nameof(PlayerEnteredChunk)} ...");
+            Log.Out($"Injecting event tracker {nameof(PlayerEnteredChunk)} ...");
             return true;
         }
 

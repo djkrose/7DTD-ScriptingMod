@@ -29,7 +29,7 @@ namespace ScriptingMod.Patches
                 return false;
             }
 
-            Log.Out($"Applying event tracker patch {nameof(PlayerStatsChanged)} ...");
+            Log.Out($"Injecting event tracker {nameof(PlayerStatsChanged)} ...");
             return true;
         }
 

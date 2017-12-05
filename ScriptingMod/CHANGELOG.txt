@@ -1,8 +1,9 @@
 ﻿Version 0.15 - compatible with A16.4 (b8)
 
+- Added command "dj-log-events" to manage event logging. See help.
 - Script files can be disabled by prefixing them with underscore (_). Non-trivial example scrips are disabled by default.
 - Changed script commands js-test, js-minibike, js-sleepers, and lua-test to all use "dj-" prefix instead.
-
+- Changed syntax of "dj-patch XYZ on" to "dj-patch xyz /on" to match other command systax like dj-repair and dj-log-events.
 
 Version 0.14 - compatible with A16.4 (b8)
 

@@ -22,7 +22,7 @@ namespace ScriptingMod.Patches
                 return false;
             }
 
-            Log.Out($"Applying patch {nameof(CorpseDupe)} ...");
+            Log.Out($"Injecting patch {nameof(CorpseDupe)} ...");
             return true;
         }
 

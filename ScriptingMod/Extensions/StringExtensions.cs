@@ -114,5 +114,43 @@ namespace ScriptingMod.Extensions
             }
             return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
         }
+
+        /// <summary>
+        /// Returns a list of strings no larger than the max length sent in.
+        /// Based on: http://web.archive.org/web/20160620132048/http://bryan.reynoldslive.com:80/post/Wrapping-string-data.aspx
+        /// </summary>
+        /// <remarks>useful function used to wrap string text for reporting.</remarks>
+        /// <param name="text">Text to be wrapped into of List of Strings</param>
+        /// <param name="maxLength">Max length you want each line to be.</param>
+        /// <returns>List of Strings</returns>
+        public static string Wrap(this string text, int maxLength)
+        {
+            if (text.Length == 0)
+                return "";
+
+            var words = text.Split(' ');
+            var lines = new StringBuilder();
+            var currentLine = "";
+
+            foreach (var currentWord in words)
+            {
+                if ((currentLine.Length > maxLength) || ((currentLine.Length + currentWord.Length) > maxLength))
+                {
+                    lines.AppendLine(currentLine);
+                    currentLine = "";
+                }
+
+                if (currentLine.Length > 0)
+                    currentLine += " " + currentWord;
+                else
+                    currentLine += currentWord;
+            }
+
+            if (currentLine.Length > 0)
+                lines.AppendLine(currentLine);
+
+            return lines.ToString().TrimEnd();
+        }
+
     }
 }

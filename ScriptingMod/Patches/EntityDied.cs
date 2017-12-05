@@ -21,7 +21,7 @@ namespace ScriptingMod.Patches
                 return false;
             }
 
-            Log.Out($"Applying event tracker patch {nameof(EntityDied)} ...");
+            Log.Out($"Injecting event tracker {nameof(EntityDied)} ...");
             return true;
         }
 

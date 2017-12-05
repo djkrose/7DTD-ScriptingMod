@@ -84,6 +84,7 @@
     <Compile Include="Api.cs" />
     <Compile Include="Commands\CheckPower.cs" />
     <Compile Include="Commands\EacWhitelist.cs" />
+    <Compile Include="Commands\LogEvents.cs" />
     <Compile Include="Commands\Patch.cs" />
     <Compile Include="Extensions\ClientInfoExtensions.cs" />
     <Compile Include="Extensions\CommandSenderInfoExtensions.cs" />
@@ -97,6 +98,7 @@
     <Compile Include="Patches\PlayerEnteredChunk.cs" />
     <Compile Include="Patches\PlayerStatsChanged.cs" />
     <Compile Include="ScriptEngines\EventArgs.cs" />
+    <Compile Include="Tools\EnumHelper.cs" />
     <Compile Include="Tools\ReflectionTools.cs" />
     <Compile Include="Patches\CorpseDupe.cs" />
     <Compile Include="PersistentData.cs" />
