@@ -25,6 +25,7 @@ namespace ScriptingMod.Tools
         private static FileSystemWatcher _scriptsWatcher;
         private static bool _scriptsChangedRunning;
         private static object _scriptsChangedLock = new object();
+        private static Dictionary<EnumGameStats, object> _lastGameStats = new Dictionary<EnumGameStats, object>();
 
         /// <summary>
         /// Array of (int)eventType => List of script filePaths
@@ -92,7 +93,18 @@ namespace ScriptingMod.Tools
             // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
             GameStats.OnChangedDelegates += delegate(EnumGameStats gameState, object newValue)
             {
-                InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvent.gameStatsChanged, gameState, newValue));
+                // Often this event is called for values that are not actually changed, so we keep track whether the value was *actually* changed
+                object oldValue;
+                bool valueChanged;
+                lock (_lastGameStats)
+                {
+                    oldValue = _lastGameStats.GetValue(gameState);
+                    valueChanged = (oldValue == null || !oldValue.Equals(newValue));
+                    if (valueChanged)
+                        _lastGameStats[gameState] = newValue;
+                }
+                if (valueChanged)
+                    InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvent.gameStatsChanged, gameState, oldValue, newValue));
             };
 
             #region Event notes

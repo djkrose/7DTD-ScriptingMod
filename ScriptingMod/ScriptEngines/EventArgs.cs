@@ -260,23 +260,28 @@ namespace ScriptingMod.ScriptEngines
     {
         public EnumGameStats gameState;
         [CanBeNull]
+        public object oldValue;
+        [CanBeNull]
         public object newValue;
 
-        public GameStatsChangedEventArgs(ScriptEvent type, EnumGameStats gameState, object newValue) : base(type)
+        public GameStatsChangedEventArgs(ScriptEvent type, EnumGameStats gameState, object oldValue, object newValue) : base(type)
         {
             this.gameState = gameState;
+            this.oldValue = oldValue;
             this.newValue = newValue;
         }
 
         public override string ToJson()
         {
-            var jsonSupported = (newValue == null || newValue is int || newValue is long || newValue is float || newValue is double || newValue is bool);
+            var jsonSupportedOld = (oldValue == null || oldValue is int || oldValue is long || oldValue is float || oldValue is double || oldValue is bool);
+            var jsonSupportedNew = (newValue == null || newValue is int || newValue is long || newValue is float || newValue is double || newValue is bool);
 
             return JsonMapper.ToJson(new
             {
                 eventType = type.ToString(),
                 gameState = gameState.ToString(),
-                newValue = jsonSupported ? newValue : newValue.ToString()
+                oldValue = jsonSupportedOld ? oldValue : oldValue.ToString(),
+                newValue = jsonSupportedNew ? newValue : newValue.ToString(),
             });
         }
     }
