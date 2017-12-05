@@ -398,6 +398,7 @@ namespace ScriptingMod.Tools
                     // Reload commands
                     UnloadCommands();
                     InitScripts();
+                    PatchTools.ApplyPatches();
                 }
                 catch (Exception ex)
                 {
