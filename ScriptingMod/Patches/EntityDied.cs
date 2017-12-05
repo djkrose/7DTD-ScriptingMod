@@ -9,14 +9,25 @@ using ScriptingMod.Tools;
 
 namespace ScriptingMod.Patches
 {
-    [HarmonyPatch(typeof(EntityAlive))]
-    [HarmonyPatch("ClientKill")]
+    [HarmonyPatch(typeof(EntityAlive), "ClientKill")]
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public class EntityDied
-    { 
+    {
+        public static bool Prepare()
+        {
+            if (!CommandTools.IsAnyEventActive(ScriptEvent.playerDied, ScriptEvent.animalDied, ScriptEvent.zombieDied))
+            {
+                Log.Debug($"Patch is disabled: {nameof(EntityDied)}");
+                return false;
+            }
+
+            Log.Debug($"Applying event tracker patch {nameof(EntityDied)} ...");
+            return true;
+        }
+
         public static bool Prefix([NotNull] EntityAlive __instance, DamageResponse _dmResponse)
         {
-            Log.Debug($"Executing patch prefix for {typeof(EntityAlive)}.ClientKill ...");
+            Log.Debug($"Executing patch prefix for {nameof(EntityDied)} ...");
 
             ScriptEvent eventType;
             if (__instance is EntityPlayer)

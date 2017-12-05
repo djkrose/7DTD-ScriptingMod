@@ -425,4 +425,59 @@ namespace ScriptingMod.ScriptEngines
             });
         }
     }
+
+    public class PlayerLevelUpEventArgs : ScriptEventArgs
+    {
+        public EntityPlayer player;
+        public int oldLevel;
+        public int newLevel;
+
+        public PlayerLevelUpEventArgs(ScriptEvent type, EntityPlayer player, int oldLevel, int newLevel) : base(type)
+        {
+            this.player = player;
+            this.oldLevel = oldLevel;
+            this.newLevel = newLevel;
+        }
+
+        public override string ToJson()
+        {
+            var clientInfo = ConnectionManager.Instance?.GetClientInfoForEntityId(player.entityId);
+
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                oldLevel,
+                newLevel,
+                clientInfo,
+            });
+        }
+    }
+
+    public class PlayerExpGainedEventArgs : ScriptEventArgs
+    {
+        public EntityPlayer player;
+        public int expGained;
+        public bool levelUp;
+
+        public PlayerExpGainedEventArgs(ScriptEvent type, EntityPlayer player, int expGained, bool levelUp) : base(type)
+        {
+            this.player = player;
+            this.expGained = expGained;
+            this.levelUp = levelUp;
+        }
+
+        public override string ToJson()
+        {
+            var clientInfo = ConnectionManager.Instance?.GetClientInfoForEntityId(player.entityId);
+
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                expGained,
+                expToNextLevel = player.ExpToNextLevel,
+                levelUp,
+                clientInfo,
+            });
+        }
+    }
 }

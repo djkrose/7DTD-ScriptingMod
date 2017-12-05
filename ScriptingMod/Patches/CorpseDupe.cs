@@ -8,30 +8,21 @@ using ScriptingMod.Extensions;
 
 namespace ScriptingMod.Patches
 {
-    [HarmonyPatch(typeof(EntityZombie))]
-    [HarmonyPatch("dropCorpseBlock")]
+    [HarmonyPatch(typeof(EntityZombie), "dropCorpseBlock")]
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-    public static class CorpseDupePatch
+    public static class CorpseDupe
     {
         public const string PatchName = "zombie corpse item dupe exploit";
-        private static bool IsPatched = false;
 
         public static bool Prepare()
         {
             if (!PersistentData.Instance.PatchCorpseItemDupeExploit)
             {
-                Log.Debug($"Patch is disabled: {PatchName}");
+                Log.Debug($"Patch is disabled: {nameof(CorpseDupe)}");
                 return false;
             }
 
-            if (IsPatched)
-            {
-                Log.Debug($"Patch already applied: {PatchName}");
-                return false;
-            }
-
-            Log.Out($"Patching {PatchName} ...");
-            IsPatched = true;
+            Log.Out($"Applying patch {nameof(CorpseDupe)} ...");
             return true;
         }
 
@@ -39,11 +30,11 @@ namespace ScriptingMod.Patches
         {
             if (!PersistentData.Instance.PatchCorpseItemDupeExploit)
             {
-                Log.Debug($"Skipping disabled patch prefix for {PatchName}.");
+                Log.Debug($"Skipping disabled patch prefix for {nameof(CorpseDupe)}.");
                 return true;
             }
 
-            Log.Debug($"Executing patch prefix for {PatchName} ...");
+            Log.Debug($"Executing patch prefix for {nameof(CorpseDupe)} ...");
 
             if (__instance.lootContainer != null && __instance.lootContainer.bTouched && !__instance.lootContainer.IsEmpty())
             {

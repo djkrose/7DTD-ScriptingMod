@@ -10,7 +10,6 @@
         chunkUnloaded,
         eacPlayerAuthenticated,
         eacPlayerKicked,
-        playerDamaged, // suggested by Guppycur, StompyNZ, Xyth
         entityLoaded,
         entityUnloaded,
         gameAwake,
@@ -18,8 +17,11 @@
         gameStartDone,
         gameStatsChanged,
         logMessageReceived,
+        playerDamaged, // suggested by Guppycur, StompyNZ, Xyth
         playerDied,
         playerDisconnected,
+        playerExpGained,
+        playerLevelUp,
         playerLogin,
         playerSaveData,
         playerSpawnedInWorld,

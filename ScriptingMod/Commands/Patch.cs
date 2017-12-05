@@ -49,7 +49,7 @@ namespace ScriptingMod.Commands
             {
                 if (parameters.Count == 0)
                 {
-                    SdtdConsole.Instance.Output($"Patch for {CorpseDupePatch.PatchName} is {(PersistentData.Instance.PatchCorpseItemDupeExploit ? "ENABLED" : "DISABLED")}.");
+                    SdtdConsole.Instance.Output($"Patch for {CorpseDupe.PatchName} is {(PersistentData.Instance.PatchCorpseItemDupeExploit ? "ENABLED" : "DISABLED")}.");
                     return;
                 }
 
@@ -68,19 +68,19 @@ namespace ScriptingMod.Commands
                         if (mode == "on")
                         {
                             if (PersistentData.Instance.PatchCorpseItemDupeExploit)
-                                throw new FriendlyMessageException($"Patch for {CorpseDupePatch.PatchName} is already enabled.");
+                                throw new FriendlyMessageException($"Patch for {CorpseDupe.PatchName} is already enabled.");
                             PersistentData.Instance.PatchCorpseItemDupeExploit = true;
                             PatchTools.ApplyPatches();
                             PersistentData.Instance.Save(); // save after patching in case something crashes
-                            SdtdConsole.Instance.Output($"Patch for {CorpseDupePatch.PatchName} enabled.");
+                            SdtdConsole.Instance.Output($"Patch for {CorpseDupe.PatchName} enabled.");
                         }
                         else if (mode == "off")
                         {
                             if (!PersistentData.Instance.PatchCorpseItemDupeExploit)
-                                throw new FriendlyMessageException($"Patch for {CorpseDupePatch.PatchName} is already disabled.");
+                                throw new FriendlyMessageException($"Patch for {CorpseDupe.PatchName} is already disabled.");
                             PersistentData.Instance.PatchCorpseItemDupeExploit = false;
                             PersistentData.Instance.Save();
-                            SdtdConsole.Instance.Output($"Patch for {CorpseDupePatch.PatchName} disabled.");
+                            SdtdConsole.Instance.Output($"Patch for {CorpseDupe.PatchName} disabled.");
                         }
                         break;
                     default:

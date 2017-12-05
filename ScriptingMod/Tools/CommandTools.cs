@@ -157,7 +157,6 @@ namespace ScriptingMod.Tools
             // ----------- TODO: More event ideas --------------
             // - Geofencing...trigger event when a player or zombie gets into a predefined area.
             // - Trigger server events on quest progress/completion. - So server admins could award questing further, or even unlock account features like forum access on quest completions.
-            // - Event for Level-up
             // - Event for Explosions (TNT, dynamite, fuel barrel)
             // - Event for large collapses (say more than 50 blocks)
             // - Event for destruction of a car(e.g.to spawn a new car somewhere else)
@@ -282,6 +281,17 @@ namespace ScriptingMod.Tools
             {
                 Log.Error("Could not initialize monitoring of scripting folder. Script file changes will not be detected. - " + ex);
             }
+        }
+
+        /// <summary>
+        /// Returns true if ANY of the eventTypes is active
+        /// </summary>
+        /// <param name="eventTypes"></param>
+        /// <returns></returns>
+        public static bool IsAnyEventActive(params ScriptEvent[] eventTypes)
+        {
+            var logEvents = PersistentData.Instance.LogEvents;
+            return eventTypes.Any(t => _events[(int) t] != null || logEvents.Contains(t));
         }
 
         public static void InvokeScriptEvents(ScriptEventArgs eventArgs)

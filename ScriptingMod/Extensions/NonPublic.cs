@@ -57,6 +57,8 @@ namespace ScriptingMod.Extensions
 
         private static MethodInfo      ev_MasterServerAnnouncer_add_ServerRegistered;          // MasterServerAnnouncer      -> private void add_Event_0(Action)
 
+        private static FieldInfo       fi_NetPackagePlayerStats_entityId;                      // NetPackagePlayerStats      -> private int int_0;
+
         public static void Init()
         {
             try
@@ -96,6 +98,8 @@ namespace ScriptingMod.Extensions
                 fi_EntityAlive_damageResponse                          = ReflectionTools.GetField(typeof(EntityAlive), typeof(DamageResponse));
 
                 ev_MasterServerAnnouncer_add_ServerRegistered          = ReflectionTools.GetAddMethod(typeof(MasterServerAnnouncer), typeof(void), new [] { typeof(Action) });
+
+                fi_NetPackagePlayerStats_entityId                      = ReflectionTools.GetField(typeof(NetPackagePlayerStats), typeof(int), 0); // WARNING! Relying on member order here!
 
                 Log.Out("Successfilly established reflection references.");
             }
@@ -298,6 +302,15 @@ namespace ScriptingMod.Extensions
         public static void AddEventServerRegistered(this MasterServerAnnouncer target, Action onServerRegistered)
         {
             ev_MasterServerAnnouncer_add_ServerRegistered.Invoke(target, new object[] {onServerRegistered});
+        }
+
+        #endregion
+
+        #region Reflected extionsions for NetPackage types
+
+        public static int GetEntityId(this NetPackagePlayerStats target)
+        {
+            return (int)fi_NetPackagePlayerStats_entityId.GetValue(target);
         }
 
         #endregion

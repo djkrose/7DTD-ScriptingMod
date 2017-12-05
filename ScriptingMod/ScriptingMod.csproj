@@ -94,9 +94,10 @@
     <Compile Include="LitJsonTypeBindings.cs" />
     <Compile Include="Patches\EntityDied.cs" />
     <Compile Include="Patches\EntityDamaged.cs" />
+    <Compile Include="Patches\PlayerStatsChanged.cs" />
     <Compile Include="ScriptEngines\EventArgs.cs" />
     <Compile Include="Tools\ReflectionTools.cs" />
-    <Compile Include="Patches\CorpseDupePatch.cs" />
+    <Compile Include="Patches\CorpseDupe.cs" />
     <Compile Include="PersistentData.cs" />
     <Compile Include="RepairEngine.cs" />
     <Compile Include="ScriptEvent.cs" />
