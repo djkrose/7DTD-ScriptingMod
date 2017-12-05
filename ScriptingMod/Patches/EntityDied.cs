@@ -17,11 +17,11 @@ namespace ScriptingMod.Patches
         {
             if (!CommandTools.IsAnyEventActive(ScriptEvent.playerDied, ScriptEvent.animalDied, ScriptEvent.zombieDied))
             {
-                Log.Debug($"Patch is disabled: {nameof(EntityDied)}");
+                Log.Debug($"Patch {nameof(EntityDied)} is disabled.");
                 return false;
             }
 
-            Log.Debug($"Applying event tracker patch {nameof(EntityDied)} ...");
+            Log.Out($"Applying event tracker patch {nameof(EntityDied)} ...");
             return true;
         }
 

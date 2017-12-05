@@ -18,7 +18,7 @@ namespace ScriptingMod.Patches
         {
             if (!PersistentData.Instance.PatchCorpseItemDupeExploit)
             {
-                Log.Debug($"Patch is disabled: {nameof(CorpseDupe)}");
+                Log.Debug($"Patch {nameof(CorpseDupe)} is disabled.");
                 return false;
             }
 

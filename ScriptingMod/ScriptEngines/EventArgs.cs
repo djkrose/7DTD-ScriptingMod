@@ -480,4 +480,32 @@ namespace ScriptingMod.ScriptEngines
             });
         }
     }
+
+    public class PlayerEnteredChunkEventArgs : ScriptEventArgs
+    {
+        public EntityPlayer player;
+        public Chunk newChunk;
+        public Vector3i oldChunkPos;
+
+        public PlayerEnteredChunkEventArgs(ScriptEvent type, EntityPlayer player, Chunk newChunk, Vector3i oldChunkPos) : base(type)
+        {
+            this.player = player;
+            this.newChunk = newChunk;
+            this.oldChunkPos = oldChunkPos;
+        }
+
+        public override string ToJson()
+        {
+            var clientInfo = ConnectionManager.Instance?.GetClientInfoForEntityId(player.entityId);
+
+            return JsonMapper.ToJson(new
+            {
+                eventType = type.ToString(),
+                newChunk = new Vector2xz(newChunk.X, newChunk.Z),
+                oldChunk = new Vector2xz(oldChunkPos.x, oldChunkPos.z),
+                position = player.GetBlockPosition(),
+                clientInfo,
+            });
+        }
+    }
 }

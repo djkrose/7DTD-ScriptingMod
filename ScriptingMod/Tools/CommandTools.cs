@@ -155,7 +155,7 @@ namespace ScriptingMod.Tools
             // - Entity.* for each zombie/player entity
 
             // ----------- TODO: More event ideas --------------
-            // - Geofencing...trigger event when a player or zombie gets into a predefined area.
+            // - Custom geo fencing: Ttrigger event when a player (or zombie) gets into a predefined area
             // - Trigger server events on quest progress/completion. - So server admins could award questing further, or even unlock account features like forum access on quest completions.
             // - Event for Explosions (TNT, dynamite, fuel barrel)
             // - Event for large collapses (say more than 50 blocks)

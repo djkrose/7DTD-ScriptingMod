@@ -94,6 +94,7 @@
     <Compile Include="LitJsonTypeBindings.cs" />
     <Compile Include="Patches\EntityDied.cs" />
     <Compile Include="Patches\EntityDamaged.cs" />
+    <Compile Include="Patches\PlayerEnteredChunk.cs" />
     <Compile Include="Patches\PlayerStatsChanged.cs" />
     <Compile Include="ScriptEngines\EventArgs.cs" />
     <Compile Include="Tools\ReflectionTools.cs" />

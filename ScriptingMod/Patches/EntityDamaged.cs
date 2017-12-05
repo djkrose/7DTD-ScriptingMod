@@ -17,7 +17,7 @@ namespace ScriptingMod.Patches
         {
             if (!CommandTools.IsAnyEventActive(ScriptEvent.playerDamaged, ScriptEvent.animalDamaged, ScriptEvent.zombieDamaged))
             {
-                Log.Debug($"Patch is disabled: {nameof(EntityDamaged)}");
+                Log.Debug($"Patch {nameof(EntityDamaged)} is disabled.");
                 return false;
             }
 

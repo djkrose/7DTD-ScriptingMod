@@ -25,11 +25,11 @@ namespace ScriptingMod.Patches
         {
             if (!CommandTools.IsAnyEventActive(ScriptEvent.playerLevelUp, ScriptEvent.playerExpGained))
             {
-                Log.Debug($"Patch is disabled: {nameof(PlayerStatsChanged)}");
+                Log.Debug($"Patch {nameof(PlayerStatsChanged)} is disabled.");
                 return false;
             }
 
-            Log.Debug($"Applying event tracker patch {nameof(PlayerStatsChanged)} ...");
+            Log.Out($"Applying event tracker patch {nameof(PlayerStatsChanged)} ...");
             return true;
         }
 

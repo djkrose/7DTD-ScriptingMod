@@ -20,6 +20,7 @@
         playerDamaged, // suggested by Guppycur, StompyNZ, Xyth
         playerDied,
         playerDisconnected,
+        playerEnteredChunk,
         playerExpGained,
         playerLevelUp,
         playerLogin,
