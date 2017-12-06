@@ -1,9 +1,14 @@
 ﻿Version 0.15 - compatible with A16.4 (b8)
 
+- Added event system that allows executing Lua/JS scripts or log to console on 28 events.
 - Added command "dj-log-events" to manage event logging. See help.
 - Script files can be disabled by prefixing them with underscore (_). Non-trivial example scrips are disabled by default.
+- Added a couple of example event scripts that can be activated by removing the trailing underscore (_).
 - Changed script commands js-test, js-minibike, js-sleepers, and lua-test to all use "dj-" prefix instead.
 - Changed syntax of "dj-patch XYZ on" to "dj-patch xyz /on" to match other command systax like dj-repair and dj-log-events.
+- Fixed: Parsing of script metadata can be very slow or freeze when file has many comments [#4]
+- Fixed: Incompatible line breaks in scripts on Linux [#28]
+
 
 Version 0.14 - compatible with A16.4 (b8)
 
