@@ -69,7 +69,7 @@
     </ReadLinesFromFile>
     <PropertyGroup>
       <In>@(ItemsFromFile)</In>
-      <Pattern>&lt;Version value="([0-9.]+)"/&gt;</Pattern>
+      <Pattern>&lt;Version value="([^"]+)"/&gt;</Pattern>
       <Version>$([System.Text.RegularExpressions.Regex]::Match($(In), $(Pattern)).Groups[1].Value)</Version>
       <ReleaseZipPath>$(OutputPath)ScriptingMod_v$(Version).zip</ReleaseZipPath>
       <TempFolder>$(OutputPath)temp\</TempFolder>

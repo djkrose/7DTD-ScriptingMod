@@ -1,3 +1,12 @@
+-- This script will be ignored by ScriptingMod but you can include it in any Lua script with:
+-- local inspect = require('_inspect')
+--
+-- The inspect method creates a readable dump of a Lua object structure. Use it to debug code or
+-- to follow the object hierarchy and find interesting game data, like so:
+-- print(inspect(someObject))
+--
+-- To dump a .Net object loaded into Lua scope, use dump(theObject) instead.
+
 local inspect ={
   _VERSION = 'inspect.lua 3.1.0',
   _URL     = 'http://github.com/kikito/inspect.lua',

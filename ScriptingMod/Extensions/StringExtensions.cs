@@ -65,7 +65,7 @@ namespace ScriptingMod.Extensions
             IEnumerable<string> lines = source.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
             lines = TrimEmptyLines(lines);
             string indent = new string((lines.FirstOrDefault() ?? "").TakeWhile(char.IsWhiteSpace).ToArray());
-            lines = lines.Select(l => l.StartsWith(indent) ? l.Substring(indent.Length) : l);
+            lines = lines.Select(l => l.StartsWith(indent) ? l.Substring(indent.Length) : l.TrimStart(' '));
             return string.Join(Environment.NewLine, lines.ToArray());
         }
 
@@ -96,5 +96,61 @@ namespace ScriptingMod.Extensions
         {
             return source.IndexOfAny(chars.ToCharArray()) != -1;
         }
+
+        /// <summary>
+        /// Replaces only the first occurence of the search string with the given replace string.
+        /// Source: https://stackoverflow.com/a/8809437/785111
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="search"></param>
+        /// <param name="replace"></param>
+        /// <returns></returns>
+        public static string ReplaceFirst(this string text, string search, string replace)
+        {
+            int pos = text.IndexOf(search, StringComparison.Ordinal);
+            if (pos < 0)
+            {
+                return text;
+            }
+            return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+        }
+
+        /// <summary>
+        /// Returns a list of strings no larger than the max length sent in.
+        /// Based on: http://web.archive.org/web/20160620132048/http://bryan.reynoldslive.com:80/post/Wrapping-string-data.aspx
+        /// </summary>
+        /// <remarks>useful function used to wrap string text for reporting.</remarks>
+        /// <param name="text">Text to be wrapped into of List of Strings</param>
+        /// <param name="maxLength">Max length you want each line to be.</param>
+        /// <returns>List of Strings</returns>
+        public static string Wrap(this string text, int maxLength)
+        {
+            if (text.Length == 0)
+                return "";
+
+            var words = text.Split(' ');
+            var lines = new StringBuilder();
+            var currentLine = "";
+
+            foreach (var currentWord in words)
+            {
+                if ((currentLine.Length > maxLength) || ((currentLine.Length + currentWord.Length) > maxLength))
+                {
+                    lines.AppendLine(currentLine);
+                    currentLine = "";
+                }
+
+                if (currentLine.Length > 0)
+                    currentLine += " " + currentWord;
+                else
+                    currentLine += currentWord;
+            }
+
+            if (currentLine.Length > 0)
+                lines.AppendLine(currentLine);
+
+            return lines.ToString().TrimEnd();
+        }
+
     }
 }

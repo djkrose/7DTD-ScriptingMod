@@ -3,7 +3,7 @@
 // Command must be entered in the console (F1) not the chat. Possibility to use chat is following shortly.
 // Insipration by: Muratus Minibike Mod
 //
-// @commands           js-minibike
+// @commands           dj-minibike
 // @description        Teleports the player's nearby minibike back to him/her.
 // @help               Teleports the minibike that is shown as symbol in the compass and map back to the player's position.
 //                     The minibike MUST be nearby, MUST show as symbol on the compass, and MUST exist in a loaded area.

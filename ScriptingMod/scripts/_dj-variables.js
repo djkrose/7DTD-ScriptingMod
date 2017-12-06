@@ -1,7 +1,10 @@
-// @commands           js-variables
+// This script is disabled by default because its filename is prefixed with underscore (_).
+// Remove the underscore to activate the script and test it. No server restart required.
+//
+// @commands           dj-variables
 // @description        Example script to show how to access certain game objects
 
-console.log("This command produces no output by default. See the source code to understand how to access game objects.");
+console.log("This command produces little output by default. See the source code to understand how to access game objects.");
 
 // You can add "dump(variable);" after all variable assignments to see the variable content.
 // Use "dump(variable, 2)" to go the object hierarchy 2 levels deep; use 3, 4, etc. to go deeper (lots of data!)

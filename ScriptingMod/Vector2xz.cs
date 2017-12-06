@@ -7,6 +7,7 @@ namespace ScriptingMod
     /// Same as Vector2i, but instead of "y" it's "z", because that is the actual 3D equivalent everywhere.
     /// Examples: chunkXY, areaXZ, etc.
     /// </summary>
+    [Obsolete("Use Vector2i or Vector3i instead for simplification")]
     internal struct Vector2xz : IEquatable<Vector2xz>
     {
         public static readonly Vector2xz None = new Vector2xz(int.MinValue, int.MinValue);

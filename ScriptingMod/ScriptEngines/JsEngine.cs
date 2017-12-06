@@ -10,6 +10,7 @@ using Jint.Parser;
 using Jint.Runtime;
 using Jint.Runtime.Interop;
 using ScriptingMod.Extensions;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod.ScriptEngines
 {
@@ -40,30 +41,30 @@ namespace ScriptingMod.ScriptEngines
 
         protected override void ExecuteFile(string filePath)
         {
-            var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+            var fileRelativePath = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
 
-            Log.Debug($"Starting JavaScript {fileName} ...");
+            Log.Debug($"Starting JavaScript {fileRelativePath} ...");
 
             var script = File.ReadAllText(filePath);
 
             try
             {
-                _jint.Execute(script, new ParserOptions {Source = fileName});
+                _jint.Execute(script, new ParserOptions {Source = fileRelativePath});
             }
             catch (JavaScriptException ex)
             {
                 // Send short message to console
-                SdtdConsole.Instance.Output($"JavaScript error in {fileName} line {ex.LineNumber}: {ex.Error} [details in server log]");
+                SdtdConsole.Instance.Output($"JavaScript error in {fileRelativePath} line {ex.LineNumber}: {ex.Error} [details in server log]");
 
                 // Log full javascript Error object with JS callstack
-                Log.Error($"JavaScript error in {fileName} line {ex.LineNumber} column {ex.Column}: {ex.Error}" +
+                Log.Error($"JavaScript error in {fileRelativePath} line {ex.LineNumber} column {ex.Column}: {ex.Error}" +
                           (string.IsNullOrEmpty(ex.CallStack) ? "" : Environment.NewLine + ex.CallStack.Indent(1).TrimEnd()));
 
                 // JavaScriptException.ToString() does not - against convention - print stack trace or inner exceptions
                 Log.Error("Underlying .Net exception: " + ex.ToStringDefault());
             }
 
-            Log.Debug($"JavaScript {fileName} ended.");
+            Log.Debug($"JavaScript {fileRelativePath} ended.");
         }
 
         protected override void SetValue(string name, object value)

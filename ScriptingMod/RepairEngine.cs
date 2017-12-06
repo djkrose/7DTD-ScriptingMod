@@ -78,7 +78,7 @@ namespace ScriptingMod
                 { PowerTrigger.TriggerTypes.TripWire,      typeof(PowerTripWireRelay) }
             };
 
-        private readonly World World = GameManager.Instance.World ?? throw new ApplicationException(Resources.ErrorWorldNotReady);
+        private readonly World World = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
 
         private List<BlockChangeInfo> _blockChangeInfos = new List<BlockChangeInfo>();
 
@@ -150,7 +150,7 @@ namespace ScriptingMod
                     if (repairEngine._problemsFound >= 1)
                     {
                         PersistentData.Instance.RepairCounter += repairEngine._problemsFound;
-                        PersistentData.Instance.Save();
+                        PersistentData.Instance.SaveLater();
                     }
                     Log.Debug("Automatic background repair timer ended.");
                 }
@@ -230,7 +230,7 @@ namespace ScriptingMod
                 if (repairEngine._problemsFound >= 1)
                 {
                     PersistentData.Instance.RepairCounter += repairEngine._problemsFound;
-                    PersistentData.Instance.Save();
+                    PersistentData.Instance.SaveLater();
                 }
             }
             catch (Exception ex)

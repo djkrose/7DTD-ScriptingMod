@@ -5,6 +5,7 @@ using System.Linq;
 using NLua;
 using NLua.Exceptions;
 using ScriptingMod.Extensions;
+using ScriptingMod.Tools;
 
 namespace ScriptingMod.ScriptEngines
 {
@@ -30,9 +31,9 @@ namespace ScriptingMod.ScriptEngines
 
         protected override void ExecuteFile(string filePath)
         {
-            var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+            var fileRelativePath = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
 
-            Log.Debug($"Starting Lua script {fileName} ...");
+            Log.Debug($"Starting Lua script {fileRelativePath} ...");
 
             // We are not using _lua.DoFile(..) because it does not support UTF-8 w/ BOM encoding
             // TODO: Fix UTF-8 for require()'d files too, e.g. by adjusting all scripts on start
@@ -42,14 +43,14 @@ namespace ScriptingMod.ScriptEngines
             try
             {
                 _lua.DoString(script);
-                Log.Debug($"Lua script {fileName} ended.");
+                Log.Debug($"Lua script {fileRelativePath} ended.");
             }
             catch (LuaScriptException ex)
             {
-                SdtdConsole.Instance.Output($"Lua script error in {fileName}: " + GetShortErrorMessage(ex) + " [details in server log]");
+                SdtdConsole.Instance.Output($"Lua script error in {fileRelativePath}: " + GetShortErrorMessage(ex) + " [details in server log]");
 
                 // LuaScriptException.ToString() does not - against convention - print stack trace or inner exceptions
-                Log.Error($"Lua script error in {fileName}: " + (ex.Source ?? "") + ex.ToStringDefault());
+                Log.Error($"Lua script error in {fileRelativePath}: " + (ex.Source ?? "") + ex.ToStringDefault());
 
                 // Dump only for me
                 Log.Dump(ex, 2);
@@ -94,6 +95,7 @@ namespace ScriptingMod.ScriptEngines
             if (values == null || values.Length == 0)
                 return;
             string output = values.Select(v => v.ToString()).Aggregate((s, s1) => s + s1);
+            // TODO: Test and fix the Print output for asynchronous/callbacks/events in Lua
             SdtdConsole.Instance.Output(output);
             Log.Debug("[CONSOLE] " + output);
         }

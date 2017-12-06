@@ -37,7 +37,6 @@ namespace UnitTests
             Assert.AreEqual("0", metadata["defaultPermission"]);
             Assert.AreEqual("Some example command", metadata["description"]);
             Console.WriteLine(Dumper.Dump(metadata, "metadata"));
-
             var help = Regex.Split(metadata["help"], "(?:\r\n|\r|\n)");
             Console.WriteLine(Dumper.Dump(help, "help"));
 

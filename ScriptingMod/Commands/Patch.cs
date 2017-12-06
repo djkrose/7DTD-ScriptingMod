@@ -33,8 +33,8 @@ namespace ScriptingMod.Commands
                     corpse-dupe   =>  Patches the zombie corpse item dupe exploit listed in the known issues for A16.x
                 Usage:
                     1. dj-patch
-                    2. dj-patch <patch-name> on
-                    3. dj-patch <patch-name> off
+                    2. dj-patch <patch-name> /on
+                    3. dj-patch <patch-name> /off
                 3. Lists the current status (on/off) of all patches.
                 2. Enable the named patch.
                 3. Disable the named patch.
@@ -49,7 +49,7 @@ namespace ScriptingMod.Commands
             {
                 if (parameters.Count == 0)
                 {
-                    SdtdConsole.Instance.Output($"Patch for {CorpseDupePatch.PatchName} is {(PersistentData.Instance.PatchCorpseItemDupeExploit ? "ENABLED" : "DISABLED")}.");
+                    SdtdConsole.Instance.Output($"Patch for {CorpseDupe.PatchName} is {(PersistentData.Instance.PatchCorpseItemDupeExploit ? "ENABLED" : "DISABLED")}.");
                     return;
                 }
 
@@ -59,28 +59,28 @@ namespace ScriptingMod.Commands
                 var patchName = parameters[0];
                 string mode = parameters[1];
 
-                if (mode != "on" && mode != "off")
+                if (mode != "/on" && mode != "/off")
                     throw new FriendlyMessageException($"Wrong second parameter \"{parameters[1]}\". See help.");
 
                 switch (patchName)
                 {
                     case "corpse-dupe":
-                        if (mode == "on")
+                        if (mode == "/on")
                         {
                             if (PersistentData.Instance.PatchCorpseItemDupeExploit)
-                                throw new FriendlyMessageException($"Patch for {CorpseDupePatch.PatchName} is already enabled.");
+                                throw new FriendlyMessageException($"Patch for {CorpseDupe.PatchName} is already enabled.");
                             PersistentData.Instance.PatchCorpseItemDupeExploit = true;
                             PatchTools.ApplyPatches();
                             PersistentData.Instance.Save(); // save after patching in case something crashes
-                            SdtdConsole.Instance.Output($"Patch for {CorpseDupePatch.PatchName} enabled.");
+                            SdtdConsole.Instance.Output($"Patch for {CorpseDupe.PatchName} enabled.");
                         }
-                        else if (mode == "off")
+                        else if (mode == "/off")
                         {
                             if (!PersistentData.Instance.PatchCorpseItemDupeExploit)
-                                throw new FriendlyMessageException($"Patch for {CorpseDupePatch.PatchName} is already disabled.");
+                                throw new FriendlyMessageException($"Patch for {CorpseDupe.PatchName} is already disabled.");
                             PersistentData.Instance.PatchCorpseItemDupeExploit = false;
                             PersistentData.Instance.Save();
-                            SdtdConsole.Instance.Output($"Patch for {CorpseDupePatch.PatchName} disabled.");
+                            SdtdConsole.Instance.Output($"Patch for {CorpseDupe.PatchName} disabled.");
                         }
                         break;
                     default:

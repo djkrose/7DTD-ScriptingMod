@@ -12,10 +12,11 @@ using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
 using ScriptingMod.ScriptEngines;
-using CommandObjectPair = ScriptingMod.Extensions.NonPublic.SdtdConsole.CommandObjectPair;
+using UnityEngine;
 
 namespace ScriptingMod.Tools
 {
+    using CommandObjectPair = NonPublic.SdtdConsole.CommandObjectPair;
 
     internal static class CommandTools
     {
@@ -24,8 +25,175 @@ namespace ScriptingMod.Tools
         private static FileSystemWatcher _scriptsWatcher;
         private static bool _scriptsChangedRunning;
         private static object _scriptsChangedLock = new object();
+        private static Dictionary<EnumGameStats, object> _lastGameStats = new Dictionary<EnumGameStats, object>();
 
-        public static void LoadCommands()
+        /// <summary>
+        /// Array of (int)eventType => List of script filePaths
+        /// Elements that are null mean that there is no script event attached to this event type.
+        /// Using an array may look "unclean" but it's much faster than Dictionary.
+        /// </summary>
+        private static List<string>[] _events = new List<string>[(int)Enum.GetValues(typeof(ScriptEvent)).Cast<ScriptEvent>().Max() + 1];
+
+        /// <summary>
+        /// Subscribes to additional scripting events that are not called directly;
+        /// MUST be called in GameStartDone or later because World is used
+        /// </summary>
+        public static void InitEvents()
+        {
+            // A lot of other methods are already calling InvokeScriptEvents(..) directly.
+            // Here are just the ones that need to be attached to actual events.
+            // See enum ScriptEvents and it's usages for a full list of supported scripting events.
+
+            // Called when a player got kicked due to failed EAC check
+            EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
+            {
+                InvokeScriptEvents(new EacPlayerKickedEventArgs(ScriptEvent.eacPlayerKicked, clientInfo, kickPlayerData));
+            };
+
+            // Called when a player successfully passed the EAC check
+            EacTools.AuthenticationSuccessful += delegate (ClientInfo clientInfo)
+            {
+                InvokeScriptEvents(new EacPlayerAuthenticatedEventArgs(ScriptEvent.eacPlayerAuthenticated, clientInfo));
+            };
+
+            // Called when the server was registered with Steam and announced to the master servers (also done for non-public dedicated servers)
+            Steam.Masterserver.Server.AddEventServerRegistered(delegate()
+            {
+                InvokeScriptEvents(new ServerRegisteredEventArgs(ScriptEvent.serverRegistered, Steam.Masterserver.Server));
+            });
+
+            // Called when ANY Unity thread logs an error message, incl. the main thread
+            Application.logMessageReceivedThreaded += delegate (string condition, string trace, LogType logType)
+            {
+                InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvent.logMessageReceived, condition, trace, logType));
+            };
+
+            var world = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
+
+            // Called when any entity (zombie, item, air drop, player, ...) is spawned in the world, both loaded and newly created
+            world.EntityLoadedDelegates += delegate (Entity entity)
+            {
+                InvokeScriptEvents(new EntityLoadedEventArgs(ScriptEvent.entityLoaded, entity));
+            };
+
+            // Called when any entity (zombie, item, air drop, player, ...) disappears from the world, e.g. it got killed, picked up, despawned, logged off, ...
+            world.EntityUnloadedDelegates += delegate (Entity entity, EnumRemoveEntityReason reason)
+            {
+                InvokeScriptEvents(new EntityUnloadedEventArgs(ScriptEvent.entityUnloaded, entity, reason));
+            };
+
+            // Called when chunks change display status, i.e. either get displayed or stop being displayed.
+            // chunkLoaded   -> Called when a chunk is loaded into the game engine because a player needs it. Called frequently - use with care!
+            // chunkUnloaded -> Called when a chunk is unloaded from the game engine because it is not used by any player anymore. Called frequently - use with care!
+            world.ChunkCache.OnChunkVisibleDelegates += delegate (long chunkKey, bool displayed)
+            {
+                InvokeScriptEvents(new ChunkLoadedUnloadedEventArgs(displayed ? ScriptEvent.chunkLoaded : ScriptEvent.chunkUnloaded, chunkKey));
+            };
+
+            // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
+            GameStats.OnChangedDelegates += delegate(EnumGameStats gameState, object newValue)
+            {
+                // Often this event is called for values that are not actually changed, so we keep track whether the value was *actually* changed
+                object oldValue;
+                bool valueChanged;
+                lock (_lastGameStats)
+                {
+                    oldValue = _lastGameStats.GetValue(gameState);
+                    valueChanged = (oldValue == null || !oldValue.Equals(newValue));
+                    if (valueChanged)
+                        _lastGameStats[gameState] = newValue;
+                }
+                if (valueChanged)
+                    InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvent.gameStatsChanged, gameState, oldValue, newValue));
+            };
+
+            #region Event notes
+
+            // ------------ Events intentionally removed -----------
+            // - Steam.Instance.PlayerConnectedEv
+            //   Called first when a player is connecting before any authentication
+            //   Removed because Api.PlayerLogin is also called before authentication and also contains clientInfo.networkPlayer
+            // - Steam.Instance.ApplicationQuitEv
+            //   Called first when the server is about to shut down
+            //   Removed because it doesn't add much value
+            // - Steam.Instance.DestroyEv
+            //   Called right before the game process ends as last event of shutdown
+            //   Removed because it doesn't add much value
+            // - Steam.Instance.DisconnectedFromServerEv
+            //   Called after the game has disconnected from Steam servers and shuts down
+            //   Removed because it doesn't add much value
+            // - Steam.Instance.UpdateEv
+            //   Invoked on every tick
+            //   Removed because too big performance impact for scripting event
+            // - Steam.Instance.LateUpdateEv
+            //   Invoked on every tick
+            //   Removed because too big performance impact for scripting event
+            // - Steam.Instance.PlayerDisconnectedEv
+            //   Called after a player disconnected, a chat message was distributed, and all associated game data has been unloaded
+            //   Removed because it's similar to "playerDisconnected" and the passed networkPlayer cannot be used on a disconnected client anyway
+            // - Application.logMessageReceived
+            //   Called when main Unity thread logs an error message
+            //   Removed because it is included in logMessageReceivedThreaded
+            // - GameManager.Instance.OnWorldChanged
+            //   Called on shutdown when the world becomes null. Not called on startup apparently.
+            //   Removed because not useful
+            // - GameManager.Instance.World.ChunkClusters.ChunkClusterChangedDelegates
+            //   Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
+            //   Removed because not useful
+
+            // --------- Events never invoked on dedicated server ----------
+            // - Steam.ConnectedToServerEv
+            // - Steam.FailedToConnectEv
+            // - Steam.ServerInitializedEv
+            // - GameManager.Instance.OnLocalPlayerChanged
+            // - World.OnWorldChanged
+            // - ChunkCluster.OnChunksFinishedDisplayingDelegates
+            // - ChunkCluster.OnChunksFinishedLoadingDelegates
+            // - MapObjectManager.ChangedDelegates
+            // - ServerListManager.GameServerDetailsEvent
+            // - MenuItemEntry.ItemClicked
+            // - LocalPlayerManager.*
+            // - Inventory.OnToolbeltItemsChangedInternal
+            // - BaseObjective.ValueChanged
+            // - UserProfile.*
+            // - CraftingManager.RecipeUnlocked
+            // - QuestJournal.* (from EntityPlayer.QuestJournal)
+            // - QuestEventManager.*
+            // - UserProfileManager.*
+
+            // -------- TODO: Events to explore further --------
+            // - MapVisitor - needs patching to attach to always newly created object; use-case questionable
+            // - AIWanderingHordeSpawner.HordeArrivedDelegate hordeArrivedDelegate_0
+            // - Entity.* for each zombie/player entity
+
+            // ----------- TODO: More event ideas --------------
+            // - Custom geo fencing: Ttrigger event when a player (or zombie) gets into a predefined area
+            // - Trigger server events on quest progress/completion. - So server admins could award questing further, or even unlock account features like forum access on quest completions.
+            // - Event for Explosions (TNT, dynamite, fuel barrel)
+            // - Event for large collapses (say more than 50 blocks)
+            // - Event for destruction of a car(e.g.to spawn a new car somewhere else)
+            // - Event for idling more than X minutes
+            // - Event for blacing bed
+            // - Event for placing LCB
+            // - Event on zombie/entity proximity (triggered when a player gets or leaves withing reach of X meters of a zombie) [Xyth]
+            // - Exploring of new land
+            // - Bloodmoon starting/ending
+            // - Item was dropped [Xyth]
+            // - Item durability hits zero [Xyth]
+            // - Screamer spawned for a chunk/player/xyz [kenyer]
+            // - AirDrop spawned
+            // - Player banned
+            // - Player unbanned
+            // - New Player connected for first time
+            // - Events for ScriptingMod things
+            // - Command that triggers when someone is in the air for more than X seconds, to catch hackers [war4head]
+
+            #endregion
+
+            Log.Out("Subscribed to all relevant game events.");
+        }
+
+        public static void InitScripts()
         {
             var scripts = Directory.GetFiles(Constants.ScriptsFolder, "*.*", SearchOption.AllDirectories)
                 .Where(s => s.EndsWith(LuaEngine.FileExtension, StringComparison.OrdinalIgnoreCase) ||
@@ -34,33 +202,164 @@ namespace ScriptingMod.Tools
             foreach (string script in scripts)
             {
                 var filePath = script; // Needed prior C# 5.0 as closure
-                var fileName = FileHelper.GetRelativePath(filePath, Constants.ScriptsFolder);
+                var fileRelativePath = FileTools.GetRelativePath(filePath, Constants.ScriptsFolder);
+                var fileName = Path.GetFileName(filePath);
 
-                Log.Debug($"Loading script {fileName} ...");
+                if (fileName.StartsWith("_"))
+                {
+                    Log.Out($"Script file {fileRelativePath} is ignored because it starts with underscore.");
+                    continue;
+                }
+
+                Log.Debug($"Loading script {fileRelativePath} ...");
 
                 try
                 {
-                    var commandObject = CreateCommandObject(filePath);
-                    if (commandObject == null)
+                    bool scriptUsed = false;
+                    var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
+                    var metadata = scriptEngine.LoadMetadata(filePath);
+
+                    // Register commands
+                    var metadataCommands = metadata.GetValue("commands") ?? metadata.GetValue("command", ""); // never returns null
+                    var commandNames = metadataCommands.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (commandNames.Length > 0)
                     {
-                        Log.Out($"Script file {fileName} is ignored because it does not contain a command name definition.");
-                        continue;
+                        scriptUsed = true;
+                        var description       = metadata.GetValue("description", "");
+                        var help              = metadata.GetValue("help", null);
+                        var defaultPermission = metadata.GetValue("defaultPermission").ToInt() ?? 0;
+                        var action            = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
+                        var commandObject     = new DynamicCommand(commandNames, description, help, defaultPermission, action);
+                        AddCommand(commandObject);
+                        Log.Out($"Registered command{(commandNames.Length == 1 ? "" : "s")} \"{commandNames.Join(" ")}\" from script {fileRelativePath}.");
                     }
 
-                    AddCommand(commandObject);
-                    var commands = commandObject.GetCommands();
-                    Log.Out($"Registered command{(commands.Length == 1 ? "" : "s")} \"{commands.Join(" ")}\" in script {fileName}.");
+                    // Register events
+                    var metadataEvents = metadata.GetValue("events") ?? metadata.GetValue("event", ""); // never returns null
+                    var eventNames = metadataEvents.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (eventNames.Length > 0)
+                    {
+                        scriptUsed = true;
+                        foreach (var eventName in eventNames)
+                        {
+                            if (!EnumHelper.TryParse<ScriptEvent>(eventName, out var eventType, true))
+                            {
+                                Log.Warning($"Event \"{eventName}\" in script {fileRelativePath} is unknown and will be ignored.");
+                                continue;
+                            }
+
+                            if (_events[(int)eventType] == null)
+                                _events[(int)eventType] = new List<string>();
+                            _events[(int)eventType].Add(filePath);
+                        }
+                        Log.Out($"Registered event{(eventNames.Length == 1 ? "" : "s")} \"{eventNames.Join(" ")}\" from script {fileRelativePath}.");
+                    }
+
+                    if (!scriptUsed)
+                    {
+                        Log.Out($"Script file {fileRelativePath} is ignored because it defines neither command names nor events.");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning($"Could not load command script {fileName}: {ex.Message}");
-                    Log.Debug(ex.ToString());
+                    Log.Error($"Could not load command script {fileRelativePath}: {ex}");
                 }
             }
 
             SaveChanges();
 
             Log.Debug("All script commands added.");
+        }
+
+        public static void InitScriptsMonitoring()
+        {
+            try
+            {
+                _scriptsWatcher = new FileSystemWatcher(Constants.ScriptsFolder);
+                _scriptsWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                _scriptsWatcher.IncludeSubdirectories = true;
+                _scriptsWatcher.Changed += ScriptsChanged;
+                _scriptsWatcher.Created += ScriptsChanged;
+                _scriptsWatcher.Deleted += ScriptsChanged;
+                _scriptsWatcher.Renamed += ScriptsChanged;
+                _scriptsWatcher.EnableRaisingEvents = true;
+                Log.Out("Monitoring of script folder changes activated.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Could not initialize monitoring of scripting folder. Script file changes will not be detected. - " + ex);
+            }
+        }
+
+        /// <summary>
+        /// Returns true if ANY of the eventTypes is active
+        /// </summary>
+        /// <param name="eventTypes"></param>
+        /// <returns></returns>
+        public static bool IsAnyEventActive(params ScriptEvent[] eventTypes)
+        {
+            var logEvents = PersistentData.Instance.LogEvents;
+            return eventTypes.Any(t => _events[(int) t] != null || logEvents.Contains(t));
+        }
+
+        public static void InvokeScriptEvents(ScriptEventArgs eventArgs)
+        {
+            TrackInvocation(eventArgs);
+
+            if (PersistentData.Instance.LogEvents.Contains(eventArgs.type))
+            {
+                Log.Out("[EVENT] " + eventArgs.ToJson());
+            }
+
+            if (_events[(int)eventArgs.type] != null)
+            {
+                foreach (var filePath in _events[(int)eventArgs.type])
+                {
+                    var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
+                    scriptEngine.ExecuteEvent(filePath, eventArgs.type, eventArgs);
+                }
+            }
+        }
+
+        public static void InvokeScriptEvents(ScriptEvent eventType, Func<ScriptEvent, ScriptEventArgs> eventArgsCallback)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Track when and how this event was invoked first time;
+        /// Only for development to learn if and when events are called.
+        /// </summary>
+        /// <param name="eventArgs"></param>
+        [Conditional("DEBUG")]
+        private static void TrackInvocation(ScriptEventArgs eventArgs)
+        {
+#if DEBUG
+            var invocationLog = Environment.NewLine +
+                                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + Environment.NewLine +
+                                eventArgs.ToJson() + Environment.NewLine +
+                                Environment.StackTrace;
+
+            var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventArgs.type.ToString());
+
+            if (invokedEvent == null)
+            {
+                invokedEvent = new PersistentData.InvokedEvent()
+                {
+                    EventName = eventArgs.type.ToString(),
+                    FirstCall = invocationLog.Indent(8) + Environment.NewLine + new string(' ', 6),
+                    LastCalls = new List<string>()
+                };
+                PersistentData.Instance.InvokedEvents.Add(invokedEvent);
+            }
+
+            // Rotate last 10 call logs with newest on top
+            if (invokedEvent.LastCalls.Count == 10)
+                invokedEvent.LastCalls.RemoveAt(invokedEvent.LastCalls.Count - 1);
+            invokedEvent.LastCalls.Insert(0, invocationLog.Indent(10) + Environment.NewLine + new string(' ', 8));
+
+            PersistentData.Instance.SaveLater();
+#endif
         }
 
         /// <summary>
@@ -82,28 +381,12 @@ namespace ScriptingMod.Tools
                     commandObjectPairs.RemoveAt(i);
             }
 
-            //SaveChanges();
-            Log.Out("Unloaded all scripting commands.");
-        }
+            SaveChanges();
 
-        public static void InitScriptsMonitoring()
-        {
-            try
-            {
-                _scriptsWatcher = new FileSystemWatcher(Constants.ScriptsFolder);
-                _scriptsWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName;
-                _scriptsWatcher.IncludeSubdirectories = true;
-                _scriptsWatcher.Changed += ScriptsChanged;
-                _scriptsWatcher.Created += ScriptsChanged;
-                _scriptsWatcher.Deleted += ScriptsChanged;
-                _scriptsWatcher.Renamed += ScriptsChanged;
-                _scriptsWatcher.EnableRaisingEvents = true;
-                Log.Out("Monitoring of script folder changes activated.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Could not initialize monitoring of scripting folder. Script file changes will not be detected. - " + ex);
-            }
+            // Clear out attached scripts
+            Array.Clear(_events, 0, _events.Length);
+
+            Log.Out("Unloaded all scripting commands.");
         }
 
         private static void ScriptsChanged(object sender, FileSystemEventArgs args)
@@ -127,7 +410,8 @@ namespace ScriptingMod.Tools
 
                     // Reload commands
                     UnloadCommands();
-                    LoadCommands();
+                    InitScripts();
+                    PatchTools.ApplyPatches();
                 }
                 catch (Exception ex)
                 {
@@ -138,29 +422,6 @@ namespace ScriptingMod.Tools
                     _scriptsChangedRunning = false;
                 }
             });
-        }
-
-        /// <summary>
-        /// Parses the file as command script and tries to create a command object from it.
-        /// </summary>
-        /// <param name="filePath">Full path of the file to parse.</param>
-        /// <returns>The new command object, or null if the script has no command name in metadata and therefore is not a command script.</returns>
-        [CanBeNull]
-        private static DynamicCommand CreateCommandObject(string filePath)
-        {
-            var scriptEngine     = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-            var metadata         = scriptEngine.LoadMetadata(filePath);
-            var commands         = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            var description      = metadata.GetValue("description", "");
-            var help             = metadata.GetValue("help", null);
-            int defaultPermision = metadata.GetValue("defaultPermission").ToInt() ?? 0;
-
-            // Skip files that have no command name defined and therefore are not commands but helper scripts.
-            if (commands.Length == 0)
-                return null;
-
-            var action = new DynamicCommandHandler((p, si) => scriptEngine.ExecuteCommand(filePath, p, si));
-            return new DynamicCommand(commands, description, help, defaultPermision, action);
         }
 
         /// <summary>
@@ -321,7 +582,6 @@ namespace ScriptingMod.Tools
                 parameters.RemoveAt(index);
             return value;
         }
-
 
         /// <summary>
         /// Looks for an option with int value of the format "/paramName=123" in the list of parameters

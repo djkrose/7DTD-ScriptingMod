@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -9,6 +10,7 @@ namespace ScriptingMod
     /// <summary>
     /// Extends the global::Log class from LogLibrary.dll with a Debug log type that only shows output in debug mode
     /// </summary>
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     internal class Log : global::Log
     {
         private const string PREFIX = "[SCRIPTING MOD] ";
@@ -36,6 +38,12 @@ namespace ScriptingMod
         public static void Dump(object obj, DumperOptions options)
         {
             Debug(Dumper.Dump(obj, options));
+        }
+
+        [Conditional("DEBUG")]
+        public static void Dump(object obj, string name, int depth)
+        {
+            Debug(Dumper.Dump(obj, name, depth));
         }
 
         [Conditional("DEBUG")]
