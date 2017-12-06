@@ -145,7 +145,7 @@
     <Compile Include="Tools\WorldTools.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="scripts\_event-died.js">
+    <Content Include="scripts\_event-level-up.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="scripts\_dj-pay.js">

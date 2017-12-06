@@ -4,6 +4,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
+using ScriptingMod.ScriptEngines;
 using ScriptingMod.Tools;
 using UnityEngine;
 
@@ -32,34 +33,7 @@ namespace ScriptingMod.Commands
                 var ci = senderInfo.RemoteClientInfo ?? throw new FriendlyMessageException(Resources.ErrorNotRemotePlayer);
                 var world = GameManager.Instance.World ?? throw new FriendlyMessageException(Resources.ErrorWorldNotReady);
                 var player = senderInfo.RemoteClientInfo.GetEntityPlayer();
-                var bounds = BoundsUtils.ExpandBounds(player.boundingBox, 2, 2, 2);
-                var entities = world.GetEntitiesInBounds(typeof(EntityItem), bounds, new List<Entity>());
-                int counter = 0;
-
-                var tt = typeof(EntityItem);
-                Log.Dump(tt);
-                Log.Dump(tt.UnderlyingSystemType);
-
-                foreach (var entity in entities)
-                {
-                    // Filter out derived types like EntityBackpack and EntiyLootContainer
-                    if (entity.GetType() != typeof(EntityItem))
-                        continue;
-
-                    var entityItem = (EntityItem) entity;
-                    Log.Out($"Player \"{ci.playerName}\" ({ci.playerId}) paid {entityItem.itemStack.count}x {entityItem.itemStack.itemValue.ItemClass.Name} of quality {entityItem.itemStack.itemValue.Quality}.");
-                    world.RemoveEntity(entity.entityId, EnumRemoveEntityReason.Killed);
-                    counter++;
-                }
-
-                if (counter == 0)
-                {
-                    SdtdConsole.Instance.Output("Could not find any dropped items nearby.");
-                }
-                else
-                {
-                    SdtdConsole.Instance.Output($"Removed {counter} items as payment.");
-                }
+                CommandTools.InvokeScriptEvents(new PlayerLevelUpEventArgs(ScriptEvent.playerLevelUp, player, 10, 11));
             }
             catch (Exception ex)
             {

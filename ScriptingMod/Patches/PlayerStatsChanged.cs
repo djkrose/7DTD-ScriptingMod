@@ -53,7 +53,7 @@ namespace ScriptingMod.Patches
             return true;
         }
 
-        public static void Postfix(NetPackagePlayerStats __instance, ref State __state, [CanBeNull] World _world)
+        public static void Postfix(NetPackagePlayerStats __instance, State __state, [CanBeNull] World _world)
         {
             Log.Debug($"Executing patch postfix {nameof(PlayerStatsChanged)} ...");
 
@@ -65,6 +65,7 @@ namespace ScriptingMod.Patches
                 // Track level increase
                 if (player.Level > __state.Level)
                 {
+                    //CommandTools.InvokeScriptEvents(ScriptEvent.playerLevelUp, eventType => new PlayerLevelUpEventArgs(ScriptEvent.playerLevelUp, player, __state.Level, player.Level));
                     CommandTools.InvokeScriptEvents(new PlayerLevelUpEventArgs(ScriptEvent.playerLevelUp, player, __state.Level, player.Level));
                 }
 

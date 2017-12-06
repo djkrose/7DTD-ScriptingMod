@@ -220,7 +220,8 @@ namespace ScriptingMod.Tools
                     var metadata = scriptEngine.LoadMetadata(filePath);
 
                     // Register commands
-                    var commandNames = metadata.GetValue("commands", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var metadataCommands = metadata.GetValue("commands") ?? metadata.GetValue("command", ""); // never returns null
+                    var commandNames = metadataCommands.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     if (commandNames.Length > 0)
                     {
                         scriptUsed = true;
@@ -234,7 +235,8 @@ namespace ScriptingMod.Tools
                     }
 
                     // Register events
-                    var eventNames = metadata.GetValue("events", "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var metadataEvents = metadata.GetValue("events") ?? metadata.GetValue("event", ""); // never returns null
+                    var eventNames = metadataEvents.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     if (eventNames.Length > 0)
                     {
                         scriptUsed = true;
@@ -317,6 +319,11 @@ namespace ScriptingMod.Tools
                     scriptEngine.ExecuteEvent(filePath, eventArgs.type, eventArgs);
                 }
             }
+        }
+
+        public static void InvokeScriptEvents(ScriptEvent eventType, Func<ScriptEvent, ScriptEventArgs> eventArgsCallback)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
