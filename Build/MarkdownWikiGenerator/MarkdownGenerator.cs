@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -207,8 +208,37 @@ namespace Build.MarkdownWikiGenerator
     }
 
 
+    public class LoadAssemblyProxy : MarshalByRefObject
+    {
+        public Assembly LoadAssembly(string assemblyPath)
+        {
+            return Assembly.LoadFile(assemblyPath);
+        }
+    }
+
     public static class MarkdownGenerator
     {
+        public static Assembly LoadAssemblyTempAppDomain(string dllPath)
+        {
+            var buildAssemblyDir = Path.GetDirectoryName(typeof(MarkdownGenerator).Assembly.Location);
+            var scriptingModAssemblyDir = Path.GetDirectoryName(dllPath);
+            AppDomainSetup domainSetup = new AppDomainSetup();
+            domainSetup.PrivateBinPath = string.Join(";", buildAssemblyDir, scriptingModAssemblyDir);
+            domainSetup.ApplicationBase = System.Environment.CurrentDirectory;
+            AppDomain domain = AppDomain.CreateDomain("TempDomain", null, domainSetup);
+
+            try
+            {
+                var type = typeof(LoadAssemblyProxy);
+                var proxy = (LoadAssemblyProxy)domain.CreateInstanceAndUnwrap(type.Assembly.FullName, type.FullName);
+                return proxy.LoadAssembly(dllPath);
+            }
+            finally
+            {
+                AppDomain.Unload(domain);
+            }
+        }
+
         public static MarkdownableType[] Load(string dllPath)
         {
             var xmlPath = Path.Combine(Directory.GetParent(dllPath).FullName, Path.GetFileNameWithoutExtension(dllPath) + ".xml");
@@ -220,29 +250,32 @@ namespace Build.MarkdownWikiGenerator
             }
             var commentsLookup = comments.ToLookup(x => x.ClassName);
 
-            var markdownableTypes = new[] { Assembly.LoadFrom(dllPath) }
-                .SelectMany(x =>
-                {
-                    try
-                    {
-                        return x.GetTypes();
-                    }
-                    catch (ReflectionTypeLoadException ex)
-                    {
-                        return ex.Types.Where(t => t != null);
-                    }
-                    catch
-                    {
-                        return Type.EmptyTypes;
-                    }
-                })
-                .Where(x => x != null)
-                .Where(x => x.IsPublic && !typeof(Delegate).IsAssignableFrom(x) && !x.GetCustomAttributes<ObsoleteAttribute>().Any())
-                .Select(x => new MarkdownableType(x, commentsLookup))
-                .ToArray();
+            var markdownableTypes = LoadAssemblyTempAppDomain(dllPath).GetExportedTypes(); //.GetExportedTypes().Select(t => new MarkdownableType(t, commentsLookup)).ToArray();
+            return new MarkdownableType[0];
+
+            //var markdownableTypes = new[] { Assembly.LoadFrom(dllPath) }
+            //    .SelectMany(x =>
+            //    {
+            //        try
+            //        {
+            //            return x.GetTypes();
+            //        }
+            //        catch (ReflectionTypeLoadException ex)
+            //        {
+            //            return ex.Types.Where(t => t != null);
+            //        }
+            //        catch
+            //        {
+            //            return Type.EmptyTypes;
+            //        }
+            //    })
+            //    .Where(x => x != null)
+            //    .Where(x => x.IsPublic && !typeof(Delegate).IsAssignableFrom(x) && !x.GetCustomAttributes<ObsoleteAttribute>().Any())
+            //    .Select(x => new MarkdownableType(x, commentsLookup))
+            //    .ToArray();
 
 
-            return markdownableTypes;
+            //return markdownableTypes;
         }
     }
 }
