@@ -82,7 +82,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api.cs" />
-    <Compile Include="Commands\CheckPower.cs" />
     <Compile Include="Commands\EacWhitelist.cs" />
     <Compile Include="Commands\LogEvents.cs" />
     <Compile Include="Commands\Patch.cs" />

@@ -8,6 +8,7 @@
 - Changed syntax of "dj-patch XYZ on" to "dj-patch xyz /on" to match other command systax like dj-repair and dj-log-events.
 - Fixed: Parsing of script metadata can be very slow or freeze when file has many comments [#4]
 - Fixed: Incompatible line breaks in scripts on Linux [#28]
+- Removed redirect command "dj-check-power". Use "dj-repair" instead.
 
 
 Version 0.14 - compatible with A16.4 (b8)
