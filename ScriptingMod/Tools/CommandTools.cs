@@ -111,35 +111,35 @@ namespace ScriptingMod.Tools
 
             // ------------ Events intentionally removed -----------
             // - Steam.Instance.PlayerConnectedEv
-            //   Called first when a player is connecting before any authentication
-            //   Removed because Api.PlayerLogin is also called before authentication and also contains clientInfo.networkPlayer
+            //   Called first when a player is connecting before any authentication.
+            //   Removed because Api.PlayerLogin is also called before authentication and also contains clientInfo.networkPlayer.
             // - Steam.Instance.ApplicationQuitEv
-            //   Called first when the server is about to shut down
-            //   Removed because it doesn't add much value
+            //   Called first when the server shuts, but sometimes called twice or three times, and sometimes not even once.
+            //   Removed because it doesn't add much value and is unreliable.
             // - Steam.Instance.DestroyEv
-            //   Called right before the game process ends as last event of shutdown
-            //   Removed because it doesn't add much value
+            //   Called right before the game process ends as last event of shutdown.
+            //   Removed because it doesn't add much value.
             // - Steam.Instance.DisconnectedFromServerEv
-            //   Called after the game has disconnected from Steam servers and shuts down
-            //   Removed because it doesn't add much value
+            //   Called after the game has disconnected from Steam servers and shuts down.
+            //   Removed because it doesn't add much value.
             // - Steam.Instance.UpdateEv
-            //   Invoked on every tick
-            //   Removed because too big performance impact for scripting event
+            //   Invoked on every tick.
+            //   Removed because too big performance impact for scripting event.
             // - Steam.Instance.LateUpdateEv
-            //   Invoked on every tick
-            //   Removed because too big performance impact for scripting event
+            //   Invoked on every tick.
+            //   Removed because too big performance impact for scripting event.
             // - Steam.Instance.PlayerDisconnectedEv
-            //   Called after a player disconnected, a chat message was distributed, and all associated game data has been unloaded
-            //   Removed because it's similar to "playerDisconnected" and the passed networkPlayer cannot be used on a disconnected client anyway
+            //   Called after a player disconnected, a chat message was distributed, and all associated game data has been unloaded.
+            //   Removed because it's similar to "playerDisconnected" and the passed networkPlayer cannot be used on a disconnected client anyway.
             // - Application.logMessageReceived
-            //   Called when main Unity thread logs an error message
-            //   Removed because it is included in logMessageReceivedThreaded
+            //   Called when main Unity thread logs an error message.
+            //   Removed because it is included in logMessageReceivedThreaded.
             // - GameManager.Instance.OnWorldChanged
             //   Called on shutdown when the world becomes null. Not called on startup apparently.
             //   Removed because not useful
-            // - GameManager.Instance.World.ChunkClusters.ChunkClusterChangedDelegates
+            // - GameManager.Instance.World.ChunkClusters.ChunkClusterChangedDelegates.
             //   Called on shutdown when the chunkCache is cleared; idx remains 0 tho. Not called on startup apparently.
-            //   Removed because not useful
+            //   Removed because not useful.
 
             // --------- Events never invoked on dedicated server ----------
             // - Steam.ConnectedToServerEv
