@@ -98,6 +98,7 @@
     <Compile Include="Patches\PlayerEnteredChunk.cs" />
     <Compile Include="Patches\PlayerStatsChanged.cs" />
     <Compile Include="ScriptEngines\EventArgs.cs" />
+    <Compile Include="Tools\TelemetryTools.cs" />
     <Compile Include="Tools\EnumHelper.cs" />
     <Compile Include="Tools\ReflectionTools.cs" />
     <Compile Include="Patches\CorpseDupe.cs" />

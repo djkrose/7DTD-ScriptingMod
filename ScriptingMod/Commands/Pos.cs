@@ -24,6 +24,7 @@ namespace ScriptingMod.Commands
 
         public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
+            TelemetryTools.CollectEvent("command", "execute", GetCommands()[0]);
             try
             {
                 var player = senderInfo.GetRemoteClientInfo().GetEntityPlayer();
