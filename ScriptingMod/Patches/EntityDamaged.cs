@@ -39,7 +39,33 @@ namespace ScriptingMod.Patches
             else
                 return true;
 
-            CommandTools.InvokeScriptEvents(new EntityDamagedEventArgs(eventType, __instance, _dmResponse));
+            CommandTools.InvokeScriptEvents(eventType, t =>
+            {
+                var sourceEntity = GameManager.Instance.World?.GetEntity(_dmResponse.Source?.getEntityId() ?? -1) as EntityAlive;
+                return new EntityDamagedEventArgs
+                {
+                    eventType        = t.ToString(),
+                    position         = __instance.GetBlockPosition(),
+                    entityId         = __instance.entityId,
+                    entityName       = __instance.EntityName,
+                    sourceEntityId   = sourceEntity?.entityId,
+                    sourceEntityName = sourceEntity?.EntityName,
+                    damageType       = _dmResponse.Source?.GetName().ToString(),
+                    hitBodyPart      = _dmResponse.HitBodyPart.ToString(),
+                    hitDirection     = _dmResponse.HitDirection.ToString(),
+                    damage           = _dmResponse.Strength,
+                    armorDamage      = _dmResponse.ArmorDamage,
+                    armorSlot        = _dmResponse.ArmorSlot.ToString(),
+                    stunType         = _dmResponse.Stun.ToString(),
+                    stunDuration     = _dmResponse.StunDuration,
+                    critical         = _dmResponse.Critical,
+                    fatal            = _dmResponse.Fatal,
+                    crippleLegs      = _dmResponse.CrippleLegs,
+                    dismember        = _dmResponse.Dismember,
+                    turnIntoCrawler  = _dmResponse.TurnIntoCrawler,
+                    painHit          = _dmResponse.PainHit,
+                };
+            });
 
             return true;
         }

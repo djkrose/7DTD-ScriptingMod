@@ -33,7 +33,6 @@ namespace ScriptingMod.Commands
                 var ci = senderInfo.RemoteClientInfo ?? throw new FriendlyMessageException(Resources.ErrorNotRemotePlayer);
                 var world = GameManager.Instance.World ?? throw new FriendlyMessageException(Resources.ErrorWorldNotReady);
                 var player = senderInfo.RemoteClientInfo.GetEntityPlayer();
-                CommandTools.InvokeScriptEvents(new PlayerLevelUpEventArgs(ScriptEvent.playerLevelUp, player, 10, 11));
             }
             catch (Exception ex)
             {

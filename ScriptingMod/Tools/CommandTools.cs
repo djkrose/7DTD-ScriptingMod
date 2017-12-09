@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using JetBrains.Annotations;
+using LitJson;
 using ScriptingMod.Commands;
 using ScriptingMod.Exceptions;
 using ScriptingMod.Extensions;
@@ -47,25 +48,44 @@ namespace ScriptingMod.Tools
             // Called when a player got kicked due to failed EAC check
             EacTools.PlayerKicked += delegate (ClientInfo clientInfo, GameUtils.KickPlayerData kickPlayerData)
             {
-                InvokeScriptEvents(new EacPlayerKickedEventArgs(ScriptEvent.eacPlayerKicked, clientInfo, kickPlayerData));
+                InvokeScriptEvents(ScriptEvent.eacPlayerKicked, t => new EacPlayerKickedEventArgs()
+                {
+                    eventType  = t.ToString(),
+                    reason     = kickPlayerData.ToString(),
+                    clientInfo = clientInfo,
+                });
             };
 
             // Called when a player successfully passed the EAC check
             EacTools.AuthenticationSuccessful += delegate (ClientInfo clientInfo)
             {
-                InvokeScriptEvents(new EacPlayerAuthenticatedEventArgs(ScriptEvent.eacPlayerAuthenticated, clientInfo));
+                InvokeScriptEvents(ScriptEvent.eacPlayerAuthenticated, t => new EacPlayerAuthenticatedEventArgs()
+                {
+                    eventType = t.ToString(),
+                    clientInfo = clientInfo,
+                });
             };
 
             // Called when the server was registered with Steam and announced to the master servers (also done for non-public dedicated servers)
             Steam.Masterserver.Server.AddEventServerRegistered(delegate()
             {
-                InvokeScriptEvents(new ServerRegisteredEventArgs(ScriptEvent.serverRegistered, Steam.Masterserver.Server));
+                InvokeScriptEvents(ScriptEvent.serverRegistered, t => new ServerRegisteredEventArgs()
+                {
+                    eventType = t.ToString(),
+                    gameInfos = Steam.Masterserver.Server.LocalGameInfo.GetDisplayValues() // dictionary of all relevant game infos
+                });
             });
 
             // Called when ANY Unity thread logs an error message, incl. the main thread
             Application.logMessageReceivedThreaded += delegate (string condition, string trace, LogType logType)
             {
-                InvokeScriptEvents(new LogMessageReceivedEventArgs(ScriptEvent.logMessageReceived, condition, trace, logType));
+                InvokeScriptEvents(ScriptEvent.logMessageReceived, t => new LogMessageReceivedEventArgs()
+                {
+                    eventType = t.ToString(),
+                    logType   = logType.ToString(),
+                    condition = condition.TrimEnd(),
+                    trace     = trace.TrimEnd(),
+                });
             };
 
             var world = GameManager.Instance.World ?? throw new NullReferenceException(Resources.ErrorWorldNotReady);
@@ -73,13 +93,28 @@ namespace ScriptingMod.Tools
             // Called when any entity (zombie, item, air drop, player, ...) is spawned in the world, both loaded and newly created
             world.EntityLoadedDelegates += delegate (Entity entity)
             {
-                InvokeScriptEvents(new EntityLoadedEventArgs(ScriptEvent.entityLoaded, entity));
+                InvokeScriptEvents(ScriptEvent.entityLoaded, t => new EntityLoadedEventArgs()
+                {
+                    eventType  = t.ToString(),
+                    entityType = entity.GetType().ToString(),
+                    entityId   = entity.entityId,
+                    entityName = (entity as EntityAlive)?.EntityName,
+                    position   = entity.GetBlockPosition(),
+                });
             };
 
             // Called when any entity (zombie, item, air drop, player, ...) disappears from the world, e.g. it got killed, picked up, despawned, logged off, ...
             world.EntityUnloadedDelegates += delegate (Entity entity, EnumRemoveEntityReason reason)
             {
-                InvokeScriptEvents(new EntityUnloadedEventArgs(ScriptEvent.entityUnloaded, entity, reason));
+                InvokeScriptEvents(ScriptEvent.entityUnloaded, t => new EntityUnloadedEventArgs()
+                {
+                    eventType  = t.ToString(),
+                    reason     = reason.ToString(),
+                    entityType = entity.GetType().ToString(),
+                    entityId   = entity.entityId,
+                    entityName = (entity as EntityAlive)?.EntityName,
+                    position   = entity.GetBlockPosition(),
+                });
             };
 
             // Called when chunks change display status, i.e. either get displayed or stop being displayed.
@@ -87,7 +122,12 @@ namespace ScriptingMod.Tools
             // chunkUnloaded -> Called when a chunk is unloaded from the game engine because it is not used by any player anymore. Called frequently - use with care!
             world.ChunkCache.OnChunkVisibleDelegates += delegate (long chunkKey, bool displayed)
             {
-                InvokeScriptEvents(new ChunkLoadedUnloadedEventArgs(displayed ? ScriptEvent.chunkLoaded : ScriptEvent.chunkUnloaded, chunkKey));
+                InvokeScriptEvents(displayed ? ScriptEvent.chunkLoaded : ScriptEvent.chunkUnloaded, t => new ChunkLoadedUnloadedEventArgs()
+                {
+                    eventType = t.ToString(),
+                    chunkKey = chunkKey,
+                    chunkPos = ChunkTools.ChunkKeyToChunkXZ(chunkKey)
+                });
             };
 
             // Called when game stats change including EnemyCount and AnimalCount, so it's called frequently. Use with care!
@@ -104,7 +144,21 @@ namespace ScriptingMod.Tools
                         _lastGameStats[gameState] = newValue;
                 }
                 if (valueChanged)
-                    InvokeScriptEvents(new GameStatsChangedEventArgs(ScriptEvent.gameStatsChanged, gameState, oldValue, newValue));
+                {
+                    InvokeScriptEvents(ScriptEvent.gameStatsChanged, t =>
+                    {
+                        // Save values of a supported types as it is, all others as string for JSON output
+                        var jsonSupportedOld = (oldValue == null || oldValue is int || oldValue is long || oldValue is float || oldValue is double || oldValue is bool);
+                        var jsonSupportedNew = (newValue == null || newValue is int || newValue is long || newValue is float || newValue is double || newValue is bool);
+                        return new GameStatsChangedEventArgs()
+                        {
+                            eventType = t.ToString(),
+                            gameState = gameState.ToString(),
+                            oldValue = jsonSupportedOld ? oldValue : oldValue.ToString(),
+                            newValue = jsonSupportedNew ? newValue : newValue.ToString(),
+                        };
+                    });
+                }
             };
 
             #region Event notes
@@ -302,51 +356,65 @@ namespace ScriptingMod.Tools
             return eventTypes.Any(t => _events[(int) t] != null || logEvents.Contains(t));
         }
 
-        public static void InvokeScriptEvents(ScriptEventArgs eventArgs)
+        /// <summary>
+        /// Invokes all subscribed actions (scripts, logging, etc.) for the event with the given type.
+        /// </summary>
+        /// <param name="eventType">The type of the event that is being invoked</param>
+        /// <param name="eventArgsCallback">
+        /// Event args passed as delegate to defer object creation to when/if it is actually needed.
+        /// The callback is only called once at most, and all actions are performed with the same resulting ScriptEventArgs
+        /// </param>
+        public static void InvokeScriptEvents(ScriptEvent eventType, Func<ScriptEvent, ScriptEventArgs> eventArgsCallback)
         {
-            TrackInvocation(eventArgs);
+            // ReSharper disable once RedundantAssignment
+            ScriptEventArgs eventArgs = null;
 
-            if (PersistentData.Instance.LogEvents.Contains(eventArgs.type))
+#if DEBUG
+            eventArgs = eventArgsCallback(eventType);
+            TrackInvocation(eventArgs);
+#endif
+
+            if (PersistentData.Instance.LogEvents.Contains(eventType))
             {
-                Log.Out("[EVENT] " + eventArgs.ToJson());
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                if (eventArgs == null)
+                    eventArgs = eventArgsCallback(eventType);
+                Log.Out("[EVENT] [" + eventType + "] " + JsonMapper.ToJson(eventArgs));
             }
 
-            if (_events[(int)eventArgs.type] != null)
+            if (_events[(int)eventType] != null)
             {
-                foreach (var filePath in _events[(int)eventArgs.type])
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                if (eventArgs == null)
+                    eventArgs = eventArgsCallback(eventType);
+                foreach (var filePath in _events[(int)eventType])
                 {
                     var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-                    scriptEngine.ExecuteEvent(filePath, eventArgs.type, eventArgs);
+                    scriptEngine.ExecuteEvent(filePath, eventArgs);
                 }
             }
         }
 
-        public static void InvokeScriptEvents(ScriptEvent eventType, Func<ScriptEvent, ScriptEventArgs> eventArgsCallback)
-        {
-            throw new NotImplementedException();
-        }
-
+#if DEBUG
         /// <summary>
         /// Track when and how this event was invoked first time;
         /// Only for development to learn if and when events are called.
         /// </summary>
         /// <param name="eventArgs"></param>
-        [Conditional("DEBUG")]
         private static void TrackInvocation(ScriptEventArgs eventArgs)
         {
-#if DEBUG
             var invocationLog = Environment.NewLine +
                                 DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + Environment.NewLine +
-                                eventArgs.ToJson() + Environment.NewLine +
+                                JsonMapper.ToJson(eventArgs) + Environment.NewLine +
                                 Environment.StackTrace;
 
-            var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventArgs.type.ToString());
+            var invokedEvent = PersistentData.Instance.InvokedEvents.FirstOrDefault(ie => ie.EventName == eventArgs.eventType.ToString());
 
             if (invokedEvent == null)
             {
                 invokedEvent = new PersistentData.InvokedEvent()
                 {
-                    EventName = eventArgs.type.ToString(),
+                    EventName = eventArgs.eventType.ToString(),
                     FirstCall = invocationLog.Indent(8) + Environment.NewLine + new string(' ', 6),
                     LastCalls = new List<string>()
                 };
@@ -359,8 +427,8 @@ namespace ScriptingMod.Tools
             invokedEvent.LastCalls.Insert(0, invocationLog.Indent(10) + Environment.NewLine + new string(' ', 8));
 
             PersistentData.Instance.SaveLater();
-#endif
         }
+#endif
 
         /// <summary>
         /// Unload all our dynamic commands from the game

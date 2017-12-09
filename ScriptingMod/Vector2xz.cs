@@ -8,7 +8,7 @@ namespace ScriptingMod
     /// Examples: chunkXY, areaXZ, etc.
     /// </summary>
     [Obsolete("Use Vector2i or Vector3i instead for simplification")]
-    internal struct Vector2xz : IEquatable<Vector2xz>
+    public struct Vector2xz : IEquatable<Vector2xz>
     {
         public static readonly Vector2xz None = new Vector2xz(int.MinValue, int.MinValue);
 

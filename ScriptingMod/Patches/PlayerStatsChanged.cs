@@ -65,17 +65,28 @@ namespace ScriptingMod.Patches
                 // Track level increase
                 if (player.Level > __state.Level)
                 {
-                    //CommandTools.InvokeScriptEvents(ScriptEvent.playerLevelUp, eventType => new PlayerLevelUpEventArgs(ScriptEvent.playerLevelUp, player, __state.Level, player.Level));
-                    CommandTools.InvokeScriptEvents(new PlayerLevelUpEventArgs(ScriptEvent.playerLevelUp, player, __state.Level, player.Level));
+                    CommandTools.InvokeScriptEvents(ScriptEvent.playerLevelUp, t => new PlayerLevelUpEventArgs()
+                    {
+                        eventType  = t.ToString(),
+                        oldLevel   = __state.Level,
+                        newLevel   = player.Level,
+                        clientInfo = ConnectionManager.Instance?.GetClientInfoForEntityId(player.entityId),
+                    });
                 }
 
                 // Track gained xp, including level-up by 1 (can't easily calculate multiple levels into xp)
                 if (player.ExpToNextLevel != __state.ExpToNextLevel && (player.Level == __state.Level || player.Level == __state.Level + 1))
                 {
-                    int expGained = player.Level == __state.Level 
-                        ? __state.ExpToNextLevel - player.ExpToNextLevel 
-                        : __state.ExpToNextLevel + (player.GetExpForNextLevel() - player.ExpToNextLevel);
-                    CommandTools.InvokeScriptEvents(new PlayerExpGainedEventArgs(ScriptEvent.playerExpGained, player, expGained, player.Level > __state.Level));
+                    CommandTools.InvokeScriptEvents(ScriptEvent.playerExpGained, t => new PlayerExpGainedEventArgs()
+                    {
+                        eventType      = t.ToString(),
+                        expGained      = player.Level == __state.Level
+                                         ? __state.ExpToNextLevel - player.ExpToNextLevel
+                                         : __state.ExpToNextLevel + (player.GetExpForNextLevel() - player.ExpToNextLevel),
+                        expToNextLevel = player.ExpToNextLevel,
+                        levelUp        = player.Level > __state.Level,
+                        clientInfo     = ConnectionManager.Instance?.GetClientInfoForEntityId(player.entityId),
+                    });
                 }
             }
         }

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using Harmony;
 using JetBrains.Annotations;
-using ScriptingMod.Extensions;
 using ScriptingMod.ScriptEngines;
 using ScriptingMod.Tools;
 
@@ -33,7 +32,14 @@ namespace ScriptingMod.Patches
 
             if (_entity is EntityPlayer player)
             {
-                CommandTools.InvokeScriptEvents(new PlayerEnteredChunkEventArgs(ScriptEvent.playerEnteredChunk, player, __instance, _entity.chunkPosAddedEntityTo));
+                CommandTools.InvokeScriptEvents(ScriptEvent.playerEnteredChunk, t => new PlayerEnteredChunkEventArgs()
+                {
+                    eventType  = t.ToString(),
+                    newChunk   = new Vector2xz(__instance.X, __instance.Z),
+                    oldChunk   = new Vector2xz(_entity.chunkPosAddedEntityTo.x, _entity.chunkPosAddedEntityTo.z),
+                    position   = player.GetBlockPosition(),
+                    clientInfo = ConnectionManager.Instance?.GetClientInfoForEntityId(player.entityId),
+                });
             }
             return true;
         }

@@ -26,12 +26,11 @@ namespace ScriptingMod.ScriptEngines
             }
         }
 
-        public void ExecuteEvent(string filePath, ScriptEvent eventType, [CanBeNull] object eventArgs)
+        public void ExecuteEvent(string filePath, object eventArgs)
         {
             var sw = new MicroStopwatch(true);
             ResetEngine();
             InitCommonValues();
-            SetValue("eventType", eventType.ToString());
             SetValue("event", eventArgs);
 
             var oldDirectory = Directory.GetCurrentDirectory();
