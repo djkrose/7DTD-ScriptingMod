@@ -32,9 +32,8 @@ namespace ScriptingMod.Patches
 
             if (_entity is EntityPlayer player)
             {
-                CommandTools.InvokeScriptEvents(ScriptEvent.playerEnteredChunk, t => new PlayerEnteredChunkEventArgs()
+                CommandTools.InvokeScriptEvents(ScriptEvent.playerEnteredChunk, () => new PlayerEnteredChunkEventArgs()
                 {
-                    eventType  = t.ToString(),
                     newChunk   = new Vector2xz(__instance.X, __instance.Z),
                     oldChunk   = new Vector2xz(_entity.chunkPosAddedEntityTo.x, _entity.chunkPosAddedEntityTo.z),
                     position   = player.GetBlockPosition(),

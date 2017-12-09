@@ -65,9 +65,8 @@ namespace ScriptingMod.Patches
                 // Track level increase
                 if (player.Level > __state.Level)
                 {
-                    CommandTools.InvokeScriptEvents(ScriptEvent.playerLevelUp, t => new PlayerLevelUpEventArgs()
+                    CommandTools.InvokeScriptEvents(ScriptEvent.playerLevelUp, () => new PlayerLevelUpEventArgs()
                     {
-                        eventType  = t.ToString(),
                         oldLevel   = __state.Level,
                         newLevel   = player.Level,
                         clientInfo = ConnectionManager.Instance?.GetClientInfoForEntityId(player.entityId),
@@ -77,9 +76,8 @@ namespace ScriptingMod.Patches
                 // Track gained xp, including level-up by 1 (can't easily calculate multiple levels into xp)
                 if (player.ExpToNextLevel != __state.ExpToNextLevel && (player.Level == __state.Level || player.Level == __state.Level + 1))
                 {
-                    CommandTools.InvokeScriptEvents(ScriptEvent.playerExpGained, t => new PlayerExpGainedEventArgs()
+                    CommandTools.InvokeScriptEvents(ScriptEvent.playerExpGained, () => new PlayerExpGainedEventArgs()
                     {
-                        eventType      = t.ToString(),
                         expGained      = player.Level == __state.Level
                                          ? __state.ExpToNextLevel - player.ExpToNextLevel
                                          : __state.ExpToNextLevel + (player.GetExpForNextLevel() - player.ExpToNextLevel),

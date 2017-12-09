@@ -38,7 +38,7 @@ namespace ScriptingMod
             CommandTools.InitScripts();
             CommandTools.InitScriptsMonitoring();
 
-            CommandTools.InvokeScriptEvents(ScriptEvent.gameAwake, t => new ScriptEventArgs { eventType = t.ToString() });
+            CommandTools.InvokeScriptEvents(ScriptEvent.gameAwake, () => new ScriptEventArgs());
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace ScriptingMod
             RepairEngine.InitAuto();
             Log.Out($"Done initializing {Constants.ModNameFull}.");
 
-            CommandTools.InvokeScriptEvents(ScriptEvent.gameStartDone, t => new ScriptEventArgs { eventType = t.ToString() });
+            CommandTools.InvokeScriptEvents(ScriptEvent.gameStartDone, () => new ScriptEventArgs());
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace ScriptingMod
         public override void GameShutdown()
         {
             Log.Debug("Api.GameShutdown called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.gameShutdown, t => new ScriptEventArgs { eventType = t.ToString() });
+            CommandTools.InvokeScriptEvents(ScriptEvent.gameShutdown, () => new ScriptEventArgs());
         }
 
         /// <summary>
@@ -81,9 +81,8 @@ namespace ScriptingMod
         public override void PlayerLogin(ClientInfo clientInfo, string compatibilityVersion)
         {
             Log.Debug("Api.PlayerLogin called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerLogin, t => new PlayerLoginEventArgs()
+            CommandTools.InvokeScriptEvents(ScriptEvent.playerLogin, () => new PlayerLoginEventArgs()
             {
-                eventType            = t.ToString(),
                 clientInfo           = clientInfo,
                 compatibilityVersion = compatibilityVersion,
             });
@@ -99,9 +98,8 @@ namespace ScriptingMod
         public override void PlayerSpawning(ClientInfo clientInfo, int chunkViewDim, PlayerProfile playerProfile)
         {
             Log.Debug("Api.PlayerSpawning called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerSpawning, t => new PlayerSpawningEventArgs()
+            CommandTools.InvokeScriptEvents(ScriptEvent.playerSpawning, () => new PlayerSpawningEventArgs()
             {
-                eventType     = t.ToString(),
                 clientInfo    = clientInfo,
                 playerProfile = playerProfile,
             });
@@ -116,9 +114,8 @@ namespace ScriptingMod
         public override void PlayerSpawnedInWorld(ClientInfo clientInfo, RespawnType respawnReason, Vector3i pos)
         {
             Log.Debug("Api.PlayerSpawnedInWorld called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerSpawnedInWorld, t => new PlayerSpawnedInWorldEventArgs()
+            CommandTools.InvokeScriptEvents(ScriptEvent.playerSpawnedInWorld, () => new PlayerSpawnedInWorldEventArgs()
             {
-                eventType  = t.ToString(),
                 reason     = respawnReason.ToString(),
                 position   = pos,
                 clientInfo = clientInfo,
@@ -134,9 +131,8 @@ namespace ScriptingMod
         public override void PlayerDisconnected(ClientInfo clientInfo, bool shutdown)
         {
             Log.Debug("Api.PlayerDisconnected called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerDisconnected, t => new PlayerDisconnectedEventArgs()
+            CommandTools.InvokeScriptEvents(ScriptEvent.playerDisconnected, () => new PlayerDisconnectedEventArgs()
             {
-                eventType  = t.ToString(),
                 clientInfo = clientInfo,
             });
         }
@@ -149,12 +145,11 @@ namespace ScriptingMod
         public override void SavePlayerData(ClientInfo clientInfo, PlayerDataFile playerDataFile)
         {
             Log.Debug("Api.SavePlayerData called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerSaveData, t =>
+            CommandTools.InvokeScriptEvents(ScriptEvent.playerSaveData, () =>
             {
                 var playerDataDir = GameUtils.GetPlayerDataDir().Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
                 return new PlayerSaveDataEventArgs()
                 {
-                    eventType      = t.ToString(),
                     playerDataFile = playerDataDir + clientInfo.playerId + "." + PlayerDataFile.EXT,
                     clientInfo     = clientInfo,
                 };
@@ -177,14 +172,13 @@ namespace ScriptingMod
             Log.Debug("Api.ChatMessage called.");
             var args = new ChatMessageEventArgs()
             {
-                eventType   = ScriptEvent.chatMessage.ToString(),
                 messageType = messageType.ToString(),
                 from        = mainName,
                 message     = message,
                 clientInfo  = clientInfo,
             };
 
-            CommandTools.InvokeScriptEvents(ScriptEvent.chatMessage, t => args);
+            CommandTools.InvokeScriptEvents(ScriptEvent.chatMessage, () => args);
 
             return !args.isPropagationStopped;
         }
@@ -198,9 +192,8 @@ namespace ScriptingMod
         {
             // No logging to avoid spam
             // Log.Debug("Api.CalcChunkColorsDone called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.chunkMapCalculated, t => new ChunkMapCalculatedEventArgs()
+            CommandTools.InvokeScriptEvents(ScriptEvent.chunkMapCalculated, () => new ChunkMapCalculatedEventArgs()
             {
-                eventType = t.ToString(),
                 chunkKey  = chunk.Key,
                 chunkPos  = ChunkTools.ChunkKeyToChunkXZ(chunk.Key),
             });

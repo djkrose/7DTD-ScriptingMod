@@ -39,12 +39,11 @@ namespace ScriptingMod.Patches
             else
                 return true;
 
-            CommandTools.InvokeScriptEvents(eventType, t =>
+            CommandTools.InvokeScriptEvents(eventType, () =>
             {
                 var sourceEntity = GameManager.Instance.World?.GetEntity(_dmResponse.Source?.getEntityId() ?? -1) as EntityAlive;
                 return new EntityDamagedEventArgs
                 {
-                    eventType        = t.ToString(),
                     position         = __instance.GetBlockPosition(),
                     entityId         = __instance.entityId,
                     entityName       = __instance.EntityName,

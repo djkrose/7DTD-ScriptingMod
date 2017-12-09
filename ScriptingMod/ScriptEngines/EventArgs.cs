@@ -8,7 +8,6 @@ namespace ScriptingMod.ScriptEngines
 {
     public class ScriptEventArgs
     {
-        public string eventType;
     }
 
     public class ChatMessageEventArgs : ScriptEventArgs
