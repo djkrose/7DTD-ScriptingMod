@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -32,7 +33,11 @@ namespace ScriptingMod
         public int RepairCounter;
         public bool PatchCorpseItemDupeExploit;
 
-        [NotNull] public HashSet<ScriptEvent> LogEvents = new HashSet<ScriptEvent>();
+        [DefaultValue(true)]
+        public bool Telemetry = true;
+
+        [NotNull]
+        public HashSet<ScriptEvent> LogEvents = new HashSet<ScriptEvent>();
             // new HashSet<ScriptEvent>(Enum.GetValues(typeof(ScriptEvent)).Cast<ScriptEvent>()); // all
 
         [NotNull]

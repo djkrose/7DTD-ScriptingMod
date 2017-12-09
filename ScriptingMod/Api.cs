@@ -51,7 +51,8 @@ namespace ScriptingMod
             EacTools.Init();
             CommandTools.InitEvents();
             RepairEngine.InitAuto();
-            Log.Out($"Done initializing {Constants.ModNameFull}.");
+            TelemetryTools.Init();
+            Log.Out($"Done initializing {Constants.ModName}.");
 
             CommandTools.InvokeScriptEvents(ScriptEvent.gameStartDone, () => new ScriptEventArgs());
         }
@@ -70,6 +71,7 @@ namespace ScriptingMod
         public override void GameShutdown()
         {
             Log.Debug("Api.GameShutdown called.");
+            TelemetryTools.Shutdown();
             CommandTools.InvokeScriptEvents(ScriptEvent.gameShutdown, () => new ScriptEventArgs());
         }
 
@@ -197,6 +199,16 @@ namespace ScriptingMod
                 chunkKey  = chunk.Key,
                 chunkPos  = ChunkTools.ChunkKeyToChunkXZ(chunk.Key),
             });
+        }
+
+        /// <summary>
+        /// Returns the Mod instance that is associated with the currently executing assembly,
+        /// or null if it is not (yet) fully loaded in the list of mods.
+        /// This approach is better than just using GetMod(modName) because the user could've changed the modname in ModInfo.xml.
+        /// </summary>
+        internal static Mod GetExecutingMod()
+        {
+            return ModManager.GetLoadedMods()?.Where(m => m.Assembly.Equals(typeof(Api).Assembly)).SingleOrDefault();
         }
 
     }

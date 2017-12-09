@@ -31,18 +31,21 @@ namespace ScriptingMod.Commands
 
         public override void Execute(List<string> parameters, CommandSenderInfo senderInfo)
         {
+            TelemetryTools.CollectEvent("command", "execute", GetCommands()[0]);
             try
             {
-                var modInfo = ModManager.GetMod(Constants.ModNameFull)?.ModInfo;
+                var modInfo = Api.GetExecutingMod()?.ModInfo;
                 if (modInfo == null)
                 {
-                    SdtdConsole.Instance.Output(Constants.ModNameFull);
-                    SdtdConsole.Instance.Output("Could not load mod infos. Have you modified the ModInfo.xml?");
+                    SdtdConsole.Instance.Output(Constants.ModName);
+                    SdtdConsole.Instance.Output("Could not load mod infos.");
                 }
                 else
                 {
                     // ReSharper disable once UnreachableCode
-                    SdtdConsole.Instance.Output(Constants.ModNameFull + " - Version " + modInfo.Version.Value + (Log.IsDebug ? " DEBUG" : ""));
+                    SdtdConsole.Instance.Output(modInfo.Name.Value + " - Version " + modInfo.Version.Value + (Log.IsDebug ? " DEBUG" : ""));
+                    if (modInfo.Name.Value != Constants.ModName)
+                        SdtdConsole.Instance.Output("Original mod name: " + Constants.ModName);
                     SdtdConsole.Instance.Output(modInfo.Description.Value);
                     if (!string.IsNullOrEmpty(modInfo.Website.Value))
                         SdtdConsole.Instance.Output("Website: " + modInfo.Website.Value);
