@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<project baseDir="bin\Release" outputDir="confused" xmlns="http://confuser.codeplex.com">
-  <!--
-  File format: https://github.com/yck1509/ConfuserEx/blob/master/docs/ProjectFormat.md
-  -->
-  <rule pattern="true" preset="aggressive" />
-  <module path="ScriptingMod.dll" />
-  <probePath>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\7DaysToDieServer_Data\Managed</probePath>
-</project>

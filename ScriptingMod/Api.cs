@@ -21,6 +21,9 @@ namespace ScriptingMod
         public Api()
         {
             Log.Debug("Api constructor called.");
+#if DEBUG
+            Log.Warning("ScriptingMod is compiled in DEBUG mode! This can hurt server performance significantly and will fill the logfile fast with useless information.");
+#endif
             Log.Out("Initializing phase 1/3 ...");
             NonPublic.Init();
             PersistentData.Load();

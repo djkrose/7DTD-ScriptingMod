@@ -22,7 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -31,7 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Test|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -196,9 +196,6 @@
     <Content Include="scripts\_inspect.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="Confuser.crproj">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="ILMerge.props" />
     <None Include="ILMerge.targets">
       <SubType>Designer</SubType>
@@ -219,7 +216,6 @@
     </PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props" Condition="Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props')" />
-  <Import Project="..\packages\MSBuild.ConfuserEx.1.0.0.0\build\MSBuild.ConfuserEx.targets" Condition="Exists('..\packages\MSBuild.ConfuserEx.1.0.0.0\build\MSBuild.ConfuserEx.targets')" />
   <Import Project="ILMerge.targets" Condition="Exists('ILMerge.targets')" />
   <Import Project="Build.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
