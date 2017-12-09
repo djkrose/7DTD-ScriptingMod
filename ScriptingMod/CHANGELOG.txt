@@ -1,5 +1,6 @@
-﻿Version 0.15 - compatible with A16.4 (b8)
+﻿Version 1.0 - compatible with A16.4 (b8)
 
+- Removed all obfuscation and made the mod open source.
 - Added event system that allows logging or scripting of 28 events.
 - Added command "dj-log-events" to manage event logging. See help.
 - Script files can be disabled by prefixing them with underscore (_). Non-trivial example scrips are disabled by default.
