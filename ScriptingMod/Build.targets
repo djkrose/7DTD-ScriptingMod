@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+  Extend the Visual Studio Build Process: https://msdn.microsoft.com/en-us/library/ms366724(v=vs.80).aspx
+  Build target order: https://stackoverflow.com/a/5927512/785111
+  -->
+  
+  <!-- Properties used in multiple targets -->
+  <PropertyGroup>
+    <GameFolder>C:\Steam\SteamApps\common\7 Days to Die Dedicated Server\</GameFolder>
+    <ModsFolder>$(GameFolder)Mods\</ModsFolder>
+    <InstallFolder>$(ModsFolder)$(ProjectName)\</InstallFolder>
+    <ManagedFolder>$(GameFolder)7DaysToDieServer_Data\Managed\</ManagedFolder>
+  </PropertyGroup>
+  
+  <!-- Remove old release zip files, which would otherwise be installed as mod or get packed itself into the new release -->
+  <Target Name="RemoveZipMod" BeforeTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <ZipFiles Include="$(OutputPath)*.zip" />
+    </ItemGroup>
+    <Delete Files="@(ZipFiles)" />
+  </Target>
+  
+  <!-- Create Mono CLR symbol files (.mdb) -->
+  <Target Name="GenerateMonoSymbols" AfterTargets="AfterBuild" Condition="Exists('$(OutputPath)\$(AssemblyName).pdb')">
+    <PropertyGroup>
+      <MonoMdbGenerator>$(SolutionDir)packages\Mono.pdb2mdb.0.1.0.20130128\tools\pdb2mdb.exe</MonoMdbGenerator>
+    </PropertyGroup>
+    <Message Text="$(ProjectName) -&gt; $(TargetPath).mdb" Importance="High" />
+    <Exec Command="$(MonoMdbGenerator) $(TargetPath)" WorkingDirectory="$(MSBuildProjectDirectory)\$(OutputPath)" />
+  </Target>
+
+  <!-- Shutdown a running server to free locked files before reinstalling the mod  -->
+  <Target Name="ShutdownServer">
+    <PropertyGroup>
+      <ServerExe>7DaysToDieServer.exe</ServerExe>
+    </PropertyGroup>
+    <Exec Command="tasklist /FI &quot;IMAGENAME eq $(ServerExe)&quot; 2&gt;NUL | find /I /N &quot;$(ServerExe)&quot;&gt;NUL" IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="ErrorCode"/>
+    </Exec>
+    <Message Text="Server is not running. No shutdown necessary." Condition="'$(ErrorCode)' != '0'" />
+    <Message Text="Server is running. Shutting down ..." Condition="'$(ErrorCode)' == '0'" />
+    <!-- Server often neds a couple of kill signals before it complies ... -->
+    <Exec Command="taskkill /IM $(ServerExe) 2&gt; nul" IgnoreExitCode="true" Condition="'$(ErrorCode)' == '0'"/>
+    <Exec Command="taskkill /IM $(ServerExe) 2&gt; nul" IgnoreExitCode="true" Condition="'$(ErrorCode)' == '0'"/>
+    <Exec Command="taskkill /IM $(ServerExe) 2&gt; nul" IgnoreExitCode="true" Condition="'$(ErrorCode)' == '0'"/>
+  </Target>
+  
+  <!-- Copy all mod files into 7DTD Mods folder after the build -->
+  <Target Name="InstallMod" AfterTargets="AfterBuild" DependsOnTargets="ShutdownServer" Condition="Exists('$(ModsFolder)')">
+    <ItemGroup>
+      <InstallFiles Include="$(OutputPath)**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(InstallFiles)" DestinationFolder="$(InstallFolder)%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Copy the Resharper extrernal annotations next to their DLLs so that Resharper picks them up -->
+  <Target Name="InstallExternalAnnotations" AfterTargets="BeforeBuild" Condition="Exists('$(ManagedFolder)')">
+    <ItemGroup>
+      <ExternalAnnotationsFiles Include="$(ProjectDir)*.ExternalAnnotations.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ExternalAnnotationsFiles)" DestinationFolder="$(ManagedFolder)" SkipUnchangedFiles="true"/>
+  </Target>
+  
+  <!-- Pack all files together into a distribution zip file after the build -->
+  <Target Name="ZipMod" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+    <ReadLinesFromFile File="ModInfo.xml">
+      <Output TaskParameter="Lines" ItemName="ItemsFromFile" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <In>@(ItemsFromFile)</In>
+      <Pattern>&lt;Version value="([^"]+)"/&gt;</Pattern>
+      <Version>$([System.Text.RegularExpressions.Regex]::Match($(In), $(Pattern)).Groups[1].Value)</Version>
+      <ReleaseZipPath>$(OutputPath)ScriptingMod_v$(Version).zip</ReleaseZipPath>
+      <TempFolder>$(OutputPath)temp\</TempFolder>
+      <TempInstallFolder>$(TempFolder)Mods\$(TargetName)\</TempInstallFolder>
+    </PropertyGroup>
+    <RemoveDir Directories="$(TempFolder)"/>
+    <ItemGroup>
+      <CompressFiles Include="$(OutputPath)**\*.*" />
+    </ItemGroup>
+    <MakeDir Directories="$(TempInstallFolder)"/>
+    <Copy SourceFiles="@(CompressFiles)" DestinationFiles="@(CompressFiles->'$(TempInstallFolder)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Exec Command="PowerShell -command Compress-Archive -Force -Path $(TempFolder)* -DestinationPath $(ReleaseZipPath)" />
+    <RemoveDir Directories="$(TempFolder)"/>
+  </Target>
+  
+  <!-- Remove the bin and obj folders for a full clean -->
+  <Target Name="CleanBinObj" AfterTargets="AfterClean">
+    <RemoveDir Directories="bin/" />
+    <RemoveDir Directories="obj/" />
+  </Target>
+
+  <!-- Remove installed mod from 7dtd as part of clean -->
+  <Target Name="CleanInstalledMod" AfterTargets="AfterClean" DependsOnTargets="ShutdownServer" Condition="Exists('$(ModsFolder)')">
+    <RemoveDir Directories="$(InstallFolder)" />
+  </Target>
+
+  <!-- Remove Resharper external annotations for game DLLs -->
+  <Target Name="CleanExternalAnnotations" AfterTargets="AfterClean" Condition="Exists('$(ManagedFolder)')">
+    <ItemGroup>
+      <ExternalAnnotationsFiles Include="$(ManagedFolder)*.ExternalAnnotations.xml" />
+    </ItemGroup>
+    <Delete Files="@(ExternalAnnotationsFiles)" />
+  </Target>
+  
+</Project>

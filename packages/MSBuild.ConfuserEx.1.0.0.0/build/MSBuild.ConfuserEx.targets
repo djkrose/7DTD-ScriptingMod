@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+***********************************************************************************************
+MSBuild.ConfuserEx.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+***********************************************************************************************
+-->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+
+    <!-- ConfuserToolsPath -->
+    <ConfuserToolsPath>$(MSBuildThisFileDirectory)..\..\ConfuserEx.Final.1.0.0\tools</ConfuserToolsPath>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <!-- Confuser command -->
+    <ConfuserExePath Condition=" '$(ConfuserExePath)' == '' ">$(ConfuserToolsPath)\Confuser.CLI.exe</ConfuserExePath>
+
+    <ConfuserCommand Condition=" '$(OS)' == 'Windows_NT'">"$(ConfuserExePath)"</ConfuserCommand>
+    <ConfuserCommand Condition=" '$(OS)' != 'Windows_NT' ">mono --runtime=v4.0.30319 "$(ConfuserExePath)"</ConfuserCommand>
+
+    <!-- PaddedSolutionDir -->
+    <PaddedSolutionDir Condition=" '$(OS)' == 'Windows_NT'">"$(SolutionDir) "</PaddedSolutionDir>
+    <PaddedSolutionDir Condition=" '$(OS)' != 'Windows_NT' ">"$(SolutionDir)"</PaddedSolutionDir>
+
+    <!-- ProjectFileName -->
+    <ProjectFileName Condition=" '$(OS)' == 'Windows_NT'">$([System.IO.Path]::Combine($(ProjectDir), "$(ProjectName).crproj"))</ProjectFileName>
+    <ProjectFileName Condition=" '$(OS)' == 'Windows_NT' AND !Exists('$(ProjectFileName)')">$([System.IO.Path]::Combine($(ProjectDir), "Confuser.crproj"))</ProjectFileName>
+
+    <ProjectFileName Condition=" '$(OS)' != 'Windows_NT' ">$(ProjectDir)$(ProjectName).crproj</ProjectFileName>
+    <ProjectFileName Condition=" '$(OS)' != 'Windows_NT' AND !Exists('$(ProjectFileName)')">$(ProjectDir)Confuser.crproj</ProjectFileName>
+    
+    <!-- Commands -->
+    <ConfuseCommand>$(ConfuserCommand) "$(ProjectFileName)"</ConfuseCommand>
+
+  </PropertyGroup>
+
+  <Target Name="CheckPrerequisites">
+    <!-- Raise an error if we're unable to locate confuser.cli.exe  -->
+    <Error Condition="'$(DownloadConfuserExe)' != 'true' AND !Exists('$(ConfuserExePath)')" Text="Unable to locate '$(ConfuserExePath)'" />
+  </Target>
+
+  <Target Name="Confuser" AfterTargets="AfterBuild" DependsOnTargets="CheckPrerequisites" Condition="Exists('$(ProjectFileName)') and '$(ConfigurationName)' == 'Release'" >
+    <MakeDir Directories="$(TargetDir)confused"/>
+    <Exec WorkingDirectory="$(ProjectDir)" Command="$(ConfuseCommand)" />
+    <ItemGroup>
+      <FilesToMove Include="$(TargetDir)confused\*.*"/>
+    </ItemGroup>
+    <Move SourceFiles="@(FilesToMove)" DestinationFolder="$(TargetDir)" OverwriteReadOnlyFiles="true" Condition=" '$(OS)' == 'Windows_NT'" />
+    <RemoveDir Directories="$(TargetDir)confused" Condition=" '$(OS)' == 'Windows_NT'" />
+  </Target>
+  
+</Project>

@@ -1,0 +1,119 @@
+﻿Version 1.0 - compatible with A16.4 (b8)
+
+- Removed all obfuscation and made the mod open source.
+- Added event system that allows logging or scripting of 28 events.
+- Added command "dj-log-events" to manage event logging. See help.
+- Script files can be disabled by prefixing them with underscore (_). Non-trivial example scrips are disabled by default.
+- Added a couple of example event scripts that can be activated by removing the trailing underscore (_).
+- Changed script commands js-test, js-minibike, js-sleepers, and lua-test to all use "dj-" prefix instead.
+- Changed syntax of "dj-patch XYZ on" to "dj-patch xyz /on" to match other command systax like dj-repair and dj-log-events.
+- Fixed: Parsing of script metadata can be very slow or freeze when file has many comments [#4]
+- Fixed: Incompatible line breaks in scripts on Linux [#28]
+- Removed deprecated command "dj-check-power". Use "dj-repair" instead.
+
+
+Version 0.14 - compatible with A16.4 (b8)
+
+- Added repair task 't' to fix bugged trees that have zero HP without falling and give endless wood
+
+
+Version 0.13 - compatible with A16.4 (b8)
+
+- Add runtime patching system and command "dj-patch"
+- Added patch for zombie corpse item dupe exploit; activate with: dj-patch corpse-dupe on
+- Removed command aliases "js" and "lua" to leave only the "-test" ones.
+
+
+Version 0.12 - compatible with A16.3 (b12) and A16.4 (b8)
+
+- Added dj-eac-whitelist command, which allows to exempt selected players from EAC checks and use modded clients on EAC-enabled servers
+- Fixed typo in js-sleepers command help
+
+
+Version 0.11 - compatible ONLY with A16.3 (b12)
+
+- Fixed bug that caused a JS exception when using console.log
+- Improved js-minibike script to also rotate minibike in direction of player for easy take-off
+- Fixed js-minibike script to not work properly when Steam Family Sharing is active
+- Added js-variables script to show how to access and iterate basic game objects
+
+
+Version 0.10 - compatible ONLY with A16.3 (b12)
+
+- Fixed error message when dj-import is called without parameter
+- Added function "importAssembly(assemblyName)" to JavaScript engine to allow importing all types of any .Net assembly
+- Added global variables "sender" and "player" to scripting engines (lua and js)
+- Added example script js-sleepers.js to show import of assemblies and access to objects
+- Added background monitoring of added/removed/changed scripts with automatic reloading of script commands without server restart
+- Added new js-minibike example script that allows players to teleport their minibike back to them
+
+
+Version 0.9 - compatible ONLY with A16.3 (b12)
+
+- Updated compatibility to 7DTD A16.3 (b12)
+- Replaced dj-power with dj-repair to add other fix tasks in the future.
+- Added repair task to restart stopped saving of power and vehicle data (also fixed in A16.3 b7)
+- Added repair task to reset locked biome respawn
+- Fixed bug that would trigger automatic fixing of power chunks also on unrelated errors
+- Fixed error message on import of rotated prefab with /all option
+- Fixed occasional error "Could not add newly generated chunk to cache." in dj-regen command
+
+
+Version 0.8 - compatible ONLY with A16.2 (b7)
+
+- Added command dj-regen to regenerate and redecorate chunks
+- Added automatic mode to dj-check-power
+- Improved parameter parsing and error messages
+
+
+Version 0.7 - compatible ONLY with A16.2 (b7)
+
+- Improved dj-import/dj-export command to fully support electricity blocks and wires
+- Improved fixing algorithm in dj-check-power command to be more sustainable
+- Added checks in dj-check-power to find other power-related corruption problems
+
+
+Version 0.6 - compatible ONLY with A16.2 (b7)
+
+- Updated compatibility to 7DTD A16.2 (b7)
+- Fixed a bug where permissions for script commands could not be set
+- Extended dj-check-tripwires to repair ALL power triggers: Switch, PressurePlate, TimerRelay, Motion, TripWire
+- Renamed dj-check-tripwires to dj-check-power to reflect the broader usecase
+- Added command dj-pos to show exended informaton about current player's position
+- Added error checks on all commands
+
+
+Version 0.5 - compatible ONLY with 7DTD A16.1 (b1)
+
+- Improved compatibility with Assembly-CSharp.dll to (hopefully) support future versions
+- Added LICENSE.txt to credit the mod and all included third-party software properly
+- Fixed import/export commands to correctly consider player's underground positions when clipping is off
+- Fixed a bug where reloading chunks after dj-import could lead to a KeyNotFoundException
+- Added command dj-check-tripwires to check and repair corrupt tripwire data
+
+
+Version 0.4 - compatible ONLY with 7DTD A16.1 (b1)
+
+- Built-in maintenance commands: dj-version, dj-reset-lua, dj-reset-js
+- Added obfuscation until source code is released
+
+
+Version 0.3-internal - compatible ONLY with 7DTD A16.1 (b1)
+
+- Update to A16.1 (b1)
+- Fixed bug where dj-import would throw exception when players with corrupt chunks are online
+- Two example scripts that show .Net and Unity access
+- Built-in export/import command for prefabs incl. full block metadata (containers, signs, doors, etc.)
+
+
+Version 0.2-internal - compatible ONLY with 7DTD A16.0 (b1)
+
+- Added support for JavaScript
+- Added some simple example scripts
+
+
+Version 0.1-internal - compatible ONLY with 7DTD A16.0 (b1)
+
+- First basic mod infrastructure
+- Dynamic command loading
+- Added support for Lua script

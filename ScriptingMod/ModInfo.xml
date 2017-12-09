@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+  <ModInfo>
+    <Name value="djkrose's Scripting Mod"/>
+    <Description value="Adds scripting support and other useful functionality to 7 Days To Die dedicated server."/>
+    <Author value="djkrose"/>
+    <Version value="1.0RC1"/>
+    <Website value="https://github.com/djkrose/7DTD-ScriptingMod"/>
+  </ModInfo>
+</xml>
