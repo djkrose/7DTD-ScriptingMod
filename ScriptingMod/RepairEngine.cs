@@ -27,7 +27,7 @@ namespace ScriptingMod
             {"t", "Fix bugged trees that have zero HP without falling and give endless wood."},
         };
 
-        public const string TasksDefault = "dprt";
+        public const string TasksDefault = "prt";
 
         /// <summary>
         /// Entities are allowed to wander this many chunks away from their initial 5x5 chunk area
