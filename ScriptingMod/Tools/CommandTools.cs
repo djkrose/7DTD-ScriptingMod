@@ -95,6 +95,7 @@ namespace ScriptingMod.Tools
                     entityId   = entity.entityId,
                     entityName = (entity as EntityAlive)?.EntityName,
                     position   = entity.GetBlockPosition(),
+                    entity     = entity, // because entity is not yet in World and can otherwise not be retrieved from scripts
                 });
             };
 
@@ -108,6 +109,7 @@ namespace ScriptingMod.Tools
                     entityId   = entity.entityId,
                     entityName = (entity as EntityAlive)?.EntityName,
                     position   = entity.GetBlockPosition(),
+                    entity     = entity,
                 });
             };
 

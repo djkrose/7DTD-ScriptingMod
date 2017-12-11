@@ -17,7 +17,7 @@ namespace ScriptingMod.ScriptEngines
         public string message;
         [CanBeNull] // doesn't need to come from player: kill messages, server messages, etc
         public ClientInfo clientInfo;
-
+        [JsonIgnore]
         public bool isPropagationStopped = false;
 
         public void stopPropagation()
@@ -82,6 +82,8 @@ namespace ScriptingMod.ScriptEngines
         public int entityId;
         public string entityName;
         public Vector3i position;
+        [JsonIgnore]
+        public Entity entity;
     }
 
     public class EntityUnloadedEventArgs : ScriptEventArgs
@@ -91,6 +93,8 @@ namespace ScriptingMod.ScriptEngines
         public int entityId;
         public string entityName;
         public Vector3i position;
+        [JsonIgnore]
+        public Entity entity;
     }
 
     public class ChunkLoadedUnloadedEventArgs : ScriptEventArgs
