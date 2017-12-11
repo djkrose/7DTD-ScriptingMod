@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -14,10 +13,8 @@ namespace ScriptingMod
     // based on: https://github.com/Mervill/UnityLitJson/blob/master/Source/Unity/UnityTypeBindings.cs
     internal static class LitJsonTypeBindings
     {
-        // ReSharper disable once AssignNullToNotNullAttribute
-        private static readonly Type _exporterFuncType = typeof(JsonMapper).Assembly.GetType(typeof(ExporterFunc<>).FullName, true);
         private static readonly MethodInfo _miRegisterExporter = ReflectionTools.GetMethod(typeof(JsonMapper), nameof(JsonMapper.RegisterExporter));
-        private static readonly MethodInfo _miIgnore = ReflectionTools.GetMethod(typeof(LitJsonTypeBindings), nameof(Ignore));
+        private static readonly MethodInfo _miConvertToTyped = ReflectionTools.GetMethod(typeof(LitJsonTypeBindings), nameof(ConvertToTyped));
 
         private static bool _registerd;
 
@@ -59,29 +56,21 @@ namespace ScriptingMod
 
             // Register all Entity and their derived types as ignored
             var entityTypes = typeof(Entity).Assembly.GetExportedTypes().Where(t => typeof(Entity).IsAssignableFrom(t));
-            RegisterIgnoredTypes(entityTypes);
+            foreach (var type in entityTypes)
+                RegisterExporter(type, WriteObject);
 
             Log.Out("Registered all custom JSON type bindings.");
         }
 
-        /// <summary>
-        /// Creates for each given type generics for JsonMapper.RegisterExporter, LitJson.ExporterFunc, and Ignore,
-        /// and registers the empty method as exporter for this type
-        /// </summary>
-        /// <param name="types"></param>
-        private static void RegisterIgnoredTypes(IEnumerable<Type> types)
-        {
-            foreach (var type in types)
-            {
-                var exporter = Delegate.CreateDelegate(_exporterFuncType.MakeGenericType(type), _miIgnore.MakeGenericMethod(type));
-                _miRegisterExporter.MakeGenericMethod(type).Invoke(null, new object[] { exporter });
-                Log.Debug($"Registered ignored JSON type {type}.");
-            }
-        }
-
         private static void RegisterExporter(Type type, Action<object, JsonWriter> exporter)
         {
-            // TODO: Try if this works better...
+            var typedExporter = _miConvertToTyped.MakeGenericMethod(type).Invoke(null, new object[]{ exporter });
+            _miRegisterExporter.MakeGenericMethod(type).Invoke(null, new object[] { typedExporter });
+        }
+
+        private static ExporterFunc<T> ConvertToTyped<T>(Action<object, JsonWriter> action)
+        {
+            return (obj, writer) => action(obj, writer);
         }
 
         private static Type ReadType(string s)
@@ -89,10 +78,12 @@ namespace ScriptingMod
             return Type.GetType(s);
         }
 
-        [SuppressMessage("ReSharper", "UnusedParameter.Local")]
-        private static void Ignore<T>(T obj, JsonWriter w)
+        /// <summary>
+        /// Writes the objects full type name
+        /// </summary>
+        private static void WriteObject(object obj, JsonWriter w)
         {
-            // intentionally left blank
+            w.Write(obj.GetType().FullName);
         }
 
         private static void WriteType(Type v, JsonWriter w)
