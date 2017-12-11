@@ -91,11 +91,9 @@
     <Compile Include="Extensions\EnumExtensions.cs" />
     <Compile Include="Extensions\ExceptionExtensions.cs" />
     <Compile Include="Extensions\LintJsonExtensions.cs" />
-    <Compile Include="JsonIgnoreAttribute.cs" />
     <Compile Include="LitJsonTypeBindings.cs" />
     <Compile Include="Patches\EntityDied.cs" />
     <Compile Include="Patches\EntityDamaged.cs" />
-    <Compile Include="Patches\JsonFilter.cs" />
     <Compile Include="Patches\PlayerEnteredChunk.cs" />
     <Compile Include="Patches\PlayerStatsChanged.cs" />
     <Compile Include="ScriptEngines\EventArgs.cs" />

@@ -51,8 +51,6 @@ namespace ScriptingMod.Tools
         private static bool IsPatchedWithType(HarmonyMethod harmonyMethod, Type withType)
         {
             MethodInfo originalMethod = AccessTools.Method(harmonyMethod.originalType, harmonyMethod.methodName, harmonyMethod.parameter);
-            if (originalMethod == null) // patch for non-existant type/method
-                return false;
             Harmony.Patches patches = PatchProcessor.IsPatched(originalMethod);
             if (patches == null)
                 return false;

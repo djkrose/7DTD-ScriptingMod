@@ -76,20 +76,6 @@ namespace ScriptingMod.Tools
         }
 
         /// <summary>
-        /// Returns a type from the given assembly;
-        /// </summary>
-        /// <param name="assembly"></param>
-        /// <param name="fullTypeName"></param>
-        /// <exception cref="ReflectionException">Thrown if no matching type could be found</exception>
-        public static Type GetType(Assembly assembly, string fullTypeName)
-        {
-            var type = assembly.GetType(fullTypeName, false);
-            if (type == null)
-                throw new ReflectionException($"Could not find type {fullTypeName} in assembly {assembly}.");
-            return type;
-        }
-
-        /// <summary>
         /// Use reflection to get nested type that contains a field with the type
         /// </summary>
         /// <param name="target"></param>

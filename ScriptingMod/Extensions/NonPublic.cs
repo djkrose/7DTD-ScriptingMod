@@ -62,14 +62,6 @@ namespace ScriptingMod.Extensions
 
         private static FieldInfo       fi_NetPackagePlayerStats_entityId;                      // NetPackagePlayerStats      -> private int int_0;
 
-        private static Type            t_JsonMapper_PropertyMetadata;                          // LitJson.JsonMapper         -> internal struct PropertyMetadata
-        private static FieldInfo       fi_JsonMapper_typeProperties;                           // LitJson.JsonMapper         -> private static IDictionary<Type, IList<PropertyMetadata>> type_properties;
-        private static FieldInfo       fi_JsonMapper_typePropertiesLock;                       // LitJson.JsonMapper         -> private static readonly object type_properties_lock = new object();
-
-        private static FieldInfo       fi_PropertyMetadata_Info;                               // LitJson.PropertyMetadata   -> public MemberInfo Info;
-        private static FieldInfo       fi_PropertyMetadata_IsField;                            // LitJson.PropertyMetadata   -> public bool IsField;
-        private static FieldInfo       fi_PropertyMetadata_Type;                               // LitJson.PropertyMetadata   -> public Type Type;
-
         public static void Init()
         {
             try
@@ -111,13 +103,6 @@ namespace ScriptingMod.Extensions
                 ev_MasterServerAnnouncer_add_ServerRegistered          = ReflectionTools.GetAddMethod(typeof(MasterServerAnnouncer), typeof(void), new [] { typeof(Action) });
 
                 fi_NetPackagePlayerStats_entityId                      = ReflectionTools.GetField(typeof(NetPackagePlayerStats), typeof(int), 0); // WARNING! Relying on member order here!
-
-                t_JsonMapper_PropertyMetadata                          = ReflectionTools.GetType(typeof(LitJson.JsonMapper).Assembly, "LitJson.PropertyMetadata");
-                fi_JsonMapper_typeProperties                           = ReflectionTools.GetField(typeof(LitJson.JsonMapper), "type_properties");
-                fi_JsonMapper_typePropertiesLock                       = ReflectionTools.GetField(typeof(LitJson.JsonMapper), "type_properties_lock");
-                fi_PropertyMetadata_Info                               = ReflectionTools.GetField(t_JsonMapper_PropertyMetadata, "Info");
-                fi_PropertyMetadata_IsField                            = ReflectionTools.GetField(t_JsonMapper_PropertyMetadata, "IsField");
-                fi_PropertyMetadata_Type                               = ReflectionTools.GetField(t_JsonMapper_PropertyMetadata, "Type");
 
                 Log.Out("Successfilly established reflection references.");
             }
@@ -390,35 +375,6 @@ namespace ScriptingMod.Extensions
                 {
                     Base = ci_CommandObjectPair_Constructor.Invoke(new [] { command, commandObject });
                 }
-            }
-        }
-
-        public static class JsonMapper
-        {
-            public static object GetTypePropertiesLock()
-            {
-                return fi_JsonMapper_typePropertiesLock.GetValue(null);
-            }
-
-            public static IDictionary GetTypeProperties()
-            {
-                return (IDictionary) fi_JsonMapper_typeProperties.GetValue(null);
-            }
-
-            public static IList CreatePropertyMetadataList()
-            {
-                Type listType = typeof(List<>);
-                Type listOfPropertyMetadataType = listType.MakeGenericType(t_JsonMapper_PropertyMetadata);
-                return (IList)Activator.CreateInstance(listOfPropertyMetadataType);
-            }
-
-            public static object CreatePropertyMetadata(MemberInfo info, bool isField, Type type)
-            {
-                var propertyMetadata = Activator.CreateInstance(t_JsonMapper_PropertyMetadata);
-                fi_PropertyMetadata_Info.SetValue(propertyMetadata, info);
-                fi_PropertyMetadata_IsField.SetValue(propertyMetadata, isField);
-                fi_PropertyMetadata_Type.SetValue(propertyMetadata, type);
-                return propertyMetadata;
             }
         }
 
