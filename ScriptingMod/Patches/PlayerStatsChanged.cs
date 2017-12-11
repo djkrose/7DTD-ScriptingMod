@@ -12,7 +12,7 @@ namespace ScriptingMod.Patches
 {
     [HarmonyPatch(typeof(NetPackagePlayerStats), "ProcessPackage")]
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-    public class PlayerStatsChanged
+    public static class PlayerStatsChanged
     {
         public class State
         {

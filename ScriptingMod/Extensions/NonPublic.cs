@@ -14,8 +14,11 @@ namespace ScriptingMod.Extensions
     /// Class abstracts access to non-public fields, properties, methods, and types through reflection ...
     /// ... for INSTANCE members by adding public getters/setters as extension methods, and
     /// ... for STATIC members/types by adding static members/types to nested classes with same name
+    ///     (Hopefully we get extensions for static members and properties soon!)
     /// 
-    /// Hopefully we get extensions for static members and properties soon, then the second part would become much cleaner!
+    /// Reflection is done separately instead of where/when needed for two reasons:
+    /// 1) Reflection is relatively slow and we should get memberInfos only once.
+    /// 2) When reflection breaks due to changes in the target DLL we know immediately and get clear error messages on startup.
     /// </summary>
     internal static class NonPublic
     {
@@ -375,8 +378,8 @@ namespace ScriptingMod.Extensions
             {
                 public object Base { get; }
 
-                public string Command => (string) NonPublic.fi_CommandObjectPair_CommandField.GetValue(Base);
-                public IConsoleCommand CommandObject => (IConsoleCommand) NonPublic.fi_CommandObjectPair_CommandObjectField.GetValue(Base);
+                public string Command => (string) fi_CommandObjectPair_CommandField.GetValue(Base);
+                public IConsoleCommand CommandObject => (IConsoleCommand) fi_CommandObjectPair_CommandObjectField.GetValue(Base);
 
                 public CommandObjectPair(object baseObject)
                 {
@@ -385,7 +388,7 @@ namespace ScriptingMod.Extensions
 
                 public CommandObjectPair(string command, object commandObject)
                 {
-                    Base = NonPublic.ci_CommandObjectPair_Constructor.Invoke(new [] { command, commandObject });
+                    Base = ci_CommandObjectPair_Constructor.Invoke(new [] { command, commandObject });
                 }
             }
         }
@@ -420,6 +423,5 @@ namespace ScriptingMod.Extensions
         }
 
         #endregion
-
     }
 }

@@ -49,7 +49,7 @@ namespace ScriptingMod
             JsonMapper.RegisterExporter<ClientInfo>(WriteClientInfo);
             JsonMapper.RegisterExporter<PlayerProfile>(WritePlayerProfile);
 
-            Log.Out("Registered all custom LitJson type bindings.");
+            Log.Out("Registered all custom JSON type bindings.");
         }
 
         private static Type ReadType(string s)

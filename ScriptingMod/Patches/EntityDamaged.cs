@@ -11,7 +11,7 @@ namespace ScriptingMod.Patches
 {
     [HarmonyPatch(typeof(EntityAlive), "ProcessDamageResponse")]
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-    public class EntityDamaged
+    public static class EntityDamaged
     {
         public static bool Prepare()
         {

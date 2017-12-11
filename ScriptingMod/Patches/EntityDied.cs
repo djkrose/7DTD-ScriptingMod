@@ -11,7 +11,7 @@ namespace ScriptingMod.Patches
 {
     [HarmonyPatch(typeof(EntityAlive), "ClientKill")]
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-    public class EntityDied
+    public static class EntityDied
     {
         public static bool Prepare()
         {

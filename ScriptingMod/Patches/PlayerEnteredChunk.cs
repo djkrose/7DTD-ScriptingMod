@@ -11,7 +11,7 @@ namespace ScriptingMod.Patches
 {
     [HarmonyPatch(typeof(Chunk), "AddEntityToChunk")]
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
-    public class PlayerEnteredChunk
+    public static class PlayerEnteredChunk
     {
 
         public static bool Prepare()
