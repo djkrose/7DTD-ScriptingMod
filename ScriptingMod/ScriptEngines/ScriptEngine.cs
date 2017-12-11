@@ -30,7 +30,7 @@ namespace ScriptingMod.ScriptEngines
         {
             ResetEngine();
             InitCommonValues();
-            SetValue("eventType", eventType);
+            SetValue("eventType", eventType.ToString());
             SetValue("event", eventArgs);
 
             var oldDirectory = Directory.GetCurrentDirectory();

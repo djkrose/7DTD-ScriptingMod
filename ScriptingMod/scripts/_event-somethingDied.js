@@ -12,11 +12,11 @@
     // In 'eventType' you will find the event name that triggered this script
     if (eventType == "zombieDied") {
 
-        message = "[FF6666]" + event.sourceEntityName + "[FFFFFF] just fearlessly killed a " + event.entityName + " with a clean hit to the " + event.hitBodyPart + ".";
+        message = "[FF6666]" + event.sourceEntityName + "[FFFFFF] just killed a zombie with a clean hit to the " + event.hitBodyPart.toLowerCase() + ".";
 
     } else if (eventType == "animalDied") {
 
-        message = "[FF6666]" + event.sourceEntityName + "[FFFFFF] just murdered this poor " + event.entityName + " by " + event.damageType + ".";
+        message = "[FF6666]" + event.sourceEntityName + "[FFFFFF] just murdered an animal by " + event.damageType.toLowerCase() + ".";
 
     } else {
 
@@ -32,7 +32,7 @@
             default: // Back, Front, Left, Right
                 direction = " from the " + event.hitDirection.toLowerCase() + ".";
         }
-        message = "[FF6666]" + event.sourceEntityName + "[FFFFFF] just killed his player [FF6666]" + event.entityName + "[FFFFFF]" + direction;
+        message = "[FF6666]" + event.sourceEntityName + "[FFFFFF] just killed the player [FF6666]" + event.entityName + "[FFFFFF]" + direction;
 
     }
 
