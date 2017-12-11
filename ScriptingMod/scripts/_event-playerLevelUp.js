@@ -3,5 +3,5 @@
 
 importAssembly('Assembly-CSharp');
 
-var text = "[FF6666]" + event.player.EntityName + " just reached level " + event.newLevel + "!";
+var text = "[FF6666]" + event.clientInfo.playerName + " just reached level " + event.newLevel + "!";
 GameManager.Instance.GameMessageServer(null, EnumGameMessages.Chat, text, "Server", false, "", false);

@@ -147,16 +147,19 @@
     <Compile Include="Tools\WorldTools.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="scripts\_event-level-up.js">
+    <Content Include="scripts\_event-somethingDied.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="scripts\_dj-pay.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\_event-item-lifetime.js">
+    <Content Include="scripts\_event-entityLoaded.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="scripts\_event-gameStartDone.js">
+    <Content Include="scripts\_event-playerLevelUp.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="scripts\_event-serverRegistered.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="scripts\dj-minibike.js">

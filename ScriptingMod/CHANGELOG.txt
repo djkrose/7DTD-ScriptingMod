@@ -1,10 +1,11 @@
 ﻿Version 1.0 - compatible with A16.4 (b8)
 
 - Removed all obfuscation and made the mod open source.
-- Added event system that allows logging or scripting of 28 events.
+- Added event system that allows logging or scripting of in-game events.
 - Added command "dj-log-events" to manage event logging. See help.
-- Script files can be disabled by prefixing them with underscore (_). Non-trivial example scrips are disabled by default.
-- Added a couple of example event scripts that can be activated by removing the trailing underscore (_).
+- Added 28 selected events with custom event data.
+- Added 5 example scripts for events.
+- Added possibility to disable scripts by prefixing them with underscore (_). Disabled example scripts.
 - Changed script commands js-test, js-minibike, js-sleepers, and lua-test to all use "dj-" prefix instead.
 - Changed syntax of "dj-patch XYZ on" to "dj-patch xyz /on" to match other command systax like dj-repair and dj-log-events.
 - Fixed: Parsing of script metadata can be very slow or freeze when file has many comments [#4]
