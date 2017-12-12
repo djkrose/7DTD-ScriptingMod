@@ -31,8 +31,6 @@ namespace ScriptingMod.Commands
             return (@"
                 Allows managing event logging to the server console. By default no events are logged, but logging can be enabled or
                 disbaled for each or all supported events individually. Log entries will contain additional event data in JSON format.
-                WARNING: Only enable logging for those events that you are really interested in! Enabling ALL events on a busy server
-                can hurt performance and will let the log file grow large.
                 Currently supported events: " + Environment.NewLine + events.Wrap(115).Indent(20) + @"
                 Usage:
                     1. dj-log-events
