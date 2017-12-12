@@ -406,7 +406,6 @@ namespace ScriptingMod.Tools
                 invokedEvent = new PersistentData.InvokedEvent()
                 {
                     EventName = eventType.ToString(),
-                    FirstCall = invocationLog.Indent(8) + Environment.NewLine + new string(' ', 6),
                     LastCalls = new List<string>()
                 };
                 PersistentData.Instance.InvokedEvents.Add(invokedEvent);

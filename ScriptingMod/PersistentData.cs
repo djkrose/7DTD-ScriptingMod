@@ -50,7 +50,6 @@ namespace ScriptingMod
         {
             [XmlAttribute]
             public string EventName;
-            public string FirstCall;
             public List<string> LastCalls;
         }
 
