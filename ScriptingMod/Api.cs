@@ -22,7 +22,7 @@ namespace ScriptingMod
         {
             Log.Debug("Api constructor called.");
 #if DEBUG
-            Log.Warning("ScriptingMod is compiled in DEBUG mode! This can hurt server performance significantly and will fill the logfile fast with useless information.");
+            Log.Warning("ScriptingMod is compiled in DEBUG mode! This can hurt server performance significantly and will fill the logfile with useless information fast.");
 #endif
             Log.Out("Initializing phase 1/3 ...");
             NonPublic.Init();
