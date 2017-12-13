@@ -1,7 +1,7 @@
 # djkrose's Scripting Mod
 Adds scripting support and other useful functionality to 7 Days To Die dedicated server.
 
-[![Download](https://abload.de/img/github-downloadm0ur7.png)](https://github.com/djkrose/7DTD-ScriptingMod/releases/latest)
+[![Download](https://raw.githubusercontent.com/wiki/djkrose/7DTD-ScriptingMod/images/github-download.png)](https://github.com/djkrose/7DTD-ScriptingMod/releases/latest)
 
 ## Scripting Examples
 
@@ -26,7 +26,7 @@ print "Hello Lua World!"
 
 2\. Drop file into *\\Mods\\ScriptingMod\\scripts* folder<br>
 3\. Execute commands: `help mylua` and `mylua`<br>
-![Example mylua](/Documentation/img/example-mylua.png?raw=true)<br>
+![Example mylua](https://raw.githubusercontent.com/wiki/djkrose/7DTD-ScriptingMod/images/example-myjs.png)<br>
 4\. Profit!
 </td>
 
@@ -43,7 +43,7 @@ console.log("Hello JavaScript World!");
 
 2\. Drop file into *\\Mods\\ScriptingMod\\scripts* folder<br>
 3\. Execute commands: `help myjs`and `myjs`<br>
-![Example mylua](/Documentation/img/example-myjs.png?raw=true)<br>
+![Example mylua](https://raw.githubusercontent.com/wiki/djkrose/7DTD-ScriptingMod/images/example-myjs.png)<br>
 4\. Profit!
 </td>
 
