@@ -31,8 +31,10 @@ namespace ScriptingMod.ScriptEngines
         public Vector3i position;
         public int entityId;
         public string entityName;
+        public string entitySteamId;
         public int? sourceEntityId;
         public string sourceEntityName;
+        public string sourceEntitySteamId;
         public string damageType;
         public string hitBodyPart;
         public string hitDirection;

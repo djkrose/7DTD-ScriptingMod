@@ -42,27 +42,32 @@ namespace ScriptingMod.Patches
             CommandTools.InvokeScriptEvents(eventType, () =>
             {
                 var sourceEntity = GameManager.Instance.World?.GetEntity(_dmResponse.Source?.getEntityId() ?? -1) as EntityAlive;
+                var targetClientInfo = ConnectionManager.Instance?.GetClientInfoForEntityId(__instance.entityId);
+                var sourceClientInfo = ConnectionManager.Instance?.GetClientInfoForEntityId(sourceEntity?.entityId ?? -1);
+
                 return new EntityDamagedEventArgs
                 {
-                    position         = __instance.GetBlockPosition(),
-                    entityId         = __instance.entityId,
-                    entityName       = __instance.EntityName,
-                    sourceEntityId   = sourceEntity?.entityId,
-                    sourceEntityName = sourceEntity?.EntityName,
-                    damageType       = _dmResponse.Source?.GetName().ToString(),
-                    hitBodyPart      = _dmResponse.HitBodyPart.ToString(),
-                    hitDirection     = _dmResponse.HitDirection.ToString(),
-                    damage           = _dmResponse.Strength,
-                    armorDamage      = _dmResponse.ArmorDamage,
-                    armorSlot        = _dmResponse.ArmorSlot.ToString(),
-                    stunType         = _dmResponse.Stun.ToString(),
-                    stunDuration     = _dmResponse.StunDuration,
-                    critical         = _dmResponse.Critical,
-                    fatal            = _dmResponse.Fatal,
-                    crippleLegs      = _dmResponse.CrippleLegs,
-                    dismember        = _dmResponse.Dismember,
-                    turnIntoCrawler  = _dmResponse.TurnIntoCrawler,
-                    painHit          = _dmResponse.PainHit,
+                    position            = __instance.GetBlockPosition(),
+                    entityId            = __instance.entityId,
+                    entityName          = __instance.EntityName,
+                    entitySteamId       = targetClientInfo?.playerId,
+                    sourceEntityId      = sourceEntity?.entityId,
+                    sourceEntityName    = sourceEntity?.EntityName,
+                    sourceEntitySteamId = sourceClientInfo?.playerId,
+                    damageType          = _dmResponse.Source?.GetName().ToString(),
+                    hitBodyPart         = _dmResponse.HitBodyPart.ToString(),
+                    hitDirection        = _dmResponse.HitDirection.ToString(),
+                    damage              = _dmResponse.Strength,
+                    armorDamage         = _dmResponse.ArmorDamage,
+                    armorSlot           = _dmResponse.ArmorSlot.ToString(),
+                    stunType            = _dmResponse.Stun.ToString(),
+                    stunDuration        = _dmResponse.StunDuration,
+                    critical            = _dmResponse.Critical,
+                    fatal               = _dmResponse.Fatal,
+                    crippleLegs         = _dmResponse.CrippleLegs,
+                    dismember           = _dmResponse.Dismember,
+                    turnIntoCrawler     = _dmResponse.TurnIntoCrawler,
+                    painHit             = _dmResponse.PainHit,
                 };
             });
 
