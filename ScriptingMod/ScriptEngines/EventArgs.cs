@@ -18,7 +18,7 @@ namespace ScriptingMod.ScriptEngines
         [CanBeNull] // doesn't need to come from player: kill messages, server messages, etc
         public ClientInfo clientInfo;
 
-        public bool isPropagationStopped = false;
+        internal bool isPropagationStopped = false;
 
         public void stopPropagation()
         {
