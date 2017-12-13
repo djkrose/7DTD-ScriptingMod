@@ -88,7 +88,8 @@ console.log("Hello JavaScript World!");
 ## Documentation
 To get you started, the mod contains a couple of example scripts that you can inspect. They can be activated by removing the trailing underscore (_) from the file name.
 
-Detailed documentation and API specification is coming later.
+Detailed documentation and API specification is just starting to grow:
+[Documentation Wiki](https://github.com/djkrose/7DTD-ScriptingMod/wiki)
 
 ## Source Code
 Since version 1.0 the source code is fully available and the releases are not obfuscated anymore. Feel free to look around and copy what you like, but please leave the author and link to this GitHub intact (see license).
