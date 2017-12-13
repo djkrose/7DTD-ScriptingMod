@@ -12,6 +12,7 @@ namespace ScriptingMod.Tools
     {
         /// <summary>
         /// Initializes or reinitializes all patches.
+        /// Depends on scripts already loaded, PersistentData available.
         /// WARNING: Can an will be called multiple times when settings changed!
         /// </summary>
         public static void ApplyPatches()

@@ -27,7 +27,6 @@ namespace ScriptingMod
             Log.Out("Initializing phase 1/3 ...");
             NonPublic.Init();
             PersistentData.Load();
-            PatchTools.ApplyPatches();
             LitJsonTypeBindings.Register();
         }
 
@@ -39,6 +38,7 @@ namespace ScriptingMod
             Log.Debug("Api.GameAwake called.");
             Log.Out("Initializing phase 2/3 ...");
             CommandTools.InitScripts();
+            PatchTools.ApplyPatches();
             CommandTools.InitScriptsMonitoring();
 
             CommandTools.InvokeScriptEvents(ScriptEvent.gameAwake, () => new ScriptEventArgs());
