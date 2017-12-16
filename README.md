@@ -67,6 +67,7 @@ console.log("Hello JavaScript World!");
 <tr><td>dj-version</td><td>Shows djkrose's Scripting Mod version information.</td></tr>
 <tr><td>dj-export</td><td>Exports a prefab including all container content, sign texts, ownership, etc.</td></tr>
 <tr><td>dj-import</td><td>Imports a prefab, optionally including all container content, sign texts, ownership, etc.</td></tr>
+<tr><td>dj-log-events</td><td>Enables or disables logging of events to the server console.</td></tr>
 <tr><td>dj-regen</td><td>Regenerates a chunk or custom area based on the world seed.</td></tr>
 <tr><td>dj-repair</td><td>Repairs server problems of various kinds.</td></tr>
 <tr><td>dj-patch</td><td>Enables or disables runtime server patches like the dupe exploit fix.</td></tr>
