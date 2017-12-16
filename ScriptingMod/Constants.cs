@@ -16,8 +16,9 @@ namespace ScriptingMod
 
         public static readonly string ScriptingModFolder = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Constants)).Location);
         public static readonly string ScriptsFolder      = Path.Combine(ScriptingModFolder, "scripts");
-        public static readonly string PrefabsFolder      = Path.GetFullPath(Utils.GetGameDir(global::Constants.cDirPrefabs));
 
-        //public static readonly string SaveGameFolder = GamePrefs.GetString(EnumGamePrefs.SaveGameFolder);
+        // Using cached property to only execute this when needed, because the static initializer would fail in NUnit environment
+        private static string _prefabsFolderCache;
+        public static string PrefabsFolder => _prefabsFolderCache ?? (_prefabsFolderCache = Path.GetFullPath(Utils.GetGameDir(global::Constants.cDirPrefabs)));
     }
 }
