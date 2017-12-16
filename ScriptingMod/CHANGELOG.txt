@@ -6,6 +6,7 @@
 - Added 28 selected events with custom event data.
 - Added 5 example scripts for events.
 - Added possibility to disable scripts by prefixing them with underscore (_). Disabled example scripts.
+- Added telemetry and exception reporting; deactivate with <Telemetry>false</Telemetry> in settings.
 - Changed script commands js-test, js-minibike, js-sleepers, and lua-test to all use "dj-" prefix instead.
 - Changed syntax of "dj-patch XYZ on" to "dj-patch xyz /on" to match other command systax like dj-repair and dj-log-events.
 - Fixed: Parsing of script metadata can be very slow or freeze when file has many comments [#4]

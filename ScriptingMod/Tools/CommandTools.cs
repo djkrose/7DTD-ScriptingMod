@@ -358,32 +358,39 @@ namespace ScriptingMod.Tools
         /// </param>
         public static void InvokeScriptEvents(ScriptEvent eventType, Func<ScriptEventArgs> eventArgsCallback)
         {
-            // ReSharper disable once RedundantAssignment
-            ScriptEventArgs eventArgs = null;
+            try
+            {
+                // ReSharper disable once RedundantAssignment
+                ScriptEventArgs eventArgs = null;
 
 #if DEBUG
-            eventArgs = eventArgsCallback();
-            TrackInvocation(eventType, eventArgs);
+                eventArgs = eventArgsCallback();
+                TrackInvocation(eventType, eventArgs);
 #endif
 
-            if (PersistentData.Instance.LogEvents.Contains(eventType))
-            {
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                if (eventArgs == null)
-                    eventArgs = eventArgsCallback();
-                Log.Out("[EVENT] [" + eventType + "] " + JsonMapper.ToJson(eventArgs));
-            }
-
-            if (_events[(int)eventType] != null)
-            {
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                if (eventArgs == null)
-                    eventArgs = eventArgsCallback();
-                foreach (var filePath in _events[(int)eventType])
+                if (PersistentData.Instance.LogEvents.Contains(eventType))
                 {
-                    var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
-                    scriptEngine.ExecuteEvent(filePath, eventType, eventArgs);
+                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                    if (eventArgs == null)
+                        eventArgs = eventArgsCallback();
+                    Log.Out("[EVENT] [" + eventType + "] " + JsonMapper.ToJson(eventArgs));
                 }
+
+                if (_events[(int)eventType] != null)
+                {
+                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                    if (eventArgs == null)
+                        eventArgs = eventArgsCallback();
+                    foreach (var filePath in _events[(int)eventType])
+                    {
+                        var scriptEngine = ScriptEngine.GetInstance(Path.GetExtension(filePath));
+                        scriptEngine.ExecuteEvent(filePath, eventType, eventArgs);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
             }
         }
 
@@ -586,6 +593,20 @@ namespace ScriptingMod.Tools
             {
                 Log.Exception(ex);
                 SdtdConsole.Instance.Output(string.Format(Resources.ErrorDuringCommand, ex.Message));
+                TelemetryTools.CollectException(ex);
+            }
+        }
+
+        public static void HandleEventException(Exception ex, bool isFatal = false)
+        {
+            if (ex is FriendlyMessageException)
+            {
+                Log.Out(ex.Message);
+            }
+            else
+            {
+                Log.Exception(ex);
+                TelemetryTools.CollectException(ex, isFatal);
             }
         }
 

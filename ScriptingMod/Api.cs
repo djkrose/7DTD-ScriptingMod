@@ -20,14 +20,22 @@ namespace ScriptingMod
     {
         public Api()
         {
-            Log.Debug("Api constructor called.");
+            try
+            {
+                Log.Debug("Api constructor called.");
 #if DEBUG
-            Log.Warning("ScriptingMod is compiled in DEBUG mode! This can hurt server performance significantly and will fill the logfile with useless information fast.");
+                Log.Warning("ScriptingMod is compiled in DEBUG mode! This can hurt server performance significantly and will fill the logfile with useless information fast.");
 #endif
-            Log.Out("Initializing phase 1/3 ...");
-            NonPublic.Init();
-            PersistentData.Load();
-            LitJsonTypeBindings.Register();
+                Log.Out("Initializing phase 1/3 ...");
+                NonPublic.Init();
+                PersistentData.Load();
+                LitJsonTypeBindings.Register();
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex, true);
+                throw;
+            }
         }
 
         /// <summary>
@@ -35,13 +43,20 @@ namespace ScriptingMod
         /// </summary>
         public override void GameAwake()
         {
-            Log.Debug("Api.GameAwake called.");
-            Log.Out("Initializing phase 2/3 ...");
-            CommandTools.InitScripts();
-            PatchTools.ApplyPatches();
-            CommandTools.InitScriptsMonitoring();
+            try
+            {
+                Log.Debug("Api.GameAwake called.");
+                Log.Out("Initializing phase 2/3 ...");
+                CommandTools.InitScripts();
+                PatchTools.ApplyPatches();
+                CommandTools.InitScriptsMonitoring();
 
-            CommandTools.InvokeScriptEvents(ScriptEvent.gameAwake, () => new ScriptEventArgs());
+                CommandTools.InvokeScriptEvents(ScriptEvent.gameAwake, () => new ScriptEventArgs());
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>
@@ -49,15 +64,22 @@ namespace ScriptingMod
         /// </summary>
         public override void GameStartDone()
         {
-            Log.Debug("Api.GameStartDone called.");
-            Log.Out("Initializing phase 3/3 ...");
-            EacTools.Init();
-            CommandTools.InitEvents();
-            RepairEngine.InitAuto();
-            TelemetryTools.Init();
-            Log.Out($"Done initializing {Constants.ModName}.");
+            try
+            {
+                Log.Debug("Api.GameStartDone called.");
+                Log.Out("Initializing phase 3/3 ...");
+                EacTools.Init();
+                CommandTools.InitEvents();
+                RepairEngine.InitAuto();
+                TelemetryTools.Init();
+                Log.Out($"Done initializing {Constants.ModName}.");
 
-            CommandTools.InvokeScriptEvents(ScriptEvent.gameStartDone, () => new ScriptEventArgs());
+                CommandTools.InvokeScriptEvents(ScriptEvent.gameStartDone, () => new ScriptEventArgs());
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>
@@ -73,9 +95,16 @@ namespace ScriptingMod
         /// </summary>
         public override void GameShutdown()
         {
-            Log.Debug("Api.GameShutdown called.");
-            TelemetryTools.Shutdown();
-            CommandTools.InvokeScriptEvents(ScriptEvent.gameShutdown, () => new ScriptEventArgs());
+            try
+            {
+                Log.Debug("Api.GameShutdown called.");
+                TelemetryTools.Shutdown();
+                CommandTools.InvokeScriptEvents(ScriptEvent.gameShutdown, () => new ScriptEventArgs());
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>
@@ -85,12 +114,19 @@ namespace ScriptingMod
         /// <param name="compatibilityVersion"></param>
         public override void PlayerLogin(ClientInfo clientInfo, string compatibilityVersion)
         {
-            Log.Debug("Api.PlayerLogin called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerLogin, () => new PlayerLoginEventArgs()
+            try
             {
-                clientInfo           = clientInfo,
-                compatibilityVersion = compatibilityVersion,
-            });
+                Log.Debug("Api.PlayerLogin called.");
+                CommandTools.InvokeScriptEvents(ScriptEvent.playerLogin, () => new PlayerLoginEventArgs()
+                {
+                    clientInfo = clientInfo,
+                    compatibilityVersion = compatibilityVersion,
+                });
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>
@@ -102,12 +138,19 @@ namespace ScriptingMod
         /// <param name="playerProfile"></param>
         public override void PlayerSpawning(ClientInfo clientInfo, int chunkViewDim, PlayerProfile playerProfile)
         {
-            Log.Debug("Api.PlayerSpawning called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerSpawning, () => new PlayerSpawningEventArgs()
+            try
             {
-                clientInfo    = clientInfo,
-                playerProfile = playerProfile,
-            });
+                Log.Debug("Api.PlayerSpawning called.");
+                CommandTools.InvokeScriptEvents(ScriptEvent.playerSpawning, () => new PlayerSpawningEventArgs()
+                {
+                    clientInfo = clientInfo,
+                    playerProfile = playerProfile,
+                });
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>
@@ -118,13 +161,20 @@ namespace ScriptingMod
         /// <param name="pos"></param>
         public override void PlayerSpawnedInWorld(ClientInfo clientInfo, RespawnType respawnReason, Vector3i pos)
         {
-            Log.Debug("Api.PlayerSpawnedInWorld called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerSpawnedInWorld, () => new PlayerSpawnedInWorldEventArgs()
+            try
             {
-                reason     = respawnReason.ToString(),
-                position   = pos,
-                clientInfo = clientInfo,
-            });
+                Log.Debug("Api.PlayerSpawnedInWorld called.");
+                CommandTools.InvokeScriptEvents(ScriptEvent.playerSpawnedInWorld, () => new PlayerSpawnedInWorldEventArgs()
+                {
+                    reason = respawnReason.ToString(),
+                    position = pos,
+                    clientInfo = clientInfo,
+                });
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>
@@ -135,11 +185,18 @@ namespace ScriptingMod
         /// <param name="shutdown"></param>
         public override void PlayerDisconnected(ClientInfo clientInfo, bool shutdown)
         {
-            Log.Debug("Api.PlayerDisconnected called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerDisconnected, () => new PlayerDisconnectedEventArgs()
+            try
             {
-                clientInfo = clientInfo,
-            });
+                Log.Debug("Api.PlayerDisconnected called.");
+                CommandTools.InvokeScriptEvents(ScriptEvent.playerDisconnected, () => new PlayerDisconnectedEventArgs()
+                {
+                    clientInfo = clientInfo,
+                });
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>
@@ -149,43 +206,51 @@ namespace ScriptingMod
         /// <param name="playerDataFile"></param>
         public override void SavePlayerData(ClientInfo clientInfo, PlayerDataFile playerDataFile)
         {
-            Log.Debug("Api.SavePlayerData called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.playerSaveData, () =>
+            try
             {
-                var playerDataDir = GameUtils.GetPlayerDataDir().Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-                return new PlayerSaveDataEventArgs()
+                Log.Debug("Api.SavePlayerData called.");
+                CommandTools.InvokeScriptEvents(ScriptEvent.playerSaveData, () =>
                 {
-                    playerDataFile = playerDataDir + clientInfo.playerId + "." + PlayerDataFile.EXT,
-                    clientInfo     = clientInfo,
-                };
-            });
+                    var playerDataDir = GameUtils.GetPlayerDataDir().Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    return new PlayerSaveDataEventArgs()
+                    {
+                        playerDataFile = playerDataDir + clientInfo.playerId + "." + PlayerDataFile.EXT,
+                        clientInfo = clientInfo,
+                    };
+                });
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>
         /// Called for every chat message, including messages about Joins, Leaves, Died, Killed, etc.
         /// </summary>
-        /// <param name="clientInfo"></param>
-        /// <param name="messageType"></param>
-        /// <param name="message"></param>
-        /// <param name="mainName"></param>
-        /// <param name="localizeMain"></param>
-        /// <param name="secondaryName"></param>
-        /// <param name="localizeSecondary"></param>
-        /// <returns></returns>
+        /// <returns>true if chat message can be processed further, false if it should be suppressed</returns>
         public override bool ChatMessage(ClientInfo clientInfo, EnumGameMessages messageType, string message, string mainName, bool localizeMain, string secondaryName, bool localizeSecondary)
         {
-            Log.Debug("Api.ChatMessage called.");
-            var args = new ChatMessageEventArgs()
+            try
             {
-                messageType = messageType.ToString(),
-                from        = mainName,
-                message     = message,
-                clientInfo  = clientInfo,
-            };
+                Log.Debug("Api.ChatMessage called.");
+                var args = new ChatMessageEventArgs()
+                {
+                    messageType = messageType.ToString(),
+                    from = mainName,
+                    message = message,
+                    clientInfo = clientInfo,
+                };
 
-            CommandTools.InvokeScriptEvents(ScriptEvent.chatMessage, () => args);
+                CommandTools.InvokeScriptEvents(ScriptEvent.chatMessage, () => args);
 
-            return !args.isPropagationStopped;
+                return !args.isPropagationStopped;
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+                return false;
+            }
         }
 
         /// <summary>
@@ -195,13 +260,20 @@ namespace ScriptingMod
         /// <param name="chunk"></param>
         public override void CalcChunkColorsDone(Chunk chunk)
         {
-            // No logging to avoid spam
-            // Log.Debug("Api.CalcChunkColorsDone called.");
-            CommandTools.InvokeScriptEvents(ScriptEvent.chunkMapCalculated, () => new ChunkMapCalculatedEventArgs()
+            try
             {
-                chunkKey  = chunk.Key,
-                chunkPos  = ChunkTools.ChunkKeyToChunkXZ(chunk.Key),
-            });
+                // No logging to avoid spam
+                // Log.Debug("Api.CalcChunkColorsDone called.");
+                CommandTools.InvokeScriptEvents(ScriptEvent.chunkMapCalculated, () => new ChunkMapCalculatedEventArgs()
+                {
+                    chunkKey = chunk.Key,
+                    chunkPos = ChunkTools.ChunkKeyToChunkXZ(chunk.Key),
+                });
+            }
+            catch (Exception ex)
+            {
+                CommandTools.HandleEventException(ex);
+            }
         }
 
         /// <summary>

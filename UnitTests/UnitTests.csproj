@@ -51,8 +51,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DumperTests.cs" />
+    <Compile Include="ExceptionSimulator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScriptEngineTests.cs" />
+    <Compile Include="TelemetryToolsTests.cs" />
     <Compile Include="TempTests.cs" />
   </ItemGroup>
   <ItemGroup>
