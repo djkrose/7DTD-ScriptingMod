@@ -164,7 +164,7 @@ namespace ScriptingMod.ScriptEngines
 
         #region Exposed in scripts
 
-        private void Dump(object obj, int? depth)
+        protected void Dump(object obj, int? depth)
         {
             // TODO: Test and fix the SdtdConsole output for asynchronous/callbacks
 
