@@ -28,7 +28,9 @@
 //   importAssembly(assemblyName)      Imports all types of the given .Net assembly name (file name without .dll or .exe extension)
 //   console.log(msg)                  Prints the text to the user's console
 //   console.info/.warn/.error(msg)    Prints the text into the server log file
-//   require(fileName)                 Executes the external JavaScript file just as if it were inline right there
+//   var foo = require(fileName[, passthrough])
+//                                     Executes the external JavaScript file and returns the module.exports variable
+//                                     passthrough = Set event, eventType, params, player, sender variables where applicable; default: false
 //   dump(variable[, maxDepth])        Dumps .Net objects in readable form into the log file.
 //                                     maxDepth = How deep the structure is traversed; default: 1
 
