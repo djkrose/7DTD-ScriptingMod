@@ -27,6 +27,7 @@ namespace ScriptingMod.ScriptEngines
             _lua = new Lua();
             _lua.LoadCLRPackage();
             _lua["print"] = new Action<object[]>(Print);
+            _lua["console"] = new JsConsole();
         }
 
         protected override void ExecuteFile(string filePath)

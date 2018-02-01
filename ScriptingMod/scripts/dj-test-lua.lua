@@ -27,6 +27,11 @@
 --   dump(variable[, maxDepth])        Dumps .Net objects in readable form into the log file.
 --                                     maxDepth = How deep the structure is traversed; default: 1
 --   print(text)                       Prints the text to console and log file
+--   console:log                       Same as print().
+--   console:info                      Same as print() but with INF marker.
+--   console:warn                      Same as print() but with WRN marker.
+--   console:error                     Same as print() but with ERR marker.
+--   console:debug                     Same as print() but with DBG marker.
 
 if params.Length == 2 then
     print("Hello " .. params[0] .. " " .. params[1] .. ", nice to meet you! I am a Lua script.")
